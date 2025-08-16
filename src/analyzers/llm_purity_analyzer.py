@@ -1,0 +1,507 @@
+#!/usr/bin/env python3
+"""
+Módulo para análise LLM específica do arquivo hashes_no_rpt_purity_with_analysis.csv
+Preenche a coluna llm_analysis com análises de commits de refatoramento.
+"""
+
+import pandas as pd
+import json
+import os
+import datetime
+from typing import Optional, List, Dict, Any
+import time
+import sys
+
+from src.handlers.optimized_llm_handler import OptimizedLLMHandler
+from src.handlers.git_handler import GitHandler
+from src.handlers.data_handler import DataHandler
+from src.utils.colors import *
+
+class ProgressBar:
+    """Barra de progresso simples para análise LLM."""
+    
+    def __init__(self, total: int, width: int = 50, title: str = "Progress"):
+        self.total = total
+        self.current = 0
+        self.width = width
+        self.title = title
+        self.start_time = time.time()
+        
+    def update(self, current: int = None):
+        """Atualiza a barra de progresso."""
+        if current is not None:
+            self.current = current
+        else:
+            self.current += 1
+            
+        # Calcular porcentagem
+        percentage = min(100, (self.current / self.total) * 100) if self.total > 0 else 0
+        
+        # Calcular tempo estimado
+        elapsed_time = time.time() - self.start_time
+        if self.current > 0:
+            avg_time_per_item = elapsed_time / self.current
+            remaining_items = self.total - self.current
+            eta_seconds = avg_time_per_item * remaining_items
+            eta_str = self._format_time(eta_seconds)
+        else:
+            eta_str = "calculating..."
+        
+        # Criar barra visual
+        filled = int(self.width * percentage / 100)
+        bar = '█' * filled + '░' * (self.width - filled)
+        
+        # Formatar elapsed time
+        elapsed_str = self._format_time(elapsed_time)
+        
+        # Imprimir barra
+        sys.stdout.write(f'\r{self.title}: |{bar}| {percentage:.1f}% ({self.current}/{self.total}) '
+                        f'Elapsed: {elapsed_str} ETA: {eta_str}')
+        sys.stdout.flush()
+        
+        if self.current >= self.total:
+            print()  # Nova linha ao completar
+            
+    def _format_time(self, seconds: float) -> str:
+        """Formata tempo em formato legível."""
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        elif seconds < 3600:
+            return f"{seconds//60:.0f}m {seconds%60:.0f}s"
+        else:
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            return f"{hours:.0f}h {minutes:.0f}m"
+
+class LLMPurityAnalyzer:
+    """Analisador LLM específico para preenchimento da coluna de análise de pureza."""
+    
+    def __init__(self):
+        """Inicializa o analisador LLM."""
+        self.llm_handler = OptimizedLLMHandler()
+        self.git_handler = GitHandler()
+        self.data_handler = DataHandler()
+        # Arquivos de trabalho (dependem do modelo atual)
+        from src.core.config import get_model_paths, get_current_llm_model, ensure_model_directories
+        paths = get_model_paths(get_current_llm_model())
+        ensure_model_directories()
+        self.csv_file_path = "csv/hashes_no_rpt_purity_with_analysis.csv"  # CSV global compartilhado
+        self.backup_dir = str(paths['ANALISES_DIR'])  # Diretório específico do modelo
+        self.session_log_file = None
+
+        # Estatísticas da sessão
+        self.stats = {
+            "start_time": datetime.datetime.now(),
+            "total_processed": 0,
+            "successful_analyses": 0,
+            "failed_analyses": 0,
+            "skipped_already_analyzed": 0,
+            "processing_errors": 0
+        }
+
+        os.makedirs(self.backup_dir, exist_ok=True)
+        
+    def _create_session_log_file(self) -> str:
+        """Cria arquivo de log da sessão."""
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        log_filename = f"llm_purity_analysis_{timestamp}.json"
+        log_path = os.path.join(self.backup_dir, log_filename)
+        return log_path
+    
+    def _load_csv_data(self) -> Optional[pd.DataFrame]:
+        """Carrega os dados do CSV de análise de pureza."""
+        try:
+            if not os.path.exists(self.csv_file_path):
+                print(error(f"Arquivo {self.csv_file_path} não encontrado."))
+                return None
+            
+            df = pd.read_csv(self.csv_file_path)
+            print(success(f"Carregados {len(df)} hashes do arquivo de análise."))
+            return df
+            
+        except Exception as e:
+            print(error(f"Erro ao carregar CSV: {str(e)}"))
+            return None
+    
+    def _save_csv_data(self, df: pd.DataFrame) -> bool:
+        """Salva os dados atualizados no CSV."""
+        try:
+            # Criar backup antes de salvar
+            backup_timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_path = f"{self.csv_file_path}.backup_{backup_timestamp}"
+            
+            if os.path.exists(self.csv_file_path):
+                df_original = pd.read_csv(self.csv_file_path)
+                df_original.to_csv(backup_path, index=False)
+                print(info(f"Backup criado: {backup_path}"))
+            
+            # Salvar arquivo atualizado
+            df.to_csv(self.csv_file_path, index=False)
+            print(success(f"Arquivo {self.csv_file_path} atualizado com sucesso."))
+            return True
+            
+        except Exception as e:
+            print(error(f"Erro ao salvar CSV: {str(e)}"))
+            return False
+    
+    def _get_commit_data_from_refactoring_csv(self, hash_commit: str) -> Optional[Dict]:
+        """Busca dados do commit no arquivo commits_with_refactoring.csv."""
+        try:
+            # Carregar dados se ainda não foram carregados
+            if not self.data_handler.load_data():
+                return None
+            
+            # Buscar o commit pelo hash
+            commit_data = self.data_handler.data[
+                self.data_handler.data['commit2'] == hash_commit
+            ]
+            
+            if commit_data.empty:
+                print(warning(f"Commit {hash_commit[:8]}... não encontrado no arquivo de refatorações."))
+                return None
+            
+            # Pegar a primeira ocorrência se houver duplicatas
+            row = commit_data.iloc[0]
+            
+            return {
+                'commit1': row['commit1'],
+                'commit2': row['commit2'],
+                'project': row['project'],
+                'project_name': row['project_name']
+            }
+            
+        except Exception as e:
+            print(error(f"Erro ao buscar dados do commit {hash_commit[:8]}...: {str(e)}"))
+            return None
+    
+    def _get_diff_for_commit(self, repository: str, commit1: str, commit2: str) -> Optional[tuple[str, str]]:
+        """Obtém o diff entre dois commits e retorna também o caminho local do repositório.
+
+        Returns:
+            tuple(diff_content, repo_path) ou None em caso de erro.
+        """
+        try:
+            success, repo_path = self.git_handler.ensure_repo_cloned(repository)
+            if not success:
+                print(error(f"Falha ao preparar repositório: {repository}"))
+                return None
+            diff_content = self.git_handler.get_commit_diff(repo_path, commit1, commit2)
+            if not diff_content:
+                print(warning(f"Diff vazio entre commits {commit1[:8]}...{commit2[:8]}"))
+                return None
+            return diff_content, repo_path
+        except Exception as e:
+            print(error(f"Erro ao obter diff: {str(e)}"))
+            return None
+    
+    def _analyze_single_commit(self, hash_commit: str, purity_classification: str) -> Optional[Dict]:
+        """Analisa um único commit com a LLM."""
+        try:
+            print(info(f"Analisando commit {hash_commit[:8]}... (Purity: {purity_classification})"))
+            
+            # Buscar dados do commit
+            commit_data = self._get_commit_data_from_refactoring_csv(hash_commit)
+            if not commit_data:
+                return None
+            
+            # Obter diff (com repo_path para evitar novo fetch)
+            diff_result = self._get_diff_for_commit(
+                commit_data['project'],
+                commit_data['commit1'],
+                commit_data['commit2']
+            )
+            if not diff_result:
+                return None
+            diff_content, repo_path = diff_result
+
+            # Obter mensagem do commit (uma única vez, usando repo já atualizado)
+            try:
+                commit_message = self.git_handler.get_commit_message(repo_path, commit_data['commit2']) or "Commit message not available"
+            except Exception:
+                commit_message = "Commit message not available"
+            
+            # Análise com LLM
+            try:
+                llm_result = self.llm_handler.analyze_commit_refactoring(
+                    current_hash=hash_commit,
+                    previous_hash=commit_data['commit1'],
+                    repository=commit_data['project'],
+                    diff_content=diff_content,
+                    commit_message=commit_message,
+                    repo_path=repo_path
+                )
+                
+                if llm_result and llm_result.get('success') and llm_result.get('refactoring_type'):
+                    result = {
+                        'hash': hash_commit,
+                        'purity_classification': purity_classification,
+                        'llm_classification': llm_result['refactoring_type'].upper(),
+                        'llm_justification': llm_result.get('justification', ''),
+                        'llm_confidence': llm_result.get('confidence_level', 'unknown'),
+                        'project_name': commit_data['project_name'],
+                        'analysis_timestamp': datetime.datetime.now().isoformat(),
+                        'diff_size': len(diff_content),
+                        'diff_lines': len(diff_content.splitlines())
+                    }
+                    
+                    print(success(f"✅ Commit {hash_commit[:8]}... analisado: {result['llm_classification']}"))
+                    return result
+                else:
+                    print(error(f"❌ Falha na análise LLM do commit {hash_commit[:8]}... - Resultado inválido"))
+                    return None
+                    
+            except Exception as llm_error:
+                print(error(f"❌ Erro na chamada LLM para {hash_commit[:8]}...: {str(llm_error)}"))
+                return None
+                
+        except Exception as e:
+            print(error(f"Erro na análise do commit {hash_commit[:8]}...: {str(e)}"))
+            return None
+    
+    def _save_session_analysis(self, analyses: List[Dict]) -> None:
+        """Salva análises da sessão em arquivo JSON."""
+        try:
+            if not self.session_log_file:
+                self.session_log_file = self._create_session_log_file()
+            
+            session_data = {
+                "session_info": {
+                    "start_time": self.stats["start_time"].isoformat(),
+                    "end_time": datetime.datetime.now().isoformat(),
+                    "total_processed": self.stats["total_processed"],
+                    "successful_analyses": self.stats["successful_analyses"],
+                    "failed_analyses": self.stats["failed_analyses"],
+                    "skipped_already_analyzed": self.stats["skipped_already_analyzed"],
+                    "processing_errors": self.stats["processing_errors"]
+                },
+                "analyses": analyses
+            }
+            
+            with open(self.session_log_file, 'w', encoding='utf-8') as f:
+                json.dump(session_data, f, indent=2, ensure_ascii=False)
+            
+            print(info(f"Sessão salva em: {self.session_log_file}"))
+            
+        except Exception as e:
+            print(error(f"Erro ao salvar sessão: {str(e)}"))
+    
+    def analyze_commits(self, 
+                       max_commits: Optional[int] = None, 
+                       skip_analyzed: bool = True,
+                       purity_filter: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Analisa commits e preenche a coluna llm_analysis.
+        
+        Args:
+            max_commits: Número máximo de commits para analisar (None = todos)
+            skip_analyzed: Se True, pula commits que já têm análise LLM
+            purity_filter: Filtro por classificação Purity ('TRUE', 'FALSE', 'NONE', None = todos)
+            
+        Returns:
+            Dict com estatísticas da análise
+        """
+        print(header(f"\n{'='*60}"))
+        print(header("INICIANDO ANÁLISE LLM DE COMMITS DE REFATORAMENTO"))
+        print(header(f"{'='*60}"))
+        
+        # Carregar dados do CSV
+        df = self._load_csv_data()
+        if df is None:
+            return self.stats
+        
+        # Aplicar filtros
+        analysis_df = df.copy()
+        
+        # Filtrar por classificação Purity se especificado
+        if purity_filter:
+            initial_count = len(analysis_df)
+            analysis_df = analysis_df[analysis_df['purity_analysis'] == purity_filter]
+            print(info(f"Filtro Purity '{purity_filter}': {len(analysis_df)} de {initial_count} commits"))
+        
+        # Pular commits já analisados se solicitado
+        if skip_analyzed:
+            initial_count = len(analysis_df)
+            analysis_df = analysis_df[
+                (analysis_df['llm_analysis'].isna()) | 
+                (analysis_df['llm_analysis'] == '') |
+                (analysis_df['llm_analysis'] == 'None')
+            ]
+            skipped = initial_count - len(analysis_df)
+            self.stats["skipped_already_analyzed"] = skipped
+            print(info(f"Pulando {skipped} commits já analisados. Restam {len(analysis_df)} para análise."))
+        
+        # Limitar número de commits se especificado
+        if max_commits and max_commits > 0:
+            analysis_df = analysis_df.head(max_commits)
+            print(info(f"Limitando análise a {len(analysis_df)} commits."))
+        
+        if len(analysis_df) == 0:
+            print(warning("Nenhum commit para analisar após aplicação dos filtros."))
+            return self.stats
+        
+        print(info(f"Iniciando análise de {len(analysis_df)} commits..."))
+        
+        # Inicializar barra de progresso
+        progress_bar = ProgressBar(len(analysis_df), title="LLM Analysis")
+        
+        # Processar commits
+        analyses_results = []
+        processed_count = 0
+        
+        for idx, row in analysis_df.iterrows():
+            processed_count += 1
+            self.stats["total_processed"] += 1
+            
+            hash_commit = row['hash']
+            purity_classification = row['purity_analysis']
+            
+            # Atualizar barra de progresso
+            progress_bar.update(processed_count)
+            
+            # Imprimir detalhes do commit atual (em nova linha após a barra)
+            print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
+            
+            try:
+                # Analisar commit
+                result = self._analyze_single_commit(hash_commit, purity_classification)
+                
+                if result:
+                    # Atualizar DataFrame
+                    classification = result['llm_classification']
+                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
+                    
+                    analyses_results.append(result)
+                    self.stats["successful_analyses"] += 1
+                    
+                    print(success(f"✅ {hash_commit[:8]}... → {classification}"))
+                else:
+                    # Marcar como falha
+                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
+                    self.stats["failed_analyses"] += 1
+                    
+                    print(error(f"❌ Failed: {hash_commit[:8]}..."))
+                
+                # Salvar progresso a cada 5 commits
+                if processed_count % 5 == 0:
+                    self._save_csv_data(df)
+                    self._save_session_analysis(analyses_results)
+                    print(dim(f"💾 Progress saved ({processed_count}/{len(analysis_df)})"))
+                
+                # Pequena pausa entre análises
+                time.sleep(1)
+                
+            except Exception as e:
+                self.stats["processing_errors"] += 1
+                df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
+                print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
+                continue
+        
+        # Salvar resultados finais
+        self._save_csv_data(df)
+        self._save_session_analysis(analyses_results)
+        
+        # Imprimir estatísticas finais
+        self._print_final_stats()
+        
+        return self.stats
+    
+    def _print_final_stats(self) -> None:
+        """Imprime estatísticas finais da análise."""
+        end_time = datetime.datetime.now()
+        duration = end_time - self.stats["start_time"]
+        
+        print(f"\n{header('='*60)}")
+        print(header("ESTATÍSTICAS FINAIS DA ANÁLISE"))
+        print(header(f"{'='*60}"))
+        
+        print(f"{info('Tempo de execução:')} {duration}")
+        print(f"{info('Total processado:')} {self.stats['total_processed']}")
+        print(f"{success('Análises bem-sucedidas:')} {self.stats['successful_analyses']}")
+        print(f"{error('Análises falharam:')} {self.stats['failed_analyses']}")
+        print(f"{warning('Já analisados (pulados):')} {self.stats['skipped_already_analyzed']}")
+        print(f"{error('Erros de processamento:')} {self.stats['processing_errors']}")
+        
+        if self.stats['total_processed'] > 0:
+            success_rate = (self.stats['successful_analyses'] / self.stats['total_processed']) * 100
+            print(f"{info('Taxa de sucesso:')} {success_rate:.1f}%")
+        
+        if self.session_log_file:
+            print(f"{info('Log da sessão:')} {self.session_log_file}")
+    
+    def get_analysis_summary(self) -> Optional[Dict]:
+        """Retorna resumo das análises realizadas."""
+        try:
+            df = self._load_csv_data()
+            if df is None:
+                return None
+            
+            # Estatísticas por categoria
+            purity_counts = df['purity_analysis'].value_counts()
+            llm_counts = df['llm_analysis'].value_counts()
+            
+            # Análise cruzada
+            cross_analysis = pd.crosstab(df['purity_analysis'], df['llm_analysis'], margins=True)
+            
+            summary = {
+                "total_hashes": len(df),
+                "purity_distribution": purity_counts.to_dict(),
+                "llm_distribution": llm_counts.to_dict(),
+                "cross_analysis": cross_analysis.to_dict(),
+                "completed_analyses": len(df[
+                    (df['llm_analysis'].notna()) & 
+                    (df['llm_analysis'] != '') & 
+                    (~df['llm_analysis'].isin(['FAILED', 'ERROR']))
+                ]),
+                "pending_analyses": len(df[
+                    (df['llm_analysis'].isna()) | 
+                    (df['llm_analysis'] == '') |
+                    (df['llm_analysis'] == 'None')
+                ])
+            }
+            
+            return summary
+            
+        except Exception as e:
+            print(error(f"Erro ao gerar resumo: {str(e)}"))
+            return None
+
+
+def main():
+    """Função principal para execução standalone."""
+    analyzer = LLMPurityAnalyzer()
+    
+    # Exemplo de uso
+    print("LLM Purity Analyzer - Opções:")
+    print("1. Analisar primeiros N commits")
+    print("2. Analisar todos os commits")
+    print("3. Analisar apenas commits FALSE do Purity")
+    print("4. Analisar apenas commits TRUE do Purity")
+    print("5. Resumo das análises existentes")
+    
+    try:
+        choice = input("Escolha uma opção (1-5): ").strip()
+        
+        if choice == "1":
+            n = int(input("Quantos commits analisar? "))
+            analyzer.analyze_commits(max_commits=n)
+        elif choice == "2":
+            analyzer.analyze_commits()
+        elif choice == "3":
+            analyzer.analyze_commits(purity_filter="FALSE")
+        elif choice == "4":
+            analyzer.analyze_commits(purity_filter="TRUE")
+        elif choice == "5":
+            summary = analyzer.get_analysis_summary()
+            if summary:
+                print(json.dumps(summary, indent=2))
+        else:
+            print("Opção inválida.")
+    
+    except KeyboardInterrupt:
+        print("\n\nAnálise interrompida pelo usuário.")
+    except Exception as e:
+        print(f"Erro: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()

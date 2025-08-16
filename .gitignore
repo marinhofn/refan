@@ -1,0 +1,66 @@
+# =====================
+# Projeto Refan - .gitignore
+# Ajuste conforme necessidade. Remova entradas se quiser versioná-las.
+# =====================
+
+# Python bytecode & metadata
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Ferramentas / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs e temporários
+*.log
+*.tmp
+*.swp
+*.swo
+*.orig
+*.bak
+
+# Arquivos de análise gerados / resultados
+analises/
+analises_completas/
+output/
+temp_diffs/
+
+# Repositórios externos clonados (reconstruíveis)
+
+# Dados derivados (ajuste se algum for fonte primária)
+data/
+
+# Cache de testes / ferramentas
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.dist/
+build/
+dist/
+
+# Notebooks temporários
+.ipynb_checkpoints/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos que podem conter segredos (verifique antes de remover este ignore)
+*.env
+.env.*
+secrets*/
+
+# Modelos adicionais (caso algum dia salvar pesos locais)
+models/
