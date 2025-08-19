@@ -9,6 +9,7 @@ import json
 import os
 import datetime
 from typing import Optional, List, Dict, Any
+from pathlib import Path
 import time
 import sys
 
@@ -76,16 +77,25 @@ class ProgressBar:
 class LLMPurityAnalyzer:
     """Analisador LLM específico para preenchimento da coluna de análise de pureza."""
     
-    def __init__(self):
-        """Inicializa o analisador LLM."""
-        self.llm_handler = OptimizedLLMHandler()
+    def __init__(self, model: str | None = None, csv_file_path: str | None = None, dry_run: bool = False):
+        """Inicializa o analisador LLM.
+
+        Args:
+            model: Nome do modelo LLM a usar (se None usa o atual configurado).
+            csv_file_path: Caminho para o CSV a ser usado/atualizado. Se None usa o CSV global.
+        """
+        self.llm_handler = OptimizedLLMHandler(model=model)
         self.git_handler = GitHandler()
         self.data_handler = DataHandler()
-        # Arquivos de trabalho (dependem do modelo atual)
+        self.dry_run = dry_run
+        # Arquivos de trabalho (dependem do modelo escolhido)
         from src.core.config import get_model_paths, get_current_llm_model, ensure_model_directories
-        paths = get_model_paths(get_current_llm_model())
+        current_model = model or get_current_llm_model()
+        paths = get_model_paths(current_model)
         ensure_model_directories()
-        self.csv_file_path = "csv/hashes_no_rpt_purity_with_analysis.csv"  # CSV global compartilhado
+        # CSV a utilizar (se informado, usamos esse caminho; caso contrário, o CSV global)
+        # Note: default master CSV is the FLOSS purity file
+        self.csv_file_path = csv_file_path or "csv/floss_hashes_no_rpt_purity_with_analysis.csv"
         self.backup_dir = str(paths['ANALISES_DIR'])  # Diretório específico do modelo
         self.session_log_file = None
 
@@ -100,6 +110,8 @@ class LLMPurityAnalyzer:
         }
 
         os.makedirs(self.backup_dir, exist_ok=True)
+        # Flag para evitar criação de múltiplos backups durante a mesma sessão
+        self._backup_created = False
         
     def _create_session_log_file(self) -> str:
         """Cria arquivo de log da sessão."""
@@ -116,6 +128,17 @@ class LLMPurityAnalyzer:
                 return None
             
             df = pd.read_csv(self.csv_file_path)
+            # Garantir que a coluna llm_analysis exista e seja string para evitar warnings
+            if 'llm_analysis' not in df.columns:
+                # Criar coluna com dtype string para evitar futuros warnings ao atribuir
+                df['llm_analysis'] = pd.Series([''] * len(df), dtype='string')
+            else:
+                # Forçar dtype string (preserva valores existentes)
+                try:
+                    df['llm_analysis'] = df['llm_analysis'].astype('string')
+                except Exception:
+                    # Em casos estranhos, recriar a coluna como string
+                    df['llm_analysis'] = pd.Series(df['llm_analysis'].astype(str).fillna(''), dtype='string')
             print(success(f"Carregados {len(df)} hashes do arquivo de análise."))
             return df
             
@@ -126,16 +149,20 @@ class LLMPurityAnalyzer:
     def _save_csv_data(self, df: pd.DataFrame) -> bool:
         """Salva os dados atualizados no CSV."""
         try:
-            # Criar backup antes de salvar
+            # Criar um backup apenas uma vez por sessão para evitar poluição
+            # do diretório csv. O backup será armazenado no diretório do modelo
+            # (self.backup_dir) para manter os arquivos de trabalho organizados.
             backup_timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            backup_path = f"{self.csv_file_path}.backup_{backup_timestamp}"
-            
-            if os.path.exists(self.csv_file_path):
+            if (not self._backup_created) and os.path.exists(self.csv_file_path):
+                # Nome seguro para o backup
+                original_name = Path(self.csv_file_path).name
+                backup_path = os.path.join(self.backup_dir, f"{original_name}.backup_{backup_timestamp}")
                 df_original = pd.read_csv(self.csv_file_path)
                 df_original.to_csv(backup_path, index=False)
                 print(info(f"Backup criado: {backup_path}"))
-            
-            # Salvar arquivo atualizado
+                self._backup_created = True
+
+            # Salvar arquivo atualizado (sobrescreve o CSV de trabalho)
             df.to_csv(self.csv_file_path, index=False)
             print(success(f"Arquivo {self.csv_file_path} atualizado com sucesso."))
             return True
@@ -203,6 +230,23 @@ class LLMPurityAnalyzer:
             commit_data = self._get_commit_data_from_refactoring_csv(hash_commit)
             if not commit_data:
                 return None
+            
+            # Dry-run: não realiza chamadas git/LLM, retorna resultado simulado
+            if self.dry_run:
+                print(dim(f"Dry-run ativado: simulando análise para {hash_commit[:8]}..."))
+                result = {
+                    'hash': hash_commit,
+                    'purity_classification': purity_classification,
+                    'llm_classification': 'DRY_RUN',
+                    'llm_justification': 'Dry run - análise simulada (nenhuma chamada LLM foi realizada).',
+                    'llm_confidence': '0',
+                    'project_name': commit_data.get('project_name', 'unknown'),
+                    'analysis_timestamp': datetime.datetime.now().isoformat(),
+                    'diff_size': 0,
+                    'diff_lines': 0
+                }
+                print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: {result['llm_classification']}"))
+                return result
             
             # Obter diff (com repo_path para evitar novo fetch)
             diff_result = self._get_diff_for_commit(
@@ -348,54 +392,65 @@ class LLMPurityAnalyzer:
         analyses_results = []
         processed_count = 0
         
-        for idx, row in analysis_df.iterrows():
-            processed_count += 1
-            self.stats["total_processed"] += 1
-            
-            hash_commit = row['hash']
-            purity_classification = row['purity_analysis']
-            
-            # Atualizar barra de progresso
-            progress_bar.update(processed_count)
-            
-            # Imprimir detalhes do commit atual (em nova linha após a barra)
-            print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
-            
-            try:
-                # Analisar commit
-                result = self._analyze_single_commit(hash_commit, purity_classification)
-                
-                if result:
-                    # Atualizar DataFrame
-                    classification = result['llm_classification']
-                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
-                    
-                    analyses_results.append(result)
-                    self.stats["successful_analyses"] += 1
-                    
-                    print(success(f"✅ {hash_commit[:8]}... → {classification}"))
-                else:
-                    # Marcar como falha
-                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
-                    self.stats["failed_analyses"] += 1
-                    
-                    print(error(f"❌ Failed: {hash_commit[:8]}..."))
-                
-                # Salvar progresso a cada 5 commits
-                if processed_count % 5 == 0:
+        try:
+            for idx, row in analysis_df.iterrows():
+                processed_count += 1
+                self.stats["total_processed"] += 1
+
+                hash_commit = row['hash']
+                purity_classification = row['purity_analysis']
+
+                # Atualizar barra de progresso
+                progress_bar.update(processed_count)
+
+                # Imprimir detalhes do commit atual (em nova linha após a barra)
+                print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
+
+                try:
+                    # Analisar commit
+                    result = self._analyze_single_commit(hash_commit, purity_classification)
+
+                    if result:
+                        # Atualizar DataFrame
+                        classification = result['llm_classification']
+                        df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
+
+                        analyses_results.append(result)
+                        self.stats["successful_analyses"] += 1
+
+                        print(success(f"✅ {hash_commit[:8]}... → {classification}"))
+                    else:
+                        # Marcar como falha
+                        df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
+                        self.stats["failed_analyses"] += 1
+
+                        print(error(f"❌ Failed: {hash_commit[:8]}..."))
+
+                    # Salvar progresso IMEDIATAMENTE após cada commit para permitir
+                    # interrupção segura (CTRL+C) sem perda de dados.
                     self._save_csv_data(df)
                     self._save_session_analysis(analyses_results)
                     print(dim(f"💾 Progress saved ({processed_count}/{len(analysis_df)})"))
-                
-                # Pequena pausa entre análises
-                time.sleep(1)
-                
+
+                    # Pequena pausa entre análises
+                    time.sleep(1)
+
+                except Exception as e:
+                    self.stats["processing_errors"] += 1
+                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
+                    print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
+                    continue
+        except KeyboardInterrupt:
+            # Usuário interrompeu com CTRL+C — salvar o que foi processado até agora
+            print(warning('\n⚠️ Interrupção detectada (CTRL+C). Salvando progresso atual...'))
+            try:
+                self._save_csv_data(df)
+                self._save_session_analysis(analyses_results)
+                print(success('💾 Progresso salvo com sucesso após interrupção.'))
             except Exception as e:
-                self.stats["processing_errors"] += 1
-                df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
-                print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
-                continue
-        
+                print(error(f"❌ Falha ao salvar progresso após interrupção: {e}"))
+            return self.stats
+
         # Salvar resultados finais
         self._save_csv_data(df)
         self._save_session_analysis(analyses_results)

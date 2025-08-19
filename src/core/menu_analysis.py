@@ -29,6 +29,7 @@ def show_menu():
     print("5. 🔄 Análise completa automática (do início)")
     print("6. 🎨 Abrir visualização")
     print("7. 🤖 Alterar modelo LLM ativo")
+    print("8. 🧩 Analisar e gerar CSV por modelo (llm_analysis_csv)")
     print("0. ❌ Sair")
 
 def run_complete_analysis_from_start():
@@ -283,7 +284,6 @@ def main():
         elif choice == "6":
             print(info("🎨 Abrindo sistema de visualização..."))
             import subprocess
-            from pathlib import Path
             script_path = Path(__file__).parent.parent.parent / "scripts" / "demos" / "demo_llm_visualization.py"
             subprocess.run([sys.executable, str(script_path)])
         
@@ -312,6 +312,50 @@ def main():
             except ValueError:
                 print(warning("Entrada inválida."))
             
+        elif choice == "8":
+            # Opção: executar análise e salvar em CSV específico do modelo
+            print(info("🔎 Análise por modelo e geração de CSV separado"))
+            models = list_available_ollama_models()
+            if not models:
+                print(error("Nenhum modelo disponível."))
+                continue
+            for idx, m in enumerate(models, 1):
+                print(f"  {cyan(str(idx)+'.')} {m}")
+            sel = input(cyan("Escolha o número do modelo para gerar CSV (Enter para cancelar): ")).strip()
+            if not sel:
+                continue
+            try:
+                idx = int(sel) - 1
+                if idx < 0 or idx >= len(models):
+                    print(warning("Índice inválido."))
+                    continue
+                chosen_model = models[idx]
+                # Preparar CSV de saída no diretório csv/llm_analysis_csv
+                from src.core.config import get_model_paths
+                safe_name = chosen_model.replace(':', '_')
+                out_dir = Path("csv") / "llm_analysis_csv"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                master_csv = Path("csv") / "floss_hashes_no_rpt_purity_with_analysis.csv"
+                target_csv = out_dir / f"{safe_name}_floss_hashes_no_rpt_purity_with_analysis.csv"
+                # Se não existir, copiar do master
+                if not target_csv.exists():
+                    if master_csv.exists():
+                        import shutil
+                        shutil.copy2(master_csv, target_csv)
+                        print(success(f"CSV criado para {chosen_model}: {target_csv}"))
+                    else:
+                        print(error(f"Arquivo master {master_csv} não encontrado."))
+                        continue
+
+                # Instanciar analisador apontando para o CSV do modelo
+                from src.analyzers.llm_purity_analyzer import LLMPurityAnalyzer
+                analyzer = LLMPurityAnalyzer(model=chosen_model, csv_file_path=str(target_csv))
+                n = input(info('Quantos commits analisar (Enter = 100): ')).strip()
+                n = int(n) if n else 100
+                stats = analyzer.analyze_commits(max_commits=n, skip_analyzed=True)
+                print(success(f"Análise concluída para modelo {chosen_model}. Estatísticas: {stats}"))
+            except ValueError:
+                print(warning("Entrada inválida."))
         else:
             print(error("❌ Opção inválida"))
 

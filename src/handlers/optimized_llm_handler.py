@@ -391,16 +391,16 @@ class OptimizedLLMHandler:
             error_msg = "Não foi possível extrair JSON válido da resposta"
             print(error(error_msg))
             print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
-            
+
             # Salvar falha completa
             if commit_hash:
                 self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg)
-            
+
             return None
 
-        # Validação e correção dos campos
-        json_result = self._validate_and_fix_json_fields(json_result, commit_message)
-        
+        # Validação e correção dos campos - fornecer commit/repository como defaults
+        json_result = self._validate_and_fix_json_fields(json_result, commit_message, commit_hash=commit_hash, repository=repository)
+
         return json_result
     
     def _attempt_json_repair(self, llm_response: str) -> Optional[dict]:
@@ -492,7 +492,7 @@ class OptimizedLLMHandler:
         except Exception:
             return json_str
     
-    def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str) -> Optional[dict]:
+    def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
         Valida e corrige campos obrigatórios do JSON.
         
@@ -503,16 +503,16 @@ class OptimizedLLMHandler:
         Returns:
             dict: JSON validado e corrigido ou None se inválido
         """
-        # Campos obrigatórios
+        # Campos obrigatórios - preferir valores que já conhecemos do commit
         required_fields = {
-            "repository": "",
-            "commit_hash_before": "",
-            "commit_hash_current": "",
+            "repository": repository or "",
+            "commit_hash_before": json_result.get('commit_hash_before', ''),
+            "commit_hash_current": commit_hash or json_result.get('commit_hash_current', ''),
             "refactoring_type": "floss",  # default conservativo
             "justification": "Analysis failed - insufficient data"
         }
-        
-        # Preencher campos faltantes
+
+        # Preencher campos faltantes usando os defaults acima
         for field, default_value in required_fields.items():
             if field not in json_result or not json_result[field]:
                 json_result[field] = default_value
@@ -523,7 +523,7 @@ class OptimizedLLMHandler:
             print(warning(f"Tipo de refatoramento inválido: {json_result.get('refactoring_type')}, usando 'floss' como padrão"))
             json_result["refactoring_type"] = "floss"
         
-        # Adicionar campos opcionais se não existirem
+    # Adicionar campos opcionais se não existirem
         optional_fields = {
             "technical_evidence": "Not provided",
             "confidence_level": "low",
