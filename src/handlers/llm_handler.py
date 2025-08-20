@@ -7,6 +7,10 @@ from __future__ import annotations
 
 import json
 import re
+try:
+    import json5 as _json5
+except Exception:
+    _json5 = None
 import os
 import datetime
 from typing import Optional, Protocol
@@ -27,6 +31,7 @@ from src.core.config import (
 )
 from src.utils.colors import *
 import math
+from src.utils.json_parser import extract_json_from_text
 
 def estimate_token_count(text: str) -> int:
     if not text:
@@ -73,9 +78,12 @@ class OllamaAdapter:
             "options": {
                 "num_ctx": num_ctx or 4096,
                 "temperature": 0.1,
-                "num_predict": 600,
+                "num_predict": 2500,
+                "think": False,
                 **base_opts,
-            }
+            },
+            # top-level flag to request no 'think' blocks when supported by server
+            "think": False,
         }
         last_error = None
         for i in range(1, attempts + 1):
@@ -169,7 +177,7 @@ class LLMHandler:
         else:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
-    def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str):
+    def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
         """
         Salva falhas de parsing JSON em arquivo separado.
         
@@ -189,7 +197,9 @@ class LLMHandler:
                 "error": error_msg,
                 "llm_response_complete": raw_response,
                 "llm_response_excerpt": raw_response[:2000] if raw_response else None,
-                "analysis_attempt": "JSON parsing failed"
+                "analysis_attempt": "JSON parsing failed",
+                "parse_attempts": 1,
+                "llm_prompt_excerpt": prompt_excerpt
             }
             
             # Carregar falhas existentes
@@ -253,12 +263,14 @@ class LLMHandler:
             print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
             
             # Salvar falha completa
+            prompt_excerpt = prompt[:2000] if prompt else None
             self.save_json_failure(
                 commit_hash=commit2, 
                 repository=repository, 
                 commit_message=commit_message, 
                 raw_response=llm_response, 
-                error_msg=error_msg
+                error_msg=error_msg,
+                prompt_excerpt=prompt_excerpt
             )
             
             # Tentar estratégia de recuperação de dados
@@ -329,12 +341,21 @@ class LLMHandler:
         Returns:
             Dicionário extraído ou None se não conseguir
         """
+        # Primeiro, delegar para utilitário compartilhado que tenta várias estratégias
+        try:
+            result = extract_json_from_text(llm_response)
+            if result and self._validate_basic_structure(result):
+                return result
+        except Exception as e:
+            print(dim(f"extract_json_from_text falhou: {e}"))
+
+        # Fallback para estratégias específicas do handler
         strategies = [
             self._extract_with_patterns,
             self._extract_with_line_parsing,
             self._extract_with_field_extraction
         ]
-        
+
         for strategy in strategies:
             try:
                 result = strategy(llm_response, commit_data)
@@ -343,7 +364,7 @@ class LLMHandler:
             except Exception as e:
                 print(dim(f"Estratégia {strategy.__name__} falhou: {e}"))
                 continue
-        
+
         return None
     
     def _extract_with_patterns(self, response: str, commit_data: dict) -> Optional[dict]:
@@ -359,12 +380,57 @@ class LLMHandler:
             matches = re.findall(pattern, response, re.MULTILINE | re.DOTALL)
             for match in matches:
                 try:
-                    result = json.loads(match)
+                    try:
+                        result = json.loads(match)
+                    except json.JSONDecodeError:
+                        if _json5 is not None:
+                            result = _json5.loads(match)
+                        else:
+                            raise
                     if isinstance(result, dict):
                         return result
-                except json.JSONDecodeError:
+                except Exception:
+                    # tentar balancear chaves e reparsear
+                    start_idx = response.find(match)
+                    end_idx = self._find_json_end_index(response, start_idx)
+                    if end_idx != -1:
+                        candidate = response[start_idx:end_idx+1]
+                        try:
+                            result = json.loads(candidate)
+                            if isinstance(result, dict):
+                                return result
+                        except Exception:
+                            if _json5 is not None:
+                                try:
+                                    result = _json5.loads(candidate)
+                                    if isinstance(result, dict):
+                                        return result
+                                except Exception:
+                                    pass
                     continue
         return None
+
+    def _find_json_end_index(self, text: str, start_idx: int) -> int:
+        depth = 0
+        in_string = False
+        escape = False
+        for i in range(start_idx, len(text)):
+            ch = text[i]
+            if ch == '"' and not escape:
+                in_string = not in_string
+            if in_string:
+                if ch == '\\' and not escape:
+                    escape = True
+                else:
+                    escape = False
+                continue
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    return i
+        return -1
     
     def _extract_with_line_parsing(self, response: str, commit_data: dict) -> Optional[dict]:
         """Extração linha por linha procurando campos específicos."""

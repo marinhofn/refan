@@ -4,21 +4,16 @@ Script para testar as correções implementadas.
 """
 
 import sys
+import os
 from pathlib import Path
 
-# Configurar paths para imports funcionarem quando executado diretamente
-if __name__ == "__main__":
-    # Adicionar o diretório raiz do projeto ao path
-    project_root = Path(__file__).parent.parent
-    sys.path.insert(0, str(project_root))
-
-
-import sys
-import os
+# Garantir que o diretório raiz do projeto esteja no sys.path para imports locais
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.handlers.data_handler import DataHandler
-from src.analyzers.optimized_llm_handler import OptimizedLLMHandler
+from src.handlers.optimized_llm_handler import OptimizedLLMHandler
 from src.utils.colors import *
 
 def test_deduplication():
@@ -79,7 +74,8 @@ def test_json_failure_handling():
         repository=test_repository, 
         commit_message=test_commit_message,
         raw_response=test_llm_response,
-        error_msg=test_error_msg
+    error_msg=test_error_msg,
+    prompt_excerpt=None
     )
     
     # Verificar se arquivo foi criado

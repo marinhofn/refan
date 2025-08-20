@@ -4,9 +4,14 @@ LLM Handler otimizado com suporte a arquivos para diffs grandes e prompt melhora
 
 import json
 import re
+try:
+    import json5 as _json5  # optional, helps with trailing commas/comments
+except Exception:
+    _json5 = None
 import os
 import datetime
 from typing import Optional, Protocol
+from src.utils.json_parser import extract_json_from_text
 
 import requests
 
@@ -113,9 +118,12 @@ class OptimizedOllamaAdapter:
             "options": {
                 "num_ctx": num_ctx or 4096,
                 "temperature": 0.1,
-                "num_predict": 800,
+                "num_predict": 5000,
+                "think": False,
                 **base_opts,
             },
+            # top-level flag to request no 'think' blocks when supported by server
+            "think": False,
         }
         last_error = None
         prompt_size = len(prompt)
@@ -163,7 +171,7 @@ class OptimizedLLMHandler:
         else:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
-    def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str):
+    def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
         """
         Salva falhas de parsing JSON em arquivo separado.
         
@@ -183,7 +191,8 @@ class OptimizedLLMHandler:
                 "error": error_msg,
                 "llm_response_complete": raw_response,
                 "llm_response_excerpt": raw_response[:2000] if raw_response else None,
-                "analysis_attempt": "JSON parsing failed"
+                "analysis_attempt": "JSON parsing failed",
+                "prompt_excerpt": prompt_excerpt
             }
             
             # Carregar falhas existentes
@@ -266,10 +275,11 @@ class OptimizedLLMHandler:
 
             # Processar resposta com informações para logging de falhas
             result = self._process_llm_response(
-                llm_response, 
-                commit_message, 
-                commit_hash=commit2, 
-                repository=repository
+                llm_response,
+                commit_message,
+                commit_hash=commit2,
+                repository=repository,
+                prompt=prompt
             )
             
             # Adicionar informações extras sobre o processamento
@@ -342,7 +352,7 @@ class OptimizedLLMHandler:
                 'error': f'Erro durante análise: {str(e)}'
             }
 
-    def _process_llm_response(self, llm_response: str, commit_message: str, commit_hash: str = None, repository: str = None) -> Optional[dict]:
+    def _process_llm_response(self, llm_response: str, commit_message: str, commit_hash: str = None, repository: str = None, prompt: str | None = None) -> Optional[dict]:
         """
         Processa a resposta do LLM e extrai o JSON.
         
@@ -359,42 +369,25 @@ class OptimizedLLMHandler:
             error_msg = "Resposta vazia do LLM"
             print(error(error_msg))
             if commit_hash:
-                self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg)
+                prompt_excerpt = prompt[:2000] if prompt else None
+                self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
             return None
         
         # Tentar diferentes estratégias para extrair JSON
         json_result = None
-        
-        # Estratégia 1: Buscar JSON completo entre chaves
-        json_patterns = [
-            r'({[\s\S]*?})',
-            r'```json\s*({[\s\S]*?})\s*```',
-            r'```\s*({[\s\S]*?})\s*```',
-            r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})'
-        ]
-        
-        for pattern in json_patterns:
-            json_match = re.search(pattern, llm_response, re.MULTILINE | re.DOTALL)
-            if json_match:
-                json_str = json_match.group(1)
-                try:
-                    json_result = json.loads(json_str)
-                    break
-                except json.JSONDecodeError:
-                    continue
-        
-        # Estratégia 2: Tentar reparar JSON incompleto
-        if not json_result:
-            json_result = self._attempt_json_repair(llm_response)
-        
+
+        # Tentar extrair JSON usando utilitário compartilhado (várias estratégias internas)
+        json_result = extract_json_from_text(llm_response)
+
         if not json_result:
             error_msg = "Não foi possível extrair JSON válido da resposta"
             print(error(error_msg))
             print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
 
-            # Salvar falha completa
+            # Salvar falha completa com contexto do prompt e tentativas
             if commit_hash:
-                self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg)
+                prompt_excerpt = prompt[:2000] if prompt else None
+                self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
 
             return None
 
@@ -418,12 +411,15 @@ class OptimizedLLMHandler:
             start_idx = llm_response.find('{')
             if start_idx == -1:
                 return None
-            
-            # Procurar pelo final do JSON
-            end_idx = llm_response.rfind('}')
+
+            # Procurar pelo final do JSON mais próximo que balanceie chaves
+            end_idx = self._find_json_end_index(llm_response, start_idx)
             if end_idx == -1:
-                return None
-            
+                # fallback: rfind
+                end_idx = llm_response.rfind('}')
+                if end_idx == -1:
+                    return None
+
             json_text = llm_response[start_idx:end_idx+1]
             
             # Reparos comuns
@@ -443,7 +439,18 @@ class OptimizedLLMHandler:
             for repair in repairs:
                 try:
                     repaired = repair(json_text)
-                    result = json.loads(repaired)
+                    # Primeiro tentar json padrão
+                    try:
+                        result = json.loads(repaired)
+                    except json.JSONDecodeError:
+                        # Tentar json5 se disponível (mais permissivo)
+                        if _json5 is not None:
+                            try:
+                                result = _json5.loads(repaired)
+                            except Exception:
+                                raise
+                        else:
+                            raise
                     if repair != repairs[0]:  # Se foi reparado
                         print(warning("JSON foi reparado automaticamente"))
                     return result
@@ -491,6 +498,32 @@ class OptimizedLLMHandler:
             
         except Exception:
             return json_str
+
+    def _find_json_end_index(self, text: str, start_idx: int) -> int:
+        """
+        Encontra o índice do fechamento '}' correspondente ao primeiro '{' em start_idx
+        usando balanceamento simples. Retorna -1 se não encontrar.
+        """
+        depth = 0
+        in_string = False
+        escape = False
+        for i in range(start_idx, len(text)):
+            ch = text[i]
+            if ch == '"' and not escape:
+                in_string = not in_string
+            if in_string:
+                if ch == '\\' and not escape:
+                    escape = True
+                else:
+                    escape = False
+                continue
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    return i
+        return -1
     
     def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
@@ -573,8 +606,8 @@ class OptimizedLLMHandler:
         return {
             "model": self.model,
             "host": self.host,
-            "max_direct_diff_size": self.config["max_direct_diff_size"],
-            "use_file_for_large_diffs": self.config["use_file_for_large_diffs"],
-            "temp_diff_dir": self.config["temp_diff_dir"],
-            "conservative_classification": self.config["conservative_classification"]
+            "max_direct_diff_size": self.config.get("max_direct_diff_size"),
+            "use_file_for_large_diffs": self.config.get("use_file_for_large_diffs"),
+            "temp_diff_dir": self.config.get("temp_diff_dir"),
+            "conservative_classification": self.config.get("conservative_classification")
         }

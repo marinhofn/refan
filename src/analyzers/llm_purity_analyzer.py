@@ -57,7 +57,7 @@ class ProgressBar:
         
         # Imprimir barra
         sys.stdout.write(f'\r{self.title}: |{bar}| {percentage:.1f}% ({self.current}/{self.total}) '
-                        f'Elapsed: {elapsed_str} ETA: {eta_str}')
+                        f'Elapsed: {elapsed_str} ETA: {eta_str} \n')
         sys.stdout.flush()
         
         if self.current >= self.total:

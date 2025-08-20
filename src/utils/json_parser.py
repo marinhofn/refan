@@ -1,0 +1,119 @@
+"""
+Utilitários para extração e reparo de JSON a partir de texto livre.
+"""
+from typing import Optional
+import json
+import re
+
+try:
+    import json5 as _json5
+except Exception:
+    _json5 = None
+
+
+def _find_json_end_index(text: str, start_idx: int) -> int:
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start_idx, len(text)):
+        ch = text[i]
+        if ch == '"' and not escape:
+            in_string = not in_string
+        if in_string:
+            if ch == '\\' and not escape:
+                escape = True
+            else:
+                escape = False
+            continue
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
+def try_parse_json(text: str) -> Optional[dict]:
+    """Tenta parsear JSON estrito e json5 como fallback."""
+    try:
+        return json.loads(text)
+    except Exception:
+        if _json5 is not None:
+            try:
+                return _json5.loads(text)
+            except Exception:
+                return None
+        return None
+
+
+def extract_json_candidates(text: str) -> list[str]:
+    """Extrai substrings candidatas que parecem JSON via regex."""
+    patterns = [
+        r'```json\s*(\{[\s\S]*?\})\s*```',
+        r'```\s*(\{[\s\S]*?\})\s*```',
+        r'(\{[\s\S]*?\})'
+    ]
+    candidates = []
+    for pat in patterns:
+        for m in re.findall(pat, text, re.MULTILINE | re.DOTALL):
+            candidates.append(m)
+    return candidates
+
+
+def extract_json_from_text(text: str) -> Optional[dict]:
+    # Pre-processamento: remover blocos de 'thinking' produzidos pelo modelo, ex: <think>...</think>
+    text = _strip_think_blocks(text)
+
+    # 1) candidatos por regex
+    for cand in extract_json_candidates(text):
+        parsed = try_parse_json(cand)
+        if parsed is not None:
+            return parsed
+    # 2) tentar localizar primeiro { e balancear
+    start = text.find('{')
+    if start == -1:
+        return None
+    end = _find_json_end_index(text, start)
+    if end == -1:
+        # fallback: rfind
+        end = text.rfind('}')
+        if end == -1:
+            return None
+    candidate = text[start:end+1]
+    parsed = try_parse_json(candidate)
+    if parsed is not None:
+        return parsed
+    # 3) tentar reparos básicos: remover trailing commas
+    repaired = re.sub(r',\s*}', '}', candidate)
+    parsed = try_parse_json(repaired)
+    if parsed is not None:
+        return parsed
+    return None
+
+
+def _strip_think_blocks(text: str) -> str:
+    """Remove blocos que indiquem 'think' ou raciocínio do modelo.
+
+    Exemplos a remover:
+    - <think> ... </think>
+    - <think/> ou <think />
+    - qualquer variação com maiúsculas/minúsculas
+    - blocos entre delimitadores como <<think>> ... <</think>>
+    """
+    if not text:
+        return text
+
+    # remover tags <think>...</think> (case-insensitive, DOTALL)
+    text = re.sub(r'(?is)<think\b[^>]*>.*?</think>', '', text)
+
+    # remover tags self-closing <think/> ou <think ... />
+    text = re.sub(r'(?is)<think\b[^>]*/>', '', text)
+
+    # remover tentativas de marcação com <<think>> ... <</think>>
+    text = re.sub(r'(?is)<<think>>.*?<</think>>', '', text)
+
+    # remover linhas que comecem com [think] ou (think)
+    text = re.sub(r'(?im)^\s*\[?\(?think\)?\]?[:\-\s].*$', '', text)
+
+    return text

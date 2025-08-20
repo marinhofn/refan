@@ -70,22 +70,35 @@ OPTIMIZED_LLM_PROMPT = """You are an expert software engineering analyst special
 - FLOSS: If ANY functional change is detected
 - PURE: Only if ALL changes are purely structural
 
-## RESPONSE FORMAT
+## RESPONSE FORMAT (STRICT JSON ONLY)
 
-Provide your analysis in this exact JSON format:
+You MUST respond with valid JSON only and nothing else. Do NOT provide explanations, step-by-step reasoning, or chain-of-thought. No markdown, no code fences, no preamble. Any extra text will be treated as invalid.
+
+Return exactly one JSON object using the following schema (keys and types MUST match):
 
 {
     "repository": "[repository_name]",
-    "commit_hash_before": "[commit1]", 
+    "commit_hash_before": "[commit1]",
     "commit_hash_current": "[commit2]",
     "refactoring_type": "pure|floss",
-    "justification": "Detailed technical analysis citing specific code evidence. For FLOSS: identify the functional changes. For PURE: confirm no behavioral modifications exist.",
-    "technical_evidence": "Specific lines/patterns from diff that support classification",
+    "justification": "Concise technical justification (one paragraph, cite concrete evidence).",
+    "technical_evidence": "Short list or summary of exact lines/patterns from diff supporting the decision.",
     "confidence_level": "high|medium|low",
-    "diff_source": "direct|file"
+    "diff_source": "direct|file",
+    "error": null
 }
 
-**CRITICAL**: Base classification ONLY on the code diff. Ignore commit messages entirely. When in doubt between pure/floss, choose FLOSS - it's better to be conservative about purity claims."""
+Minimal generation rules (enforced):
+- Output ONLY the JSON object above. Do NOT include any additional text.
+- Do NOT perform or reveal any internal chain-of-thought or reasoning.
+- Keep "justification" concise (max ~250 words). If unsure, set "confidence_level": "low" and describe the limitation in "error".
+- If you cannot produce the schema-compliant JSON for any reason, return the same JSON with "refactoring_type": "floss" and a brief message in "error". Do NOT return plain text.
+
+Priority instruction (very short):
+1) DO NOT explain. Return JSON ONLY.
+2) NO <think> or similar tokens. If your generation would include internal reasoning, omit it and return the JSON only.
+
+When in doubt prefer conservative answers (choose "floss") and set appropriate "confidence_level"."""
 
 
 def ensure_temp_diff_dir():
