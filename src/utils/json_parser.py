@@ -34,6 +34,30 @@ def _find_json_end_index(text: str, start_idx: int) -> int:
     return -1
 
 
+def _find_matching_closing(text: str, start_idx: int, open_ch: str, close_ch: str) -> int:
+    """Generalized matcher para chaves/colchetes, respeitando strings e escapes."""
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start_idx, len(text)):
+        ch = text[i]
+        if ch == '"' and not escape:
+            in_string = not in_string
+        if in_string:
+            if ch == '\\' and not escape:
+                escape = True
+            else:
+                escape = False
+            continue
+        if ch == open_ch:
+            depth += 1
+        elif ch == close_ch:
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
 def try_parse_json(text: str) -> Optional[dict]:
     """Tenta parsear JSON estrito e json5 como fallback."""
     try:
@@ -65,30 +89,63 @@ def extract_json_from_text(text: str) -> Optional[dict]:
     # Pre-processamento: remover blocos de 'thinking' produzidos pelo modelo, ex: <think>...</think>
     text = _strip_think_blocks(text)
 
+    # 0) tentar parsear o texto inteiro (alguns modelos retornam apenas JSON)
+    whole = text.strip()
+    if whole:
+        parsed_whole = try_parse_json(whole)
+        if parsed_whole is not None:
+            return parsed_whole
+
     # 1) candidatos por regex
     for cand in extract_json_candidates(text):
         parsed = try_parse_json(cand)
         if parsed is not None:
             return parsed
-    # 2) tentar localizar primeiro { e balancear
-    start = text.find('{')
-    if start == -1:
-        return None
-    end = _find_json_end_index(text, start)
-    if end == -1:
-        # fallback: rfind
-        end = text.rfind('}')
+    
+    # 1.5) tentar reconhecer arrays JSON no texto completo ou em blocos
+    # procurar por blocos que comecem com '[' e terminem em ']' balanceado
+    for idx, ch in enumerate(text):
+        if ch == '[':
+            end_idx = _find_matching_closing(text, idx, '[', ']')
+            if end_idx != -1:
+                candidate = text[idx:end_idx+1]
+                parsed = try_parse_json(candidate)
+                if parsed is not None:
+                    return parsed
+    # 2) varrer todas as posições de '{' e tentar balancear corretamente
+    starts = [i for i, ch in enumerate(text) if ch == '{']
+    for start in starts:
+        end = _find_matching_closing(text, start, '{', '}')
         if end == -1:
-            return None
-    candidate = text[start:end+1]
-    parsed = try_parse_json(candidate)
-    if parsed is not None:
-        return parsed
-    # 3) tentar reparos básicos: remover trailing commas
-    repaired = re.sub(r',\s*}', '}', candidate)
-    parsed = try_parse_json(repaired)
-    if parsed is not None:
-        return parsed
+            # tentar rfind de '}' após start
+            end = text.find('}', start)
+            if end == -1:
+                continue
+        candidate = text[start:end+1]
+        # limpar markers de código
+        candidate = candidate.strip('`\n ')
+        parsed = try_parse_json(candidate)
+        if parsed is not None:
+            return parsed
+        # tentar reparos básicos e reparsear
+        repaired = re.sub(r',\s*}', '}', candidate)
+        repaired = re.sub(r',\s*\]', ']', repaired)
+        # remover comentários de linha iniciados por //
+        repaired = re.sub(r'//.*?\n', '\n', repaired)
+        parsed = try_parse_json(repaired)
+        if parsed is not None:
+            return parsed
+
+    # 3) último recurso: tentar extrair pares simples 'key: value' e montar um dict mínimo
+    simple_kv = {}
+    for m in re.finditer(r'(["\']?)([a-zA-Z0-9_\- ]{3,40})\1\s*[:=]\s*(["\']?)([^\n\r]+?)\3(?:\n|$)', text):
+        k = m.group(2).strip()
+        v = m.group(4).strip().strip('"\'')
+        if len(k) > 1 and len(v) > 0:
+            simple_kv[k] = v
+    if simple_kv:
+        return simple_kv
+
     return None
 
 

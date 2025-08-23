@@ -78,7 +78,7 @@ class OllamaAdapter:
             "options": {
                 "num_ctx": num_ctx or 4096,
                 "temperature": 0.1,
-                "num_predict": 2500,
+                "num_predict": 5000,
                 "think": False,
                 **base_opts,
             },
@@ -196,10 +196,11 @@ class LLMHandler:
                 "commit_message": commit_message,
                 "error": error_msg,
                 "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response[:2000] if raw_response else None,
+                "llm_response_excerpt": raw_response[:4000] if raw_response else None,
                 "analysis_attempt": "JSON parsing failed",
                 "parse_attempts": 1,
-                "llm_prompt_excerpt": prompt_excerpt
+                "llm_prompt_excerpt": prompt_excerpt,
+                "notes": "Saved by save_json_failure"
             }
             
             # Carregar falhas existentes
@@ -224,10 +225,61 @@ class LLMHandler:
         except Exception as e:
             print(error(f"⚠️ Erro ao salvar falha JSON: {str(e)}"))
 
-    def analyze_commit(self, repository: str, commit1: str, commit2: str, commit_message: str, diff: str, show_prompt: bool = False):
+    def _attempt_multiple_extractions(self, llm_response: str, commit_data: dict, max_attempts: int = 3) -> Optional[dict]:
+        """Tenta extrair JSON várias vezes aplicando limpezas incrementais na resposta."""
+        attempts = 0
+        last_exception = None
+        for i in range(max_attempts):
+            attempts += 1
+            try:
+                # tentativa direta
+                res = extract_json_from_text(llm_response)
+                if res and self._validate_basic_structure(res):
+                    return res
+
+                # tentativa: remover linhas com 'Resposta recebida' ou marcadores de salvamento
+                cleaned = re.sub(r'\bResposta recebida\b.*', '', llm_response, flags=re.IGNORECASE | re.DOTALL)
+                cleaned = re.sub(r'💾.*$', '', cleaned, flags=re.MULTILINE)
+                res = extract_json_from_text(cleaned)
+                if res and self._validate_basic_structure(res):
+                    return res
+
+                # tentativa: buscar trecho entre primeiros '{' e último '}'
+                s = llm_response.find('{')
+                e = llm_response.rfind('}')
+                if s != -1 and e != -1 and e > s:
+                    candidate = llm_response[s:e+1]
+                    res = extract_json_from_text(candidate)
+                    if res and self._validate_basic_structure(res):
+                        return res
+
+            except Exception as ex:
+                last_exception = ex
+                print(dim(f"_attempt_multiple_extractions tentativa {i+1} falhou: {ex}"))
+                continue
+
+        # se chegar aqui, salvar contexto para investigação
+        err_msg = f"Failed to parse JSON after {attempts} attempts"
+        # incluir prompt excerpt if available (commit_data não contém prompt aqui)
+        self.save_json_failure(
+            commit_hash=commit_data.get('commit_hash_current', ''),
+            repository=commit_data.get('repository', ''),
+            commit_message=commit_data.get('commit_message', ''),
+            raw_response=llm_response,
+            error_msg=err_msg,
+            prompt_excerpt=None
+        )
+        if last_exception:
+            print(dim(f"Last exception during JSON extraction: {last_exception}"))
+        return None
+
+    def analyze_commit(self, repository: str, commit1: str, commit2: str, commit_message: str, diff: str, show_prompt: bool = False, previous_hash: str | None = None):
+        # previous_hash é um alias opcional (por exemplo vindo do CSV: commit1) que
+        # pode ser passado explicitamente por chamadores que já consultaram a base.
+        # Se fornecido, ele deve ter precedência ao preencher commit_hash_before.
         commit_data = {
             "repository": repository,
-            "commit_hash_before": commit1,
+            "commit_hash_before": previous_hash or commit1,
             "commit_hash_current": commit2,
             "commit_message": commit_message,
             "diff": diff,
@@ -256,6 +308,10 @@ class LLMHandler:
 
         # Extrair JSON da resposta com múltiplas estratégias robustas
         json_result = self._extract_json_from_response(llm_response, commit_data)
+
+        # Se falhar, tentar múltiplas extrações com limpezas incrementais
+        if not json_result:
+            json_result = self._attempt_multiple_extractions(llm_response, commit_data, max_attempts=3)
         
         if not json_result:
             error_msg = "Não foi possível extrair JSON válido da resposta"
@@ -438,6 +494,7 @@ class LLMHandler:
         lines = response.split('\n')
         
         field_patterns = {
+            'project': [r'"project":\s*"([^"]*)"', r'project[:\s]*([^\n,}]+)'],
             'repository': [r'"repository":\s*"([^"]*)"', r'repository[:\s]*([^\n,}]+)'],
             'commit_hash_before': [r'"commit_hash_before":\s*"([^"]*)"', r'commit_hash_before[:\s]*([^\n,}]+)'],
             'commit_hash_current': [r'"commit_hash_current":\s*"([^"]*)"', r'commit_hash_current[:\s]*([^\n,}]+)'],
@@ -454,6 +511,10 @@ class LLMHandler:
                         result[field] = value
                         break
         
+        # Se 'project' foi encontrado, mapear para 'repository' como fallback
+        if 'repository' not in result and 'project' in result:
+            result['repository'] = result.get('project')
+
         return result if len(result) >= 2 else None
     
     def _extract_with_field_extraction(self, response: str, commit_data: dict) -> Optional[dict]:

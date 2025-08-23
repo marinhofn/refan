@@ -278,6 +278,7 @@ class OptimizedLLMHandler:
                 llm_response,
                 commit_message,
                 commit_hash=commit2,
+                previous_hash=commit1,
                 repository=repository,
                 prompt=prompt
             )
@@ -352,7 +353,7 @@ class OptimizedLLMHandler:
                 'error': f'Erro durante análise: {str(e)}'
             }
 
-    def _process_llm_response(self, llm_response: str, commit_message: str, commit_hash: str = None, repository: str = None, prompt: str | None = None) -> Optional[dict]:
+    def _process_llm_response(self, llm_response: str, commit_message: str, commit_hash: str = None, previous_hash: str | None = None, repository: str = None, prompt: str | None = None) -> Optional[dict]:
         """
         Processa a resposta do LLM e extrai o JSON.
         
@@ -392,7 +393,25 @@ class OptimizedLLMHandler:
             return None
 
         # Validação e correção dos campos - fornecer commit/repository como defaults
-        json_result = self._validate_and_fix_json_fields(json_result, commit_message, commit_hash=commit_hash, repository=repository)
+        # Normalizar sinônimos comuns (project -> repository, commit1/commit2 -> commit_hash_before/_current)
+        if isinstance(json_result, dict):
+            # 'project' -> 'repository'
+            if 'repository' not in json_result and 'project' in json_result:
+                json_result['repository'] = json_result.get('project')
+            # commit hash synonyms
+            if 'commit_hash_before' not in json_result and 'commit1' in json_result:
+                json_result['commit_hash_before'] = json_result.get('commit1')
+            if 'commit_hash_current' not in json_result and 'commit2' in json_result:
+                json_result['commit_hash_current'] = json_result.get('commit2')
+
+        # Validar e preencher campos usando hashes conhecidos (previous_hash, commit_hash)
+        json_result = self._validate_and_fix_json_fields(
+            json_result,
+            commit_message,
+            commit_hash=commit_hash,
+            previous_hash=previous_hash,
+            repository=repository
+        )
 
         return json_result
     
@@ -525,7 +544,7 @@ class OptimizedLLMHandler:
                     return i
         return -1
     
-    def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
+    def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, previous_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
         Valida e corrige campos obrigatórios do JSON.
         
@@ -537,9 +556,10 @@ class OptimizedLLMHandler:
             dict: JSON validado e corrigido ou None se inválido
         """
         # Campos obrigatórios - preferir valores que já conhecemos do commit
+        # Preferir valores já conhecidos (previous_hash, commit_hash) quando presentes
         required_fields = {
             "repository": repository or "",
-            "commit_hash_before": json_result.get('commit_hash_before', ''),
+            "commit_hash_before": previous_hash or json_result.get('commit_hash_before', ''),
             "commit_hash_current": commit_hash or json_result.get('commit_hash_current', ''),
             "refactoring_type": "floss",  # default conservativo
             "justification": "Analysis failed - insufficient data"
