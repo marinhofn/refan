@@ -10,10 +10,15 @@ except Exception:
     _json5 = None
 import os
 import datetime
-from typing import Optional, Protocol
+import warnings
+from typing import Optional, Protocol, Dict, Any
 from src.utils.json_parser import extract_json_from_text
 
 import requests
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 from src.analyzers.optimized_prompt import (
     OPTIMIZED_LLM_PROMPT,
@@ -31,6 +36,83 @@ from src.core.config import (
 )
 from src.utils.colors import *
 import math
+
+# -----------------------------
+# Carregador de dados dos CSVs
+# -----------------------------
+
+class CSVDataLoader:
+    """Carrega dados dos CSVs para preencher automaticamente campos do JSON."""
+    
+    def __init__(self, csv_dir: str = "csv"):
+        self.csv_dir = csv_dir
+        self.commits_data = None
+        self.purity_data = None
+        self._load_csv_data()
+    
+    def _load_csv_data(self):
+        """Carrega dados dos CSVs."""
+        if pd is None:
+            warnings.warn("pandas não disponível, usando fallback sem dados de CSV")
+            return
+            
+        try:
+            # Carrega commits_with_refactoring.csv
+            commits_path = os.path.join(self.csv_dir, "commits_with_refactoring.csv")
+            if os.path.exists(commits_path):
+                self.commits_data = pd.read_csv(commits_path)
+                print(f"✅ Carregados {len(self.commits_data)} commits de {commits_path}")
+            
+            # Carrega puritychecker_detailed_classification.csv
+            purity_path = os.path.join(self.csv_dir, "puritychecker_detailed_classification.csv")
+            if os.path.exists(purity_path):
+                self.purity_data = pd.read_csv(purity_path, sep=';')
+                print(f"✅ Carregados {len(self.purity_data)} registros de pureza de {purity_path}")
+                
+        except Exception as e:
+            warnings.warn(f"Erro ao carregar CSVs: {e}")
+    
+    def get_commit_info(self, commit_hash: str) -> Dict[str, Any]:
+        """Obtém informações do commit pelos CSVs."""
+        result = {}
+        
+        if self.commits_data is not None:
+            # Procura por commit1 ou commit2
+            commit_row = None
+            if not self.commits_data[
+                (self.commits_data['commit1'] == commit_hash) | 
+                (self.commits_data['commit2'] == commit_hash)
+            ].empty:
+                commit_row = self.commits_data[
+                    (self.commits_data['commit1'] == commit_hash) | 
+                    (self.commits_data['commit2'] == commit_hash)
+                ].iloc[0]
+            
+            if commit_row is not None:
+                result['repository'] = self._extract_repo_name(commit_row.get('project', ''))
+                result['commit_hash_before'] = commit_row.get('commit1', '')
+                result['commit_hash_current'] = commit_row.get('commit2', '')
+        
+        if self.purity_data is not None:
+            # Busca evidências técnicas do puritychecker
+            purity_rows = self.purity_data[self.purity_data['commit'] == commit_hash]
+            if not purity_rows.empty:
+                evidences = []
+                for _, row in purity_rows.iterrows():
+                    if pd.notna(row.get('refactoring_description')):
+                        evidences.append(row['refactoring_description'])
+                
+                if evidences:
+                    result['technical_evidence'] = '; '.join(evidences[:3])  # Limita a 3 evidências
+        
+        return result
+    
+    def _extract_repo_name(self, project_url: str) -> str:
+        """Extrai nome do repositório da URL."""
+        if not project_url:
+            return "unknown"
+        # https://github.com/apache/log4j -> log4j
+        return project_url.split('/')[-1] if '/' in project_url else project_url
 
 # -----------------------------
 # Utilidades de otimização de prompt
@@ -159,12 +241,13 @@ class OptimizedOllamaAdapter:
 # -----------------------------
 
 class OptimizedLLMHandler:
-    def __init__(self, model: Optional[str] = None, host: Optional[str] = None, llm_type: str = "ollama"):
+    def __init__(self, model: Optional[str] = None, host: Optional[str] = None, llm_type: str = "ollama", csv_dir: str = "csv"):
         self.model = model or LLM_MODEL
         self.host = host or LLM_HOST
         self.llm_prompt = OPTIMIZED_LLM_PROMPT
         self.config = OPTIMIZED_CONFIG
         self.failures_file = "json_failures.json"
+        self.csv_loader = CSVDataLoader(csv_dir)
         
         if llm_type == "ollama":
             self.adapter: LLMAdapter = OptimizedOllamaAdapter(self.host, self.model)
@@ -374,23 +457,42 @@ class OptimizedLLMHandler:
                 self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
             return None
         
+        # Preservar resposta raw para análise futura
+        raw_response = llm_response.strip()
+        
         # Tentar diferentes estratégias para extrair JSON
         json_result = None
 
-        # Tentar extrair JSON usando utilitário compartilhado (várias estratégias internas)
+        # Primeira tentativa: extrair JSON usando utilitário compartilhado
         json_result = extract_json_from_text(llm_response)
 
         if not json_result:
-            error_msg = "Não foi possível extrair JSON válido da resposta"
-            print(error(error_msg))
-            print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
+            print(warning(f"JSON parsing falhou. Tentando extrair justificativa do texto..."))
+            
+            # Criar JSON com justificativa extraída do texto raw
+            json_result = self._extract_analysis_from_raw_text(raw_response)
+            
+            # Segunda tentativa: retry com prompt simplificado se possível
+            if not json_result or not json_result.get("justification") or len(json_result.get("justification", "")) < 10:
+                if commit_hash and prompt:
+                    print(dim(f"Tentando retry com prompt simplificado para hash {commit_hash}"))
+                    retry_result = self._retry_analysis_with_simplified_prompt(
+                        commit_hash, previous_hash, repository, prompt
+                    )
+                    if retry_result and retry_result.get("justification"):
+                        json_result = retry_result
+            
+            if not json_result:
+                error_msg = "Não foi possível extrair JSON válido da resposta após todas as tentativas"
+                print(error(error_msg))
+                print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
 
-            # Salvar falha completa com contexto do prompt e tentativas
-            if commit_hash:
-                prompt_excerpt = prompt[:2000] if prompt else None
-                self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
+                # Salvar falha completa com contexto do prompt
+                if commit_hash:
+                    prompt_excerpt = prompt[:2000] if prompt else None
+                    self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
 
-            return None
+                return None
 
         # Validação e correção dos campos - fornecer commit/repository como defaults
         # Normalizar sinônimos comuns (project -> repository, commit1/commit2 -> commit_hash_before/_current)
@@ -412,8 +514,102 @@ class OptimizedLLMHandler:
             previous_hash=previous_hash,
             repository=repository
         )
+        
+        # Sempre adicionar a resposta raw para análise futura
+        if json_result:
+            json_result["llm_raw_response"] = raw_response
 
         return json_result
+
+    def _extract_analysis_from_raw_text(self, raw_response: str) -> dict:
+        """
+        Extrai informações de análise do texto raw quando JSON parsing falha.
+        
+        Args:
+            raw_response (str): Resposta bruta da LLM
+            
+        Returns:
+            dict: JSON construído a partir do texto
+        """
+        result = {}
+        
+        # Procurar por classificação no texto
+        lower_text = raw_response.lower()
+        
+        # Detectar tipo de refactoring
+        if any(word in lower_text for word in ['pure', 'puro', 'estrutural']):
+            result["refactoring_type"] = "pure"
+        elif any(word in lower_text for word in ['floss', 'misto', 'functional', 'behavioral']):
+            result["refactoring_type"] = "floss"
+        
+        # Detectar nível de confiança
+        if any(word in lower_text for word in ['high', 'alta', 'certain', 'confident']):
+            result["confidence_level"] = "high"
+        elif any(word in lower_text for word in ['medium', 'média', 'moderate']):
+            result["confidence_level"] = "medium"
+        else:
+            result["confidence_level"] = "low"
+        
+        # Usar o texto completo como justificativa se não conseguiu extrair JSON
+        # Limitar a 2000 caracteres para não sobrecarregar o JSON
+        justification = raw_response.strip()
+        if len(justification) > 2000:
+            justification = justification[:2000] + "... [texto truncado]"
+        
+        result["justification"] = justification if justification else "Resposta da LLM não contém análise interpretável"
+        
+        return result
+
+    def _retry_analysis_with_simplified_prompt(self, commit_hash: str, previous_hash: str, repository: str, original_prompt: str) -> Optional[dict]:
+        """
+        Tenta uma nova análise com prompt mais simples e direto quando a primeira falha.
+        """
+        try:
+            print(dim(f"Executando retry para {commit_hash} com prompt simplificado"))
+            
+            # Criar prompt mais direto e específico
+            simplified_prompt = f"""
+CRITICAL: You must respond with ONLY a valid JSON object. No other text before or after.
+
+Analyze this Git diff and classify as either "pure" or "floss" refactoring.
+
+Repository: {repository or 'unknown'}
+Previous commit: {previous_hash or 'unknown'}  
+Current commit: {commit_hash}
+
+Response format (respond with ONLY this JSON structure):
+{{
+    "repository": "{repository or 'unknown'}",
+    "commit_hash_before": "{previous_hash or 'unknown'}",
+    "commit_hash_current": "{commit_hash}",
+    "refactoring_type": "pure",
+    "justification": "Brief analysis of the changes",
+    "technical_evidence": "Specific evidence from the diff",
+    "confidence_level": "medium",
+    "diff_source": "direct"
+}}
+
+{original_prompt[-2000:]}  
+"""
+
+            # Fazer nova chamada ao LLM
+            response = self._call_ollama(simplified_prompt, model=self.model, attempts=2)
+            
+            if response:
+                # Tentar extrair JSON da nova resposta
+                json_result = extract_json_from_text(response)
+                if json_result:
+                    print(success(f"Retry bem-sucedido para hash {commit_hash}"))
+                    return json_result
+                else:
+                    print(warning(f"Retry também falhou em extrair JSON para hash {commit_hash}"))
+            else:
+                print(warning(f"Retry não obteve resposta do LLM para hash {commit_hash}"))
+                
+        except Exception as e:
+            print(error(f"Erro durante retry para hash {commit_hash}: {e}"))
+            
+        return None
     
     def _attempt_json_repair(self, llm_response: str) -> Optional[dict]:
         """
@@ -546,7 +742,7 @@ class OptimizedLLMHandler:
     
     def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, previous_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
-        Valida e corrige campos obrigatórios do JSON.
+        Valida e corrige campos obrigatórios do JSON usando dados dos CSVs quando possível.
         
         Args:
             json_result (dict): JSON extraído
@@ -555,41 +751,96 @@ class OptimizedLLMHandler:
         Returns:
             dict: JSON validado e corrigido ou None se inválido
         """
-        # Campos obrigatórios - preferir valores que já conhecemos do commit
-        # Preferir valores já conhecidos (previous_hash, commit_hash) quando presentes
-        required_fields = {
-            "repository": repository or "",
-            "commit_hash_before": previous_hash or json_result.get('commit_hash_before', ''),
-            "commit_hash_current": commit_hash or json_result.get('commit_hash_current', ''),
-            "refactoring_type": "floss",  # default conservativo
-            "justification": "Analysis failed - insufficient data"
-        }
-
-        # Preencher campos faltantes usando os defaults acima
-        for field, default_value in required_fields.items():
-            if field not in json_result or not json_result[field]:
-                json_result[field] = default_value
-                print(warning(f"Campo '{field}' estava ausente, preenchido com valor padrão"))
+        # Contador de campos preenchidos automaticamente
+        fields_filled = []
         
-        # Validação específica do tipo de refatoramento
-        if json_result.get("refactoring_type") not in ("pure", "floss"):
-            print(warning(f"Tipo de refatoramento inválido: {json_result.get('refactoring_type')}, usando 'floss' como padrão"))
-            json_result["refactoring_type"] = "floss"
+        # Primeiro, tentar obter dados dos CSVs
+        csv_data = {}
+        if commit_hash:
+            csv_data = self.csv_loader.get_commit_info(commit_hash)
+            if csv_data:
+                print(f"📊 Dados obtidos dos CSVs para {commit_hash}: {list(csv_data.keys())}")
         
-    # Adicionar campos opcionais se não existirem
+        # Verificar se temos dados válidos do LLM para classificação
+        has_valid_classification = (
+            json_result.get("refactoring_type") in ("pure", "floss") and
+            json_result.get("justification") and 
+            json_result.get("justification") != "Analysis failed - insufficient data" and
+            len(json_result.get("justification", "")) > 10
+        )
+        
+        # Usar dados dos CSVs com prioridade, fallback para parâmetros passados
+        if not json_result.get("repository"):
+            json_result["repository"] = csv_data.get("repository") or repository or "unknown"
+            if csv_data.get("repository") or repository:
+                fields_filled.append("repository")
+                
+        if not json_result.get("commit_hash_before"):
+            json_result["commit_hash_before"] = csv_data.get("commit_hash_before") or previous_hash or "unknown"
+            if csv_data.get("commit_hash_before") or previous_hash:
+                fields_filled.append("commit_hash_before")
+                
+        if not json_result.get("commit_hash_current"):
+            json_result["commit_hash_current"] = csv_data.get("commit_hash_current") or commit_hash or "unknown"
+            if csv_data.get("commit_hash_current") or commit_hash:
+                fields_filled.append("commit_hash_current")
+        
+        # Para evidência técnica, usar dados do CSV se disponível
+        if not json_result.get("technical_evidence") and csv_data.get("technical_evidence"):
+            json_result["technical_evidence"] = csv_data["technical_evidence"]
+            fields_filled.append("technical_evidence")
+        
+        # Para classificação, só usar padrão se realmente não temos dados válidos
+        if not json_result.get("refactoring_type") or json_result.get("refactoring_type") not in ("pure", "floss"):
+            json_result["refactoring_type"] = "floss"  # padrão conservativo
+            fields_filled.append("refactoring_type")
+            
+        # Para justificativa, evitar usar o fallback genérico se temos resposta raw da LLM
+        current_justification = json_result.get("justification", "")
+        if not current_justification or len(current_justification) < 5:
+            # Se temos resposta raw, usá-la como justificativa
+            raw_response = json_result.get("llm_raw_response", "")
+            if raw_response and len(raw_response.strip()) > 10:
+                # Limitar a 1500 caracteres para justificativa
+                justification = raw_response.strip()
+                if len(justification) > 1500:
+                    justification = justification[:1500] + "... [texto truncado]"
+                json_result["justification"] = f"Resposta LLM (JSON parsing falhou): {justification}"
+            else:
+                json_result["justification"] = "Analysis failed - insufficient data"
+            fields_filled.append("justification")
+        
+        # Adicionar campos opcionais se não existirem
         optional_fields = {
-            "technical_evidence": "Not provided",
+            "technical_evidence": csv_data.get("technical_evidence", "Not provided"),
             "confidence_level": "low",
-            "diff_source": "unknown",
-            "commit_message": commit_message
+            "diff_source": "direct"
         }
         
         for field, default_value in optional_fields.items():
-            if field not in json_result:
+            if field not in json_result or not json_result[field]:
                 json_result[field] = default_value
+                if field != "technical_evidence" or not csv_data.get("technical_evidence"):
+                    fields_filled.append(field)
         
-        # Atualizar commit_message
+        # Sempre adicionar/atualizar commit_message
         json_result["commit_message"] = commit_message
+        
+        # Relatório do que foi preenchido
+        if fields_filled:
+            # Separar campos automáticos dos campos de análise
+            auto_fields = [f for f in fields_filled if f in ['repository', 'commit_hash_before', 'commit_hash_current', 'technical_evidence', 'diff_source']]
+            analysis_fields = [f for f in fields_filled if f in ['refactoring_type', 'justification', 'confidence_level']]
+            
+            if auto_fields and not analysis_fields:
+                print(dim(f"Campos preenchidos automaticamente do sistema: {', '.join(auto_fields)}"))
+            elif analysis_fields:
+                auto_msg = f" Campos automáticos: {', '.join(auto_fields)}." if auto_fields else ""
+                print(warning(f"LLM não forneceu análise completa. Campos de análise preenchidos com padrão: {', '.join(analysis_fields)}.{auto_msg}"))
+            else:
+                print(dim(f"Campos complementados: {', '.join(fields_filled)}"))
+        else:
+            print(success(f"Análise LLM está completa"))
         
         return json_result
 

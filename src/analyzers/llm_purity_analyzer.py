@@ -257,7 +257,13 @@ class LLMPurityAnalyzer:
                     'project_name': commit_data.get('project_name', 'unknown'),
                     'analysis_timestamp': datetime.datetime.now().isoformat(),
                     'diff_size': 0,
-                    'diff_lines': 0
+                    'diff_lines': 0,
+                    'llm_raw_response': 'DRY_RUN - No LLM call made',
+                    'repository': commit_data.get('project_name', 'unknown'),
+                    'commit_hash_before': commit_data.get('commit1', 'unknown'),
+                    'commit_hash_current': commit_data.get('commit2', 'unknown'),
+                    'technical_evidence': 'DRY_RUN - No analysis performed',
+                    'diff_source': 'dry_run'
                 }
                 print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: {result['llm_classification']}"))
                 return result
@@ -302,11 +308,53 @@ class LLMPurityAnalyzer:
                         'diff_lines': len(diff_content.splitlines())
                     }
                     
+                    # Adicionar novos campos implementados se disponíveis
+                    if 'llm_raw_response' in llm_result:
+                        result['llm_raw_response'] = llm_result['llm_raw_response']
+                    if 'repository' in llm_result:
+                        result['repository'] = llm_result['repository']
+                    if 'commit_hash_before' in llm_result:
+                        result['commit_hash_before'] = llm_result['commit_hash_before']
+                    if 'commit_hash_current' in llm_result:
+                        result['commit_hash_current'] = llm_result['commit_hash_current']
+                    if 'technical_evidence' in llm_result:
+                        result['technical_evidence'] = llm_result['technical_evidence']
+                    if 'diff_source' in llm_result:
+                        result['diff_source'] = llm_result['diff_source']
+                    
                     print(success(f"✅ Commit {hash_commit[:8]}... analisado: {result['llm_classification']}"))
                     return result
                 else:
-                    print(error(f"❌ Falha na análise LLM do commit {hash_commit[:8]}... - Resultado inválido"))
-                    return None
+                    # Mesmo com falha, tentar preservar dados disponíveis
+                    result = {
+                        'hash': hash_commit,
+                        'purity_classification': purity_classification,
+                        'llm_classification': 'FLOSS',  # padrão conservativo
+                        'llm_justification': 'Analysis failed - insufficient data',
+                        'llm_confidence': 'low',
+                        'project_name': commit_data['project_name'],
+                        'analysis_timestamp': datetime.datetime.now().isoformat(),
+                        'diff_size': len(diff_content),
+                        'diff_lines': len(diff_content.splitlines())
+                    }
+                    
+                    # Tentar preservar dados parciais mesmo em falhas
+                    if llm_result:
+                        if 'llm_raw_response' in llm_result:
+                            result['llm_raw_response'] = llm_result['llm_raw_response']
+                        if 'justification' in llm_result and llm_result['justification']:
+                            result['llm_justification'] = llm_result['justification']
+                        if 'repository' in llm_result:
+                            result['repository'] = llm_result['repository']
+                        if 'commit_hash_before' in llm_result:
+                            result['commit_hash_before'] = llm_result['commit_hash_before']
+                        if 'commit_hash_current' in llm_result:
+                            result['commit_hash_current'] = llm_result['commit_hash_current']
+                        if 'technical_evidence' in llm_result:
+                            result['technical_evidence'] = llm_result['technical_evidence']
+                    
+                    print(warning(f"⚠️ Commit {hash_commit[:8]}... - LLM falhou, usando dados parciais/padrão"))
+                    return result
                     
             except Exception as llm_error:
                 print(error(f"❌ Erro na chamada LLM para {hash_commit[:8]}...: {str(llm_error)}"))

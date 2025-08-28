@@ -157,6 +157,7 @@ def _strip_think_blocks(text: str) -> str:
     - <think/> ou <think />
     - qualquer variação com maiúsculas/minúsculas
     - blocos entre delimitadores como <<think>> ... <</think>>
+    - repetições de instruções do sistema
     """
     if not text:
         return text
@@ -173,4 +174,27 @@ def _strip_think_blocks(text: str) -> str:
     # remover linhas que comecem com [think] ou (think)
     text = re.sub(r'(?im)^\s*\[?\(?think\)?\]?[:\-\s].*$', '', text)
 
-    return text
+    # remover repetições óbvias de instruções do sistema
+    text = re.sub(r'(?is)CRITICAL:\s*You\s+must\s+respond.*?before\s+or\s+after\.', '', text)
+    text = re.sub(r'(?is)Analyze\s+this\s+Git\s+diff\s+and\s+classify.*?refactoring\.', '', text)
+    
+    # remover blocos que começam com "You are an expert" e similares
+    text = re.sub(r'(?im)^You\s+are\s+an?\s+expert.*$', '', text)
+    text = re.sub(r'(?im)^Based\s+on\s+the\s+provided.*$', '', text)
+    
+    # remover linhas repetidas ou que parecem confusas
+    lines = text.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        line = line.strip()
+        # pular linhas que são apenas repetições de palavras
+        if len(set(line.split())) < len(line.split()) / 3 and len(line.split()) > 5:
+            continue
+        # pular linhas que são muito repetitivas
+        if line and len(line) > 20:
+            words = line.split()
+            if len(words) > 5 and len(set(words)) < len(words) / 2:
+                continue
+        cleaned_lines.append(line)
+    
+    return '\n'.join(cleaned_lines)
