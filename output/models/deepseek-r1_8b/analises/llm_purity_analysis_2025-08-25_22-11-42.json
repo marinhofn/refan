@@ -1,0 +1,332 @@
+{
+  "session_info": {
+    "start_time": "2025-08-25T22:03:26.513068",
+    "end_time": "2025-08-26T09:09:27.298674",
+    "total_processed": 60,
+    "successful_analyses": 29,
+    "failed_analyses": 30,
+    "skipped_already_analyzed": 2766,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "7684e73cb80b75b4c32ffa2e64385dd3c80f736a",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-25T22:11:42.791334",
+      "diff_size": 45633,
+      "diff_lines": 1465
+    },
+    {
+      "hash": "76926d0041cae7a8c19d27273d9c6b7bef57403c",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new class 'AndroidForwarderRPC' replacing the existing 'GCMForwarderRPC'. This change includes modifications to method signatures (e.g., changing handleRelay from void to FutureDone<Message>), addition of new conditional logic for handling responses, and changes in exception handling. Additionally, there are performance optimizations with asynchronous processing and resource management improvements by introducing a MessageBuffer class that handles message buffering under specific conditions.",
+      "llm_confidence": "medium",
+      "project_name": "TomP2P",
+      "analysis_timestamp": "2025-08-25T22:33:55.703586",
+      "diff_size": 16618,
+      "diff_lines": 388
+    },
+    {
+      "hash": "769d4c5e321f59ecaa7152485794398a0d7654db",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "maven-plugins",
+      "analysis_timestamp": "2025-08-25T22:34:17.007938",
+      "diff_size": 37386,
+      "diff_lines": 974
+    },
+    {
+      "hash": "769fe895a36868c47101f681f5fdd721bee1ad62",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-25T22:40:19.912797",
+      "diff_size": 886101,
+      "diff_lines": 20342
+    },
+    {
+      "hash": "76e5ff805317b21f97b0f9237953d34e9bdd368c",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit involves changing the interface of ConnectOAuth2RequestManager from OAuth2RequestManager to OAuth2RequestFactory, which is a functional change. Additionally, in ClientDynamicRegistrationEndpoint.java, there's a replacement of oAuth2RequestManager with oAuth2RequestFactory and corresponding method calls (createOAuth2Request) are updated. These changes indicate an adaptation for new functionality or behavior, as the class now implements OAuth2RequestFactory instead of OAuth2RequestManager, suggesting a shift in responsibilities that alters execution paths.",
+      "llm_confidence": "high",
+      "project_name": "OpenID-Connect-Java-Spring-Server",
+      "analysis_timestamp": "2025-08-26T00:14:26.681543",
+      "diff_size": 4787,
+      "diff_lines": 83
+    },
+    {
+      "hash": "76ea95f3cea4e350cfe522738c98a59f2442bac5",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Osmand",
+      "analysis_timestamp": "2025-08-26T00:15:09.979607",
+      "diff_size": 31125,
+      "diff_lines": 791
+    },
+    {
+      "hash": "76ed8b0653569ab3e22d5dcb2b4db7981dabb49a",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit includes multiple changes that introduce functional modifications. In DroppedBlockFactory.java, the BlockPickupComponent import is moved to org.terasology.world.block, which aligns with a structural change but also involves reorganization of packages and classes (renamed from PhysicsSystem to World/block). Additionally, GroovyManager.java adds an instance field for skipProcessingFrames in PhysicsSystem, indicating a performance optimization that alters execution flow by skipping physics updates frames. The new cacheBlockMesh method caches mesh data which wasn't present before, adding functionality. These changes include behavioral modifications and non-mapped nodes due to the reorganization.",
+      "llm_confidence": "medium",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-26T00:16:18.812833",
+      "diff_size": 6989,
+      "diff_lines": 165
+    },
+    {
+      "hash": "76f5c1e2936faf1bc042e2935d677e8b82746cc7",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "basex",
+      "analysis_timestamp": "2025-08-26T00:28:14.288637",
+      "diff_size": 526729,
+      "diff_lines": 11669
+    },
+    {
+      "hash": "7735edeae87652c1fa8196e7956851a39f5a84d4",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "github-api",
+      "analysis_timestamp": "2025-08-26T02:49:18.344998",
+      "diff_size": 582886,
+      "diff_lines": 13398
+    },
+    {
+      "hash": "77a90edc625f9b3f7b012000b76f7345fa835884",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit refactors the TypeMapper and ObjectGraphBuilder classes by consolidating two methods into one, changing method names from isCollectionOfEntityReferences to isCollectionOfManagedClasses, and updating related test cases. This change introduces a new functional aspect as it now handles both entity references and value objects under a single method name, altering the behavior of the system in terms of how collections are identified and processed.",
+      "llm_confidence": "high",
+      "project_name": "javers",
+      "analysis_timestamp": "2025-08-26T04:38:26.529268",
+      "diff_size": 6979,
+      "diff_lines": 152
+    },
+    {
+      "hash": "77ad456fe427c67c527945c7aab268c6eb80318a",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "TomP2P",
+      "analysis_timestamp": "2025-08-26T04:39:00.072267",
+      "diff_size": 44551,
+      "diff_lines": 1003
+    },
+    {
+      "hash": "77dde2a3c4b40da3d820d4852c572338acbf6dc9",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-26T04:41:54.648722",
+      "diff_size": 1307375,
+      "diff_lines": 27453
+    },
+    {
+      "hash": "77e1d3f8ee96d2fbb5df4748aa3c2d6848a9d86c",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a change in the `showProgressDialogForTask` method by replacing the hardcoded icon loading with a static LOGO field. This adds new functionality (loading and using an image) that wasn't present before, altering how the progress dialog is initialized. Additionally, it changes the thread confinement annotation from @GuardedBy to @ThreadConfined, which affects behavior by specifying AWT thread confinement instead of relying on intrinsic locking. These modifications indicate a functional change beyond pure structural reorganization.",
+      "llm_confidence": "high",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-26T04:42:45.898271",
+      "diff_size": 4648,
+      "diff_lines": 107
+    },
+    {
+      "hash": "77e6902da6b3b0320f70f57ea60dc153f0d3d749",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces new functionality by adding a method to render plugin information and modifying the PluginDescriptorGenerator to use BuildSettings. This includes changes to method signatures, addition of conditional logic for rendering metadata, and modifications to how dependencies are handled in XML generation. These alterations change the behavior of the code by introducing new features related to plugin documentation.",
+      "llm_confidence": "high",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-26T04:43:52.943761",
+      "diff_size": 27225,
+      "diff_lines": 582
+    },
+    {
+      "hash": "77f0f68313a4c36bf86363e71f4775e36ccf85bc",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-26T04:44:16.493799",
+      "diff_size": 991374,
+      "diff_lines": 20740
+    },
+    {
+      "hash": "7822353ebabdaaa2023f6119b34b701a36ccadca",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "saiku",
+      "analysis_timestamp": "2025-08-26T04:47:45.467245",
+      "diff_size": 101251,
+      "diff_lines": 2425
+    },
+    {
+      "hash": "783761d744379c99cf1eef9ff38665d75582515b",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new import (bi.meteorite.license.SaikuLicense2) and replaces the existing license retrieval logic in getLicense() with direct instantiation of SaikuLicense2, which changes the functional behavior by altering how licenses are obtained and handled. Additionally, there is restructuring in validateLicense() where commented code suggests handling authentication via a cookie-based method, indicating potential new functionality or behavioral change even if not fully implemented.",
+      "llm_confidence": "medium",
+      "project_name": "saiku",
+      "analysis_timestamp": "2025-08-26T04:48:42.302792",
+      "diff_size": 17117,
+      "diff_lines": 430
+    },
+    {
+      "hash": "7847762ee1d9716878fa651737d3ae360e35aa35",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new method 'removeWaypoints' in Mission.java that replaces the old single-argument removeWaypoint method. This change adds functionality by allowing bulk deletion, which is not present before. Additionally, it modifies the existing onActionItemClicked method to use a different parameter (mode instead of arg0) and changes the logic for handling deletions, indicating behavioral modifications beyond pure structural reorganization.",
+      "llm_confidence": "high",
+      "project_name": "droidplanner",
+      "analysis_timestamp": "2025-08-26T04:49:32.186310",
+      "diff_size": 3396,
+      "diff_lines": 92
+    },
+    {
+      "hash": "78503e44c281968a9616afe215870f4d8440e247",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "BuildCraft",
+      "analysis_timestamp": "2025-08-26T04:53:51.185488",
+      "diff_size": 61727,
+      "diff_lines": 1375
+    },
+    {
+      "hash": "7871e6e2ef219ee9af3366a06ad61ab0df146164",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit involves a significant refactoring where the TabbingManager class is renamed to TabbingManagerSystem and its static methods are moved. Additionally, there are changes in method signatures (e.g., onBindEvent now references 'TabbingManagerSystem' instead of 'TabmingManager') which alter behavior by changing how focus is managed. New conditional logging statements were added that change the output without affecting functionality, but this combined with structural changes indicates functional impact.",
+      "llm_confidence": "medium",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-26T05:15:48.261327",
+      "diff_size": 10487,
+      "diff_lines": 244
+    },
+    {
+      "hash": "787f9d65a3f5d3b0dfcf6751e6a076c60aa21526",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces several changes that alter the functional behavior. In ColumnFamilySerializer.java, a condition is added to check for null before calling serializedSize(). Similarly, in CounterMutation.java and other classes (RowMutation, ReadResponse), new conditional logic appears where parameters are modified or checked differently. For example, RowMutation's getSerializedBuffer now uses a cached buffer if available, which changes the execution path by potentially avoiding recomputation. Also, FBUtilities is updated to include a method for serialization that might change how objects are handled compared to previous versions.",
+      "llm_confidence": "medium",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-26T05:17:01.784442",
+      "diff_size": 29160,
+      "diff_lines": 645
+    },
+    {
+      "hash": "7883e5b0e8bc87b194d549bb1ffa210187d204c6",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "gephi",
+      "analysis_timestamp": "2025-08-26T05:20:47.302378",
+      "diff_size": 591504,
+      "diff_lines": 13252
+    },
+    {
+      "hash": "78f44a961be3e786fa4049731e8adf5baa87976d",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "antlr4",
+      "analysis_timestamp": "2025-08-26T07:27:51.625711",
+      "diff_size": 156359,
+      "diff_lines": 3493
+    },
+    {
+      "hash": "791d25426b3bbf65535a5cca25d5338403fa3251",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new feature by adding the ability to configure and use a Tenacity-specific Circuit Breaker Health Check. This is evident through the addition of the 'withCircuitBreakerHealthCheck()' method in TenacityBundleBuilder, which sets a boolean flag indicating whether this health check should be used. The constructor of TenacityConfiguredBundle now accepts this boolean parameter and uses it to conditionally register the health check. Additionally, new test cases are added that specifically handle the configuration and usage of this feature, including setting the flag to true for enabling the health check.",
+      "llm_confidence": "high",
+      "project_name": "tenacity",
+      "analysis_timestamp": "2025-08-26T08:32:02.458934",
+      "diff_size": 18069,
+      "diff_lines": 341
+    },
+    {
+      "hash": "7936d966351abfe30a2cb3010bf753da230d0fb2",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jmeter",
+      "analysis_timestamp": "2025-08-26T08:33:09.193129",
+      "diff_size": 149217,
+      "diff_lines": 2847
+    },
+    {
+      "hash": "794d68b51b77c2a3cb09374010b6f84231ead604",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-26T08:39:47.117075",
+      "diff_size": 3570423,
+      "diff_lines": 78617
+    },
+    {
+      "hash": "795177b1b31f9beb69028fc0fd6aca99353ebbb8",
+      "purity_classification": "NONE",
+      "llm_classification": "PURE",
+      "llm_justification": "The changes primarily involve renaming strings in the resources file and refactoring method calls within ProjectManager.java. The string 'rename_project' was changed to 'Projekt umbenennen', which is a simple rename without altering functionality. In ProjectManager.java, the code block that loads a project now uses Utils.findValidProject() instead of UtilFile.getProjectNames(...) combined with conditional checks and direct loading. This change simplifies the logic by removing an unused import (UtilFile) and consolidating the method call for finding valid projects. The test file MyProjectsActivityTest.java updates a variable name from invalidProjectModifier to INVALID_PROJECT_MODIFIER, which is also a simple rename preserving behavior.",
+      "llm_confidence": "high",
+      "project_name": "Catroid",
+      "analysis_timestamp": "2025-08-26T09:01:51.302150",
+      "diff_size": 7366,
+      "diff_lines": 176
+    },
+    {
+      "hash": "7952c05234bb845552599fe86148112eb2bcf20c",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "EventBus",
+      "analysis_timestamp": "2025-08-26T09:02:18.771724",
+      "diff_size": 56041,
+      "diff_lines": 1302
+    },
+    {
+      "hash": "795356741ebe6c9418bbd1e1194d4ba1d69608a2",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Osmand",
+      "analysis_timestamp": "2025-08-26T09:06:05.656385",
+      "diff_size": 1604633,
+      "diff_lines": 39847
+    }
+  ]
+}

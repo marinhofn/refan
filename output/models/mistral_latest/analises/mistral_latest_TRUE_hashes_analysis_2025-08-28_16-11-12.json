@@ -1,0 +1,60 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:11:12.463327",
+    "end_time": "2025-08-28T16:11:15.516043",
+    "total_processed": 3,
+    "successful_analyses": 3,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": true,
+      "llm_classification": "DRY_RUN",
+      "llm_justification": "Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+      "llm_confidence": "0",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:11:12.478415",
+      "diff_size": 0,
+      "diff_lines": 0
+    },
+    {
+      "hash": "009f536772a2cd771755e6a31d5e56a30d0a6358",
+      "purity_classification": true,
+      "llm_classification": "DRY_RUN",
+      "llm_justification": "Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+      "llm_confidence": "0",
+      "project_name": "android-calculatorpp",
+      "analysis_timestamp": "2025-08-28T16:11:13.496299",
+      "diff_size": 0,
+      "diff_lines": 0
+    },
+    {
+      "hash": "00b15a44c61f88da69670b6f2f1357736eb8776e",
+      "purity_classification": true,
+      "llm_classification": "DRY_RUN",
+      "llm_justification": "Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+      "llm_confidence": "0",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-28T16:11:14.511226",
+      "diff_size": 0,
+      "diff_lines": 0
+    }
+  ],
+  "summary": {
+    "total_commits": 3,
+    "classifications": {
+      "DRY_RUN": 3
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 3
+    }
+  }
+}

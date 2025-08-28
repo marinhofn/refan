@@ -1,0 +1,57 @@
+{
+  "session_info": {
+    "start_time": "2025-08-21T22:54:52.805597",
+    "end_time": "2025-08-21T22:55:38.960652",
+    "total_processed": 4,
+    "successful_analyses": 4,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1163,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "3148f38df9f46e7c0e3fb3c720b4f462bd734dcd",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "OpenTripPlanner",
+      "analysis_timestamp": "2025-08-21T22:55:08.256008",
+      "diff_size": 20777,
+      "diff_lines": 458
+    },
+    {
+      "hash": "314a08c634a076a03878f3336660178f07aea71f",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-21T22:55:19.417471",
+      "diff_size": 25850,
+      "diff_lines": 626
+    },
+    {
+      "hash": "315812d9d824a14ca6d4e4163dc64ef3fb5db2f0",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-21T22:55:28.700127",
+      "diff_size": 20949,
+      "diff_lines": 408
+    },
+    {
+      "hash": "3160602072c198728cca48e449984a4e596e7c37",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-21T22:55:38.760029",
+      "diff_size": 205963,
+      "diff_lines": 3822
+    }
+  ]
+}

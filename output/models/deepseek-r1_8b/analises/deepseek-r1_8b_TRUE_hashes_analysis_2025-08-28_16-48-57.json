@@ -1,0 +1,60 @@
+{
+  "session_info": {
+    "model_used": "deepseek-r1:8b",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/deepseek-r1_8b_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:48:30.502229",
+    "end_time": "2025-08-28T16:52:08.819147",
+    "total_processed": 5,
+    "successful_analyses": 3,
+    "failed_analyses": 2,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a change in the BloomFilter class by replacing 'fastSet' and 'fastGet' method calls with standard 'set' and 'get' methods, which alters the behavior of these methods. This is evident from the OpenBitSet.java changes where the 'fastGet' and 'fastSet' methods are deprecated or removed, replaced by generic 'get' and 'set' methods that may have different performance characteristics but maintain the same interface for external use.",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:48:57.605524",
+      "diff_size": 15028,
+      "diff_lines": 417
+    },
+    {
+      "hash": "009f536772a2cd771755e6a31d5e56a30d0a6358",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "android-calculatorpp",
+      "analysis_timestamp": "2025-08-28T16:49:09.102204",
+      "diff_size": 40524,
+      "diff_lines": 745
+    },
+    {
+      "hash": "014a1c7899502ec6a515acde4d285505b0c70788",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "ribbon",
+      "analysis_timestamp": "2025-08-28T16:50:49.439255",
+      "diff_size": 55712,
+      "diff_lines": 1282
+    }
+  ],
+  "summary": {
+    "total_commits": 3,
+    "classifications": {
+      "FLOSS": 3
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 3
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:27:20.537288",
+    "end_time": "2025-08-28T16:28:16.584758",
+    "total_processed": 7,
+    "successful_analyses": 6,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 47,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "0f1e838d17ac90d4d44e3369309b245afa969f33",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:27:31.196851",
+      "diff_size": 2332278,
+      "diff_lines": 50733
+    },
+    {
+      "hash": "0f38592da367f7856391a4eefb70ef62e28ed60f",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-28T16:27:41.083064",
+      "diff_size": 108990,
+      "diff_lines": 2557
+    },
+    {
+      "hash": "0f3f576c8f154702738c12f548784ba407280e13",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jclouds",
+      "analysis_timestamp": "2025-08-28T16:27:47.535275",
+      "diff_size": 9464,
+      "diff_lines": 213
+    },
+    {
+      "hash": "0f5dd225de6ae995ddbc6d8d099260ed6eabd501",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:27:57.455365",
+      "diff_size": 1319692,
+      "diff_lines": 29016
+    },
+    {
+      "hash": "0f5e780781ce3f0cb3732515dacc7e467571a7c9",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:28:07.059378",
+      "diff_size": 2938741,
+      "diff_lines": 58185
+    },
+    {
+      "hash": "0f7ebba018f9edf81119da3bdb714fd6c11cda61",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "The changes are purely structural, with no behavioral modifications. The code is reorganized for better readability and maintainability, but the functionality remains unchanged.",
+      "llm_confidence": "high",
+      "project_name": "pdfbox",
+      "analysis_timestamp": "2025-08-28T16:28:14.171844",
+      "diff_size": 9631,
+      "diff_lines": 199
+    }
+  ],
+  "summary": {
+    "total_commits": 6,
+    "classifications": {
+      "FLOSS": 5,
+      "PURE": 1
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 6
+    }
+  }
+}

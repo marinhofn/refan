@@ -1,0 +1,82 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:45:23.056048",
+    "end_time": "2025-08-28T16:46:39.921605",
+    "total_processed": 6,
+    "successful_analyses": 5,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 57,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "1227751661e653fb39be1ada369a9eda8f1e9d7f",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:45:38.017446",
+      "diff_size": 621192,
+      "diff_lines": 13105
+    },
+    {
+      "hash": "122b7a128541b3d2bd8e6c0c87a292cbb9abc513",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "javers",
+      "analysis_timestamp": "2025-08-28T16:46:08.552868",
+      "diff_size": 30730,
+      "diff_lines": 618
+    },
+    {
+      "hash": "124d60f572d5c2c4b80bb448f5cc6be3ae578905",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jbake",
+      "analysis_timestamp": "2025-08-28T16:46:16.108005",
+      "diff_size": 58301,
+      "diff_lines": 1271
+    },
+    {
+      "hash": "1287dfdd0c07f27165535a90eb18413630276d91",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "basex",
+      "analysis_timestamp": "2025-08-28T16:46:28.914443",
+      "diff_size": 23409,
+      "diff_lines": 588
+    },
+    {
+      "hash": "12ea038b9630a6175a606ef39e429e6ab360a5cb",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "log4j",
+      "analysis_timestamp": "2025-08-28T16:46:38.232197",
+      "diff_size": 236303,
+      "diff_lines": 6600
+    }
+  ],
+  "summary": {
+    "total_commits": 5,
+    "classifications": {
+      "FLOSS": 5
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 5
+    }
+  }
+}

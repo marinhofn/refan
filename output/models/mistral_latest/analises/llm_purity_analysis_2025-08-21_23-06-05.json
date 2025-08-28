@@ -1,0 +1,35 @@
+{
+  "session_info": {
+    "start_time": "2025-08-21T23:05:47.302743",
+    "end_time": "2025-08-21T23:06:31.753675",
+    "total_processed": 3,
+    "successful_analyses": 2,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1167,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "3167dd71feafd6b9390ed4dd8ee5662b7539a7b5",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "graylog2-server",
+      "analysis_timestamp": "2025-08-21T23:06:04.981889",
+      "diff_size": 50884,
+      "diff_lines": 994
+    },
+    {
+      "hash": "31683b3f5a1aec8943e5bce6352b14539c454d65",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jclouds",
+      "analysis_timestamp": "2025-08-21T23:06:27.127445",
+      "diff_size": 52502,
+      "diff_lines": 1160
+    }
+  ]
+}

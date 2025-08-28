@@ -1,0 +1,35 @@
+{
+  "session_info": {
+    "start_time": "2025-08-16T13:36:51.739998",
+    "end_time": "2025-08-16T13:44:27.197603",
+    "total_processed": 10,
+    "successful_analyses": 2,
+    "failed_analyses": 8,
+    "skipped_already_analyzed": 60,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "02f34bd51beb02600b5957e61d8c351bf85571f0",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "bigbluebutton",
+      "analysis_timestamp": "2025-08-16T13:42:54.344014",
+      "diff_size": 10297,
+      "diff_lines": 219
+    },
+    {
+      "hash": "032b476c522e7d78c244b6a132027197b7434a08",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff introduces new functionality: a new ApplicationState.RPC_ADDRESS enum constant, a new rpcaddress method in VersionedValue, and logic in StorageService to publish the RPC address to the gossip protocol. It also changes the public API of StorageService and StorageServiceMBean to return RPC addresses instead of endpoint IPs, and updates CassandraServer to use the new method. These changes alter the behavior of the system (how range-to-endpoint mapping is represented and how RPC addresses are propagated), thus qualifying as FLOSS refactoring.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-16T13:44:26.135356",
+      "diff_size": 6210,
+      "diff_lines": 117
+    }
+  ]
+}

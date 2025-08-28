@@ -1,0 +1,24 @@
+{
+  "session_info": {
+    "start_time": "2025-08-19T22:19:46.689691",
+    "end_time": "2025-08-19T22:22:46.652475",
+    "total_processed": 10,
+    "successful_analyses": 1,
+    "failed_analyses": 9,
+    "skipped_already_analyzed": 4,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "0040fea3797ea3e497691e9d1e2660711c60ac4d",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-19T22:20:12.036066",
+      "diff_size": 5505794,
+      "diff_lines": 121392
+    }
+  ]
+}

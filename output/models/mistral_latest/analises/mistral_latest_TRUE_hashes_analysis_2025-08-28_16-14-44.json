@@ -1,0 +1,291 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:13:51.406965",
+    "end_time": "2025-08-28T16:18:20.941443",
+    "total_processed": 25,
+    "successful_analyses": 24,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 23,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "0790e0ef923c9d3c40b1358d586667f9e9c37923",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-28T16:14:44.723709",
+      "diff_size": 361995,
+      "diff_lines": 8750
+    },
+    {
+      "hash": "07ac6bd6d942b87e4615aa4fec61a0aa91c7451b",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "struts",
+      "analysis_timestamp": "2025-08-28T16:14:51.581401",
+      "diff_size": 91590,
+      "diff_lines": 2102
+    },
+    {
+      "hash": "07d269928d5e9acbee6eda7a525e66d9a806f19d",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "krati",
+      "analysis_timestamp": "2025-08-28T16:15:00.382048",
+      "diff_size": 8530,
+      "diff_lines": 203
+    },
+    {
+      "hash": "08137e2c49a030a8dedb511af14f779e12b5f6a0",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "netty",
+      "analysis_timestamp": "2025-08-28T16:15:16.264351",
+      "diff_size": 63592,
+      "diff_lines": 1609
+    },
+    {
+      "hash": "08a0eecbe1891b6ee9fbd0bd0580674ae1d46119",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "opencms-core",
+      "analysis_timestamp": "2025-08-28T16:15:24.191324",
+      "diff_size": 59699,
+      "diff_lines": 1752
+    },
+    {
+      "hash": "08a2e48e301677a3a3363990659f138e1235530a",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "PinDroid",
+      "analysis_timestamp": "2025-08-28T16:15:30.938242",
+      "diff_size": 98548,
+      "diff_lines": 2384
+    },
+    {
+      "hash": "092e8b9cd51d22246f69e3a4fb192cb7be1b7e0c",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-28T16:15:39.838531",
+      "diff_size": 10421503,
+      "diff_lines": 305824
+    },
+    {
+      "hash": "0998c561009bd1e863216326f1a745ab1dfb6ca4",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "OG-Platform",
+      "analysis_timestamp": "2025-08-28T16:15:52.705734",
+      "diff_size": 537670,
+      "diff_lines": 10188
+    },
+    {
+      "hash": "099be0b214ef03ddf058758696ab68aafd52a9e0",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "antlr4",
+      "analysis_timestamp": "2025-08-28T16:16:02.667378",
+      "diff_size": 332740,
+      "diff_lines": 8583
+    },
+    {
+      "hash": "099f04e609487a4e01b2e21758593a820869f8d9",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:16:11.163149",
+      "diff_size": 2918377,
+      "diff_lines": 68207
+    },
+    {
+      "hash": "09aee18b06116f0c0f6e051bb2e0ba601bd4191e",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "antlr4",
+      "analysis_timestamp": "2025-08-28T16:16:20.503016",
+      "diff_size": 425205,
+      "diff_lines": 10834
+    },
+    {
+      "hash": "0a4b1667bee674f7c0a22057cbdab97e368a20d1",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:16:32.490809",
+      "diff_size": 20754,
+      "diff_lines": 444
+    },
+    {
+      "hash": "0a6f99924e2c76f2ed15fc2fe7f440f65c642a7c",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "New method 'retrainAggregator' added, which modifies the training set of the aggregator. This change affects the behavior of the Ensemble class.\",",
+      "llm_confidence": "high\",",
+      "project_name": "encog-java-core",
+      "analysis_timestamp": "2025-08-28T16:16:39.799020",
+      "diff_size": 3648,
+      "diff_lines": 88
+    },
+    {
+      "hash": "0ad848da6e390a6cdee8af756be4631d3e179260",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "droidplanner",
+      "analysis_timestamp": "2025-08-28T16:16:53.409123",
+      "diff_size": 25523,
+      "diff_lines": 634
+    },
+    {
+      "hash": "0af7167741893554d9acbbba5c7fbe635d2757b0",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Catroid",
+      "analysis_timestamp": "2025-08-28T16:17:03.374714",
+      "diff_size": 14696,
+      "diff_lines": 391
+    },
+    {
+      "hash": "0b024834549c53512ef18bce89f60ef9225d4819",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "YCSB",
+      "analysis_timestamp": "2025-08-28T16:17:14.386732",
+      "diff_size": 269590,
+      "diff_lines": 7303
+    },
+    {
+      "hash": "0c5557490a7266ffacd744ffea407d3d3cdbb6bc",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-28T16:17:23.428656",
+      "diff_size": 4473702,
+      "diff_lines": 127314
+    },
+    {
+      "hash": "0cd7ba4ad251c391b3ba1d41c3a68b95c608106d",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-28T16:17:30.436490",
+      "diff_size": 12529,
+      "diff_lines": 360
+    },
+    {
+      "hash": "0d09df354fdf79bcd54720d673c18539ee1dc4b0",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-28T16:17:41.247965",
+      "diff_size": 323570,
+      "diff_lines": 8217
+    },
+    {
+      "hash": "0d7412f34f571961e1dac85598fa3758c6c91505",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "droidplanner",
+      "analysis_timestamp": "2025-08-28T16:17:50.056773",
+      "diff_size": 10270,
+      "diff_lines": 266
+    },
+    {
+      "hash": "0dc13e7870b84c67a86163ce72a07ab33681ed06",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-28T16:17:54.725009",
+      "diff_size": 10238,
+      "diff_lines": 180
+    },
+    {
+      "hash": "0e133c59ef53c3a92030881045b23e460e93ad1f",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-28T16:18:04.003753",
+      "diff_size": 563483,
+      "diff_lines": 11885
+    },
+    {
+      "hash": "0ecffd06890e02abb2be4a70243e424634e530ec",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-28T16:18:13.371515",
+      "diff_size": 20239,
+      "diff_lines": 507
+    },
+    {
+      "hash": "0f0d2ab2d5e942775da4aea5894a70b341b00c13",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Spout",
+      "analysis_timestamp": "2025-08-28T16:18:19.916873",
+      "diff_size": 23098,
+      "diff_lines": 735
+    }
+  ],
+  "summary": {
+    "total_commits": 24,
+    "classifications": {
+      "FLOSS": 24
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 24
+    }
+  }
+}

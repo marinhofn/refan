@@ -1,0 +1,24 @@
+{
+  "session_info": {
+    "start_time": "2025-08-19T11:20:48.595260",
+    "end_time": "2025-08-19T11:21:01.348737",
+    "total_processed": 1,
+    "successful_analyses": 1,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "0011daa934f9397a0dd77ef368b86d2adbe8b239",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "metrics",
+      "analysis_timestamp": "2025-08-19T11:21:00.293586",
+      "diff_size": 67322,
+      "diff_lines": 1677
+    }
+  ]
+}

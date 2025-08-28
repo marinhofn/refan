@@ -1,0 +1,71 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T16:37:39.809671",
+    "end_time": "2025-08-28T16:38:37.021414",
+    "total_processed": 5,
+    "successful_analyses": 4,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 53,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "0ff15e6dff5ff4dc25656a75b4e4dad61633562c",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "testng",
+      "analysis_timestamp": "2025-08-28T16:37:56.788193",
+      "diff_size": 29858,
+      "diff_lines": 959
+    },
+    {
+      "hash": "11489a36920f0f6733750b1b2c63c8dc4657e0ca",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "log4j",
+      "analysis_timestamp": "2025-08-28T16:38:03.447833",
+      "diff_size": 91478,
+      "diff_lines": 2297
+    },
+    {
+      "hash": "11fb30374f65db1c324b2b9960e91ee29e7564db",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "modeshape",
+      "analysis_timestamp": "2025-08-28T16:38:12.109755",
+      "diff_size": 484287,
+      "diff_lines": 10994
+    },
+    {
+      "hash": "12230bff81e4092cd79ccf3f033c0fdcb0d5887b",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "pdfbox",
+      "analysis_timestamp": "2025-08-28T16:38:18.708444",
+      "diff_size": 42751,
+      "diff_lines": 978
+    }
+  ],
+  "summary": {
+    "total_commits": 4,
+    "classifications": {
+      "FLOSS": 4
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 4
+    }
+  }
+}

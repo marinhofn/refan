@@ -1,0 +1,68 @@
+{
+  "session_info": {
+    "start_time": "2025-08-20T22:57:10.206430",
+    "end_time": "2025-08-20T22:59:01.611076",
+    "total_processed": 11,
+    "successful_analyses": 5,
+    "failed_analyses": 5,
+    "skipped_already_analyzed": 1151,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "3113e2e0187907e84c1ab3759f5e90d0e83ad1f3",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "platform_packages_apps_calendar",
+      "analysis_timestamp": "2025-08-20T22:58:01.048614",
+      "diff_size": 224263,
+      "diff_lines": 3767
+    },
+    {
+      "hash": "3115f92ee4dfc78a0ad12033c350f1c543aaeb32",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "MinecraftForge",
+      "analysis_timestamp": "2025-08-20T22:58:20.616401",
+      "diff_size": 56818,
+      "diff_lines": 1744
+    },
+    {
+      "hash": "311891f35e538f4a8be0309f6d7045fef59dee71",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-20T22:58:32.137651",
+      "diff_size": 62917,
+      "diff_lines": 1067
+    },
+    {
+      "hash": "311f17f6ef7df7130120f090a4a2cc1856416c33",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "netty",
+      "analysis_timestamp": "2025-08-20T22:58:43.951461",
+      "diff_size": 102362,
+      "diff_lines": 2642
+    },
+    {
+      "hash": "3124d64c4a4dccd61e4bafaf03125313e32b3f47",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "testng",
+      "analysis_timestamp": "2025-08-20T22:58:58.912645",
+      "diff_size": 15922,
+      "diff_lines": 398
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "session_info": {
+    "start_time": "2025-08-21T23:14:01.793479",
+    "end_time": "2025-08-21T23:15:45.956520",
+    "total_processed": 5,
+    "successful_analyses": 5,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1169,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "317d1c12d441f8b4bb7b2c06a9d17ee0551b98c5",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "rubychina4android",
+      "analysis_timestamp": "2025-08-21T23:14:10.372246",
+      "diff_size": 8186,
+      "diff_lines": 158
+    },
+    {
+      "hash": "31804572c294f0352c8aa1ed48b3e7060ca38eef",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-21T23:14:21.407606",
+      "diff_size": 138953,
+      "diff_lines": 2977
+    },
+    {
+      "hash": "3181474113fc5bcff251e6217ca07ccb756f2172",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "New functionality is added by updating the schema of 'jv_snapshot' and 'jv_global_id' tables, which involves changes to method signatures, addition of new conditional logic, and modification of return values.",
+      "llm_confidence": "high",
+      "project_name": "javers",
+      "analysis_timestamp": "2025-08-21T23:14:28.626065",
+      "diff_size": 5902,
+      "diff_lines": 128
+    },
+    {
+      "hash": "319ba13cd79111c8ef38156723d5d73b9bc7d0e4",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Functional changes include the modification of a comment, addition of a new comparator for HostCandidateIterator, and alteration of the error level in FileReaderHostLocationInitializer. Additionally, there are changes to the HostLocation class that affect its behavior.",
+      "llm_confidence": "high",
+      "project_name": "hydra",
+      "analysis_timestamp": "2025-08-21T23:14:34.584897",
+      "diff_size": 7412,
+      "diff_lines": 153
+    },
+    {
+      "hash": "319c22abe422eccf7369803d59bcfc3b9fb2aa2a",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jolokia",
+      "analysis_timestamp": "2025-08-21T23:15:44.939865",
+      "diff_size": 30144,
+      "diff_lines": 649
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "session_info": {
+    "start_time": "2025-08-19T11:43:59.091376",
+    "end_time": "2025-08-19T11:44:00.132735",
+    "total_processed": 1,
+    "successful_analyses": 1,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "00159507fdead0eff8e7c2b62e17d8257b4313a6",
+      "purity_classification": "NONE",
+      "llm_classification": "DRY_RUN",
+      "llm_justification": "Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+      "llm_confidence": "0",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-19T11:43:59.113234",
+      "diff_size": 0,
+      "diff_lines": 0
+    }
+  ]
+}

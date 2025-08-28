@@ -1,0 +1,156 @@
+{
+  "session_info": {
+    "start_time": "2025-08-28T15:53:44.045197",
+    "end_time": "2025-08-28T15:55:52.237602",
+    "total_processed": 14,
+    "successful_analyses": 13,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T15:54:01.352109",
+      "diff_size": 15028,
+      "diff_lines": 417
+    },
+    {
+      "hash": "009f536772a2cd771755e6a31d5e56a30d0a6358",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "android-calculatorpp",
+      "analysis_timestamp": "2025-08-28T15:54:09.041721",
+      "diff_size": 40524,
+      "diff_lines": 745
+    },
+    {
+      "hash": "00b15a44c61f88da69670b6f2f1357736eb8776e",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-28T15:54:17.317947",
+      "diff_size": 306834,
+      "diff_lines": 6461
+    },
+    {
+      "hash": "014a1c7899502ec6a515acde4d285505b0c70788",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "ribbon",
+      "analysis_timestamp": "2025-08-28T15:54:30.242383",
+      "diff_size": 55712,
+      "diff_lines": 1282
+    },
+    {
+      "hash": "01a11fd2626d57bf0c8d0bce1e43060017592896",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T15:54:38.248542",
+      "diff_size": 3638740,
+      "diff_lines": 81863
+    },
+    {
+      "hash": "01cb9121acf296c6205a88106c2f3495602d4e6e",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "TomP2P",
+      "analysis_timestamp": "2025-08-28T15:54:51.269154",
+      "diff_size": 135580,
+      "diff_lines": 3201
+    },
+    {
+      "hash": "020bde0d66344623150ef57562523f514d011f70",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-28T15:55:00.544361",
+      "diff_size": 228396,
+      "diff_lines": 5804
+    },
+    {
+      "hash": "02243165f1d9bb47c428921d99bcf16e8a944cfe",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "play-authenticate",
+      "analysis_timestamp": "2025-08-28T15:55:06.625321",
+      "diff_size": 78218,
+      "diff_lines": 1885
+    },
+    {
+      "hash": "0225c9c888637f136b162435ecfddacf7ad33a7c",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jbot",
+      "analysis_timestamp": "2025-08-28T15:55:18.016054",
+      "diff_size": 71041,
+      "diff_lines": 2152
+    },
+    {
+      "hash": "03c0e143fcffc0a1ef2d7a4d9c5f82af4053e761",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-28T15:55:26.754464",
+      "diff_size": 30183,
+      "diff_lines": 606
+    },
+    {
+      "hash": "03d7b51d3c927207e5b203d8f4fb2a9a9a7e7799",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "The changes in this diff are purely structural, with no behavioral modifications. The code reorganization involves renaming variables and methods, moving code between classes/packages, and formatting improvements.",
+      "llm_confidence": "high",
+      "project_name": "antlr4",
+      "analysis_timestamp": "2025-08-28T15:55:33.974644",
+      "diff_size": 5956,
+      "diff_lines": 163
+    },
+    {
+      "hash": "03e2f5fb6c1a82f49da6576cdaff26cf1922aa7f",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-28T15:55:43.506592",
+      "diff_size": 23946,
+      "diff_lines": 428
+    },
+    {
+      "hash": "055a98ebf1d9e9fa8cc349024c94384d715fcfb3",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T15:55:48.285785",
+      "diff_size": 23361,
+      "diff_lines": 512
+    }
+  ]
+}

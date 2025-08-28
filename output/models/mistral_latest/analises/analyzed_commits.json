@@ -1,0 +1,82 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "c82cc4ba16a78bdb6f05b17fbadc24d0677efdb9",
+        "commit_hash_current": "871f9af19d28df58ddde023108dcc21ddfc7c509",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces a new boolean variable 'follow' and related method calls in the ConsoleAppender class, which indicates that the behavior of the appender has been changed. Additionally, the existing 'honorReassignment' variable and its associated methods have been replaced with 'follow'. This refactoring includes both code reorganization and a functional change, making it a 'floss' refactoring.",
+        "commit_message": "Bug 37122: honorReassignment changed to follow\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@332396 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "c72fe5ece25c77d93d3ed236cddd8a98a215b5a8",
+        "commit_hash_current": "7d36034b59b57cc4471b28c2a82121f36dd45cfd",
+        "refactoring_type": "pure",
+        "justification": "The code changes in this commit appear to be purely structural, with no discernible impact on behavior or functionality. The addition of the 'getCurrentThread()' method call and the use of it throughout the code seems to be a refactoring effort aimed at improving readability and organization without altering the original functionality.",
+        "commit_message": "Bug 40159: NullPointerException in org.apache.log4j.NDC.get\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@427881 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "7d36034b59b57cc4471b28c2a82121f36dd45cfd",
+        "commit_hash_current": "cfc9ec4911b34740c1d4539a6eccd92db6d6bb9e",
+        "refactoring_type": "pure",
+        "justification": "The commit adds support for IPv6 addresses and enclosed square brackets, but it does not change the behavior or functionality of the existing code. Instead, it extends the existing functionality to accommodate new address formats without altering the original logic.",
+        "commit_message": "Bug 39687: Enable configuring port for SyslogAppender\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@438792 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "4dfcd799fa9de74758d0b1475e46af37",
+        "commit_hash_current": "9948bb5a50465e6d6dc801fada6c1d371a65d0d2",
+        "refactoring_type": "pure",
+        "justification": "The commit removes several files, which indicates a cleanup or reorganization of the codebase. There are no changes to behavior or functionality in the remaining code.",
+        "commit_message": "Bug 41219: Stacktraces of exceptions disappear occassionally\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@510214 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "210059990075fc61e68c286b5a9ac4c06b77b4af",
+        "commit_hash_current": "a62d7f759f56671df2021807ec6fae0b559e2",
+        "refactoring_type": "pure",
+        "justification": "The code changes in the diff do not appear to alter the functionality or behavior of the codebase. The modifications seem to be focused on reorganizing and simplifying the existing structure, such as renaming variables and methods without changing their purpose, extracting methods, and restructuring code while maintaining the same behavior. No new features have been added, and there are no bug fixes or changes in method signatures that could affect behavior.",
+        "commit_message": "Bug 40502: SyslogAppender assumes all stack trace lines start with tab\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@510307 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "a62d7f759f56671df2021807ec6fae0b557059e2",
+        "commit_hash_current": "f1c135e5e6b85ac17cbe5a7cc3b0d73e1245d44f",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a new test case for logging with a header, but the existing code remains unchanged. The changes are purely structural and do not affect the behavior or functionality of the original code.",
+        "commit_message": "Bug 41040: SyslogAppender should prefix message with TIMESTAMP and local hostname\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@510660 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "6faddc887151cdb2974c3011410036aa5bf25e24",
+        "commit_hash_current": "75aed2cf444f0654fd7f596dbd3e0e5bf24f9416",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a SimpleDateFormat object to compare the formatted date string with the expected output, but it does not change the behavior or functionality of the DateLayoutTest class. The refactoring is purely structural in nature.",
+        "commit_message": "Bug 40944: PropertyConfigurator.configure(URL) does not close the resource stream\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@510831 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "e4bb5e96052e534613fcd43f74efba6e12339d32",
+        "commit_hash_current": "9b83dcfdbc613a281c1e30d7c148eff4038db25e",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a new XSLT file for generating compatibility reports, but it does not seem to change any existing functionality or behavior. The changes are purely structural and organizational.",
+        "commit_message": "Bug 41708: PropertyPrinter.printOptions breaking signature change in log4j 1.2.9\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@512082 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "90d4e78e7ab65cb2588808474355cb6907f37111",
+        "commit_hash_current": "c4a748ac5a13d4deed5ce9f7cc03951d7a29bcd7",
+        "refactoring_type": "pure",
+        "justification": "The code changes in the diff primarily involve reorganization and simplification of existing code, such as removing a line of code (the DatagramPacket p = new DatagramPacket(new byte[1000], 0, 1000) on lines -399 and -519), and replacing it with a new variable declaration (byte[] buf = new byte[1000]) and a new DatagramPacket instantiation (DatagramPacket p = new DatagramPacket(buf, 0, buf.length)) on lines +417 and +534. These changes do not seem to affect the behavior or functionality of the code.",
+        "commit_message": "Bug 40502: Fix syslog tests to not reuse packets, fails on jdk 1.3\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@512139 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "c4a748ac5a13d4deed5ce9f7cc03951d7a29bcd7",
+        "commit_hash_current": "cf4d8a2be2ccf6919037be7070526a79e02c223e",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a new test case for the RollingFileAppender class, but it does not seem to change any existing functionality or behavior. The new test case checks the locking mechanism of the .1 and .3 files when renaming them during rolling over. However, this is purely for testing purposes and does not affect the actual functioning of the appender.",
+        "commit_message": "Bug 41735: RollingFileAppender may delete files during rollover\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@513638 13f79535-47bb-0310-9956-ffa450edef68"
+    }
+]

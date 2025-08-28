@@ -63,4 +63,4 @@ Thumbs.db
 secrets*/
 
 # Modelos adicionais (caso algum dia salvar pesos locais)
-models/
+# models/

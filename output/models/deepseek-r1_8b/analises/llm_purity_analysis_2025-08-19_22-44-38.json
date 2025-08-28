@@ -1,0 +1,12 @@
+{
+  "session_info": {
+    "start_time": "2025-08-19T22:43:59.778596",
+    "end_time": "2025-08-19T22:45:39.553758",
+    "total_processed": 4,
+    "successful_analyses": 0,
+    "failed_analyses": 3,
+    "skipped_already_analyzed": 20,
+    "processing_errors": 0
+  },
+  "analyses": []
+}

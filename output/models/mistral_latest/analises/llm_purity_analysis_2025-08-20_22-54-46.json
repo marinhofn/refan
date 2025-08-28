@@ -1,0 +1,24 @@
+{
+  "session_info": {
+    "start_time": "2025-08-20T22:54:23.381239",
+    "end_time": "2025-08-20T22:54:54.044839",
+    "total_processed": 2,
+    "successful_analyses": 1,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1150,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "310038571c9a02ec6e762a31402ee83ecda46151",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-20T22:54:46.612011",
+      "diff_size": 36266,
+      "diff_lines": 784
+    }
+  ]
+}

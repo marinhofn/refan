@@ -1,0 +1,123 @@
+{
+  "session_info": {
+    "start_time": "2025-08-28T16:00:49.107918",
+    "end_time": "2025-08-28T16:03:23.537530",
+    "total_processed": 11,
+    "successful_analyses": 10,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 13,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "057aadfd7cdf2eb7bb8c0d008c1579d8d36dffb8",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "All changes appear to be purely structural, with no evidence of functional modifications. There are no new conditional logic, modified method parameters, or different return types/values detected.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:01:43.572752",
+      "diff_size": 7442,
+      "diff_lines": 155
+    },
+    {
+      "hash": "058ed513495b219e3615b0639d1ed8ea6aa1f447",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "antlr4",
+      "analysis_timestamp": "2025-08-28T16:01:55.157273",
+      "diff_size": 9383,
+      "diff_lines": 261
+    },
+    {
+      "hash": "05d8ffdabb60d85d41ff943c3703ebe234817cc6",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:02:11.257531",
+      "diff_size": 162232,
+      "diff_lines": 3662
+    },
+    {
+      "hash": "05fdbfeff89736a3f16ad52d04383ebc03d23bfe",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "The commit only involves structural changes such as class declaration, method signatures, and variable renaming. There are no behavioral modifications or functional additions.",
+      "llm_confidence": "high",
+      "project_name": "droidplanner",
+      "analysis_timestamp": "2025-08-28T16:02:18.689391",
+      "diff_size": 7455,
+      "diff_lines": 213
+    },
+    {
+      "hash": "0630f46897f6408432cb37c9ff8ca1e053a40bc0",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-28T16:02:33.212612",
+      "diff_size": 81718,
+      "diff_lines": 1739
+    },
+    {
+      "hash": "0685ccdda0dc1ff27b8503867b11fe22cbf64519",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "The commit consolidates multiple widget creation methods into a single static method, improving code organization without affecting functionality.",
+      "llm_confidence": "high",
+      "project_name": "graylog2-server",
+      "analysis_timestamp": "2025-08-28T16:02:40.971197",
+      "diff_size": 15023,
+      "diff_lines": 286
+    },
+    {
+      "hash": "06960d752ab6748ee87ac6743f0d34004e73468a",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-28T16:02:52.635556",
+      "diff_size": 5305691,
+      "diff_lines": 116511
+    },
+    {
+      "hash": "06b792a8b54a8a25477fbe8da0a9b1be274be344",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Android-CircleDialog",
+      "analysis_timestamp": "2025-08-28T16:03:00.890948",
+      "diff_size": 49489,
+      "diff_lines": 1116
+    },
+    {
+      "hash": "0721f9e57a8714906e1c0c4bfb1c77730f09c621",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "BuildCraft",
+      "analysis_timestamp": "2025-08-28T16:03:09.212970",
+      "diff_size": 74742,
+      "diff_lines": 1786
+    },
+    {
+      "hash": "0775aa8ef2f5ebdab88b97f8d57637bce343aa71",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jongo",
+      "analysis_timestamp": "2025-08-28T16:03:20.979756",
+      "diff_size": 38645,
+      "diff_lines": 1007
+    }
+  ]
+}
