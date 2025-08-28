@@ -30,6 +30,7 @@ def show_menu():
     print("6. 🎨 Abrir visualização")
     print("7. 🤖 Alterar modelo LLM ativo")
     print("8. 🧩 Analisar e gerar CSV por modelo (llm_analysis_csv)")
+    print("9. ✨ Analisar hashes TRUE por modelo")
     print("0. ❌ Sair")
 
 def run_complete_analysis_from_start():
@@ -242,7 +243,7 @@ def main():
     
     while True:
         show_menu()
-        choice = input(f"\n{info('Escolha (0-6):')} ").strip()
+        choice = input(f"\n{info('Escolha (0-9):')} ").strip()
         
         if choice == "0":
             print(info("👋 Saindo..."))
@@ -354,6 +355,65 @@ def main():
                 n = int(n) if n else 100
                 stats = analyzer.analyze_commits(max_commits=n, skip_analyzed=True)
                 print(success(f"Análise concluída para modelo {chosen_model}. Estatísticas: {stats}"))
+            except ValueError:
+                print(warning("Entrada inválida."))
+        
+        elif choice == "9":
+            # Opção: analisar hashes TRUE e salvar em CSV específico do modelo
+            print(info("✨ Análise de hashes TRUE por modelo"))
+            models = list_available_ollama_models()
+            if not models:
+                print(error("Nenhum modelo disponível."))
+                continue
+            for idx, m in enumerate(models, 1):
+                print(f"  {cyan(str(idx)+'.')} {m}")
+            sel = input(cyan("Escolha o número do modelo para analisar hashes TRUE (Enter para cancelar): ")).strip()
+            if not sel:
+                continue
+            try:
+                idx = int(sel) - 1
+                if idx < 0 or idx >= len(models):
+                    print(warning("Índice inválido."))
+                    continue
+                chosen_model = models[idx]
+                
+                # Preparar CSV de saída no diretório csv/llm_analysis_csv
+                safe_name = chosen_model.replace(':', '_')
+                out_dir = Path("csv") / "llm_analysis_csv"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Usar arquivo TRUE como base
+                master_csv = Path("csv") / "true_purity_hashes_with_analysis.csv"
+                target_csv = out_dir / f"{safe_name}_true_purity_hashes_with_analysis.csv"
+                
+                # Se não existir, copiar do master
+                if not target_csv.exists():
+                    if master_csv.exists():
+                        import shutil
+                        shutil.copy2(master_csv, target_csv)
+                        print(success(f"CSV criado para {chosen_model}: {target_csv}"))
+                    else:
+                        print(error(f"Arquivo master {master_csv} não encontrado."))
+                        continue
+                else:
+                    print(info(f"Usando CSV existente: {target_csv}"))
+
+                # Instanciar analisador apontando para o CSV do modelo
+                from src.analyzers.llm_purity_analyzer import LLMPurityAnalyzer
+                analyzer = LLMPurityAnalyzer(model=chosen_model, csv_file_path=str(target_csv))
+                
+                # Pergunta quantos commits analisar
+                n = input(info('Quantos commits analisar (Enter = 100): ')).strip()
+                n = int(n) if n else 100
+                
+                print(success(f"Iniciando análise de {n} hashes TRUE com modelo {chosen_model}..."))
+                stats = analyzer.analyze_commits(max_commits=n, skip_analyzed=True)
+                
+                print(f"\n{success('📊 Análise concluída!')}")
+                print(f"   Modelo usado: {chosen_model}")
+                print(f"   Arquivo: {target_csv}")
+                print(f"   Estatísticas: {stats}")
+                
             except ValueError:
                 print(warning("Entrada inválida."))
         else:
