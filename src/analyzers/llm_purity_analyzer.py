@@ -114,9 +114,23 @@ class LLMPurityAnalyzer:
         self._backup_created = False
         
     def _create_session_log_file(self) -> str:
-        """Cria arquivo de log da sessão."""
+        """Cria arquivo de log da sessão específico por modelo e tipo."""
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        log_filename = f"llm_purity_analysis_{timestamp}.json"
+        
+        # Detectar tipo de análise baseado no caminho do CSV
+        csv_name = Path(self.csv_file_path).name
+        if "true_purity" in csv_name.lower():
+            analysis_type = "TRUE_hashes"
+        elif "floss" in csv_name.lower():
+            analysis_type = "FLOSS_hashes"
+        else:
+            analysis_type = "general"
+        
+        # Obter modelo atual
+        from src.core.config import get_current_llm_model
+        current_model = get_current_llm_model().replace(':', '_')
+        
+        log_filename = f"{current_model}_{analysis_type}_analysis_{timestamp}.json"
         log_path = os.path.join(self.backup_dir, log_filename)
         return log_path
     
@@ -303,13 +317,33 @@ class LLMPurityAnalyzer:
             return None
     
     def _save_session_analysis(self, analyses: List[Dict]) -> None:
-        """Salva análises da sessão em arquivo JSON."""
+        """Salva análises da sessão em arquivo JSON com dados detalhados."""
         try:
             if not self.session_log_file:
                 self.session_log_file = self._create_session_log_file()
             
+            # Detectar tipo de análise
+            csv_name = Path(self.csv_file_path).name
+            if "true_purity" in csv_name.lower():
+                analysis_type = "TRUE_hashes"
+                description = "Análise de hashes com classificação Purity=TRUE"
+            elif "floss" in csv_name.lower():
+                analysis_type = "FLOSS_hashes"
+                description = "Análise de hashes com classificação Purity=FALSE (FLOSS)"
+            else:
+                analysis_type = "general"
+                description = "Análise geral de hashes"
+            
+            # Obter modelo atual
+            from src.core.config import get_current_llm_model
+            current_model = get_current_llm_model()
+            
             session_data = {
                 "session_info": {
+                    "model_used": current_model,
+                    "analysis_type": analysis_type,
+                    "description": description,
+                    "csv_file_analyzed": self.csv_file_path,
                     "start_time": self.stats["start_time"].isoformat(),
                     "end_time": datetime.datetime.now().isoformat(),
                     "total_processed": self.stats["total_processed"],
@@ -318,13 +352,43 @@ class LLMPurityAnalyzer:
                     "skipped_already_analyzed": self.stats["skipped_already_analyzed"],
                     "processing_errors": self.stats["processing_errors"]
                 },
-                "analyses": analyses
+                "detailed_analyses": analyses,
+                "summary": {
+                    "total_commits": len(analyses),
+                    "classifications": {},
+                    "convergence_analysis": {}
+                }
             }
+            
+            # Adicionar estatísticas de classificações
+            if analyses:
+                classifications = {}
+                convergence = {"agree": 0, "disagree": 0}
+                
+                for analysis in analyses:
+                    llm_class = analysis.get('llm_classification', 'UNKNOWN')
+                    purity_class = analysis.get('purity_classification', 'UNKNOWN')
+                    
+                    # Contar classificações LLM
+                    classifications[llm_class] = classifications.get(llm_class, 0) + 1
+                    
+                    # Análise de convergência (TRUE vs FLOSS)
+                    if (purity_class == 'TRUE' and llm_class == 'TRUE') or \
+                       (purity_class == 'FALSE' and llm_class == 'FALSE'):
+                        convergence["agree"] += 1
+                    else:
+                        convergence["disagree"] += 1
+                
+                session_data["summary"]["classifications"] = classifications
+                session_data["summary"]["convergence_analysis"] = convergence
             
             with open(self.session_log_file, 'w', encoding='utf-8') as f:
                 json.dump(session_data, f, indent=2, ensure_ascii=False)
             
-            print(info(f"Sessão salva em: {self.session_log_file}"))
+            print(success(f"📊 Dados detalhados salvos em: {self.session_log_file}"))
+            print(info(f"   Modelo: {current_model}"))
+            print(info(f"   Tipo: {analysis_type}"))
+            print(info(f"   Total analisado: {len(analyses)} commits"))
             
         except Exception as e:
             print(error(f"Erro ao salvar sessão: {str(e)}"))

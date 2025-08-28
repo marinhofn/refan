@@ -31,10 +31,10 @@ ENV/
 *.bak
 
 # Arquivos de análise gerados / resultados
-analises/
-analises_completas/
-output/
-temp_diffs/
+# analises/
+# analises_completas/
+# output/
+# temp_diffs/
 
 # Repositórios externos clonados (reconstruíveis)
 

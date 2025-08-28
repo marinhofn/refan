@@ -315,7 +315,11 @@ def main():
             
         elif choice == "8":
             # Opção: executar análise e salvar em CSV específico do modelo
-            print(info("🔎 Análise por modelo e geração de CSV separado"))
+            print(info("🔎 Análise FLOSS por modelo com coleta de justificativas"))
+            print(dim("   • Cria CSV específico para o modelo escolhido"))
+            print(dim("   • Coleta justificativas detalhadas da LLM"))
+            print(dim("   • Salva dados em JSON com análise de convergência"))
+            
             models = list_available_ollama_models()
             if not models:
                 print(error("Nenhum modelo disponível."))
@@ -353,14 +357,30 @@ def main():
                 analyzer = LLMPurityAnalyzer(model=chosen_model, csv_file_path=str(target_csv))
                 n = input(info('Quantos commits analisar (Enter = 100): ')).strip()
                 n = int(n) if n else 100
+                
+                print(success(f"Iniciando análise FLOSS com {chosen_model}..."))
+                print(info("   📊 Coletando justificativas detalhadas da LLM"))
+                print(info("   💾 Dados serão salvos em JSON específico do modelo"))
+                
                 stats = analyzer.analyze_commits(max_commits=n, skip_analyzed=True)
-                print(success(f"Análise concluída para modelo {chosen_model}. Estatísticas: {stats}"))
+                
+                print(f"\n{success('📊 Análise FLOSS concluída!')}")
+                print(f"   Modelo: {chosen_model}")
+                print(f"   CSV: {target_csv}")
+                print(f"   Estatísticas: {stats}")
+                print(info("   📄 Verifique os JSONs gerados com justificativas detalhadas"))
+                
             except ValueError:
                 print(warning("Entrada inválida."))
         
         elif choice == "9":
             # Opção: analisar hashes TRUE e salvar em CSV específico do modelo
-            print(info("✨ Análise de hashes TRUE por modelo"))
+            print(info("✨ Análise de hashes TRUE por modelo com coleta de justificativas"))
+            print(dim("   • Analisa apenas hashes com classificação Purity=TRUE"))
+            print(dim("   • Cria CSV específico para o modelo escolhido"))
+            print(dim("   • Coleta justificativas detalhadas da LLM"))
+            print(dim("   • Salva dados em JSON com análise de convergência"))
+            
             models = list_available_ollama_models()
             if not models:
                 print(error("Nenhum modelo disponível."))
@@ -406,13 +426,18 @@ def main():
                 n = input(info('Quantos commits analisar (Enter = 100): ')).strip()
                 n = int(n) if n else 100
                 
-                print(success(f"Iniciando análise de {n} hashes TRUE com modelo {chosen_model}..."))
+                print(success(f"Iniciando análise de hashes TRUE com {chosen_model}..."))
+                print(info("   🎯 Analisando apenas commits com Purity=TRUE"))
+                print(info("   📊 Coletando justificativas detalhadas da LLM"))
+                print(info("   💾 Dados serão salvos em JSON específico do modelo"))
+                
                 stats = analyzer.analyze_commits(max_commits=n, skip_analyzed=True)
                 
-                print(f"\n{success('📊 Análise concluída!')}")
-                print(f"   Modelo usado: {chosen_model}")
-                print(f"   Arquivo: {target_csv}")
+                print(f"\n{success('✨ Análise de hashes TRUE concluída!')}")
+                print(f"   Modelo: {chosen_model}")
+                print(f"   CSV: {target_csv}")
                 print(f"   Estatísticas: {stats}")
+                print(info("   📄 Verifique os JSONs gerados com justificativas detalhadas"))
                 
             except ValueError:
                 print(warning("Entrada inválida."))
