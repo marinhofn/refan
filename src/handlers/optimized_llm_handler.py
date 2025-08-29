@@ -37,6 +37,31 @@ from src.core.config import (
 from src.utils.colors import *
 import math
 
+# Função auxiliar para extração de JSON
+def extract_json_from_text(text):
+    """Extrai JSON do texto usando várias estratégias"""
+    import re
+    import json
+    
+    # Tentar encontrar JSON entre chaves
+    json_patterns = [
+        r'```json\s*(\{[\s\S]*?\})\s*```',
+        r'```\s*(\{[\s\S]*?\})\s*```',
+        r'(\{[\s\S]*?\})',
+        r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})'
+    ]
+    
+    for pattern in json_patterns:
+        matches = re.findall(pattern, text, re.MULTILINE | re.DOTALL)
+        for match in matches:
+            try:
+                result = json.loads(match)
+                if isinstance(result, dict):
+                    return result
+            except:
+                continue
+    return None
+
 # -----------------------------
 # Carregador de dados dos CSVs
 # -----------------------------
@@ -200,7 +225,7 @@ class OptimizedOllamaAdapter:
             "options": {
                 "num_ctx": num_ctx or 4096,
                 "temperature": 0.1,
-                "num_predict": 5000,
+                "num_predict": 200000,  # Permitir respostas mais longas da LLM
                 "think": False,
                 **base_opts,
             },
@@ -211,13 +236,13 @@ class OptimizedOllamaAdapter:
         prompt_size = len(prompt)
         # Ajustar timeout proporcional ao tamanho
         if prompt_size > 80000:
-            timeout = 600
+            timeout = 6000
         elif prompt_size > 50000:
-            timeout = 420
+            timeout = 4200
         elif prompt_size > 30000:
-            timeout = 300
+            timeout = 3000
         else:
-            timeout = 180
+            timeout = 1800
         for i in range(1, attempts + 1):
             try:
                 print(dim(f"Envio tentativa {i}/{attempts} - prompt {prompt_size} chars timeout {timeout}s"))
@@ -273,7 +298,7 @@ class OptimizedLLMHandler:
                 "commit_message": commit_message,
                 "error": error_msg,
                 "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response[:2000] if raw_response else None,
+                "llm_response_excerpt": raw_response,  # Capturar resposta completa sem truncamento
                 "analysis_attempt": "JSON parsing failed",
                 "prompt_excerpt": prompt_excerpt
             }
@@ -460,10 +485,27 @@ class OptimizedLLMHandler:
         # Preservar resposta raw para análise futura
         raw_response = llm_response.strip()
         
-        # Tentar diferentes estratégias para extrair JSON
+        # Primeira tentativa: procurar padrão FINAL: (PRIORIDADE ABSOLUTA)
+        final_classification = self._extract_final_classification(llm_response)
+        if final_classification:
+            print(success(f"Classificação extraída via FINAL: {final_classification}"))
+            # Criar resultado imediato com FINAL: - não precisa de JSON
+            result_with_final = {
+                'repository': repository or 'Unknown',
+                'commit_hash_before': previous_hash or 'Unknown', 
+                'commit_hash_current': commit_hash or 'Unknown',
+                'refactoring_type': final_classification.lower(),
+                'justification': raw_response,  # Resposta completa como justificativa
+                'commit_message': commit_message,
+                'extraction_method': 'final_pattern',
+                'llm_raw_response': raw_response
+            }
+            return result_with_final
+        
+        # Tentar diferentes estratégias para extrair JSON APENAS se não temos FINAL:
         json_result = None
 
-        # Primeira tentativa: extrair JSON usando utilitário compartilhado
+        # Segunda tentativa: extrair JSON usando utilitário compartilhado
         json_result = extract_json_from_text(llm_response)
 
         if not json_result:
@@ -472,7 +514,7 @@ class OptimizedLLMHandler:
             # Criar JSON com justificativa extraída do texto raw
             json_result = self._extract_analysis_from_raw_text(raw_response)
             
-            # Segunda tentativa: retry com prompt simplificado se possível
+            # Terceira tentativa: retry com prompt simplificado se possível
             if not json_result or not json_result.get("justification") or len(json_result.get("justification", "")) < 10:
                 if commit_hash and prompt:
                     print(dim(f"Tentando retry com prompt simplificado para hash {commit_hash}"))
@@ -483,16 +525,33 @@ class OptimizedLLMHandler:
                         json_result = retry_result
             
             if not json_result:
-                error_msg = "Não foi possível extrair JSON válido da resposta após todas as tentativas"
-                print(error(error_msg))
-                print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
+                # Se temos FINAL: mas não conseguimos extrair JSON completo, criar resultado mínimo
+                if final_classification:
+                    json_result = {
+                        'repository': repository or 'Unknown',
+                        'commit_hash_before': previous_hash or 'Unknown',
+                        'commit_hash_current': commit_hash or 'Unknown',
+                        'refactoring_type': final_classification.lower(),
+                        'justification': f'Classification extracted from FINAL: pattern. Full response: {raw_response}',
+                        'commit_message': commit_message,
+                        'extraction_method': 'final_pattern'
+                    }
+                else:
+                    error_msg = "Não foi possível extrair JSON válido da resposta após todas as tentativas"
+                    print(error(error_msg))
+                    print(dim(f"Resposta recebida (primeiros 1000 chars): {llm_response[:1000]}"))
 
-                # Salvar falha completa com contexto do prompt
-                if commit_hash:
-                    prompt_excerpt = prompt[:2000] if prompt else None
-                    self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
+                    # Salvar falha completa com contexto do prompt
+                    if commit_hash:
+                        prompt_excerpt = prompt[:2000] if prompt else None
+                        self.save_json_failure(commit_hash, repository or "unknown", commit_message, llm_response, error_msg, prompt_excerpt=prompt_excerpt)
 
-                return None
+                    return None
+        
+        # Se encontramos FINAL: classification, usar ela ao invés da extraída do JSON
+        if final_classification and json_result and json_result.get('refactoring_type'):
+            json_result['refactoring_type'] = final_classification.lower()
+            print(info(f"Substituindo classificação por FINAL: {final_classification}"))
 
         # Validação e correção dos campos - fornecer commit/repository como defaults
         # Normalizar sinônimos comuns (project -> repository, commit1/commit2 -> commit_hash_before/_current)
@@ -524,6 +583,7 @@ class OptimizedLLMHandler:
     def _extract_analysis_from_raw_text(self, raw_response: str) -> dict:
         """
         Extrai informações de análise do texto raw quando JSON parsing falha.
+        Usa critérios rígidos para evitar classificação incorreta.
         
         Args:
             raw_response (str): Resposta bruta da LLM
@@ -533,14 +593,51 @@ class OptimizedLLMHandler:
         """
         result = {}
         
-        # Procurar por classificação no texto
+        # Procurar por classificação no texto com critérios mais rígidos
         lower_text = raw_response.lower()
         
-        # Detectar tipo de refactoring
-        if any(word in lower_text for word in ['pure', 'puro', 'estrutural']):
+        # Detectar PURE com indicadores específicos
+        pure_indicators = [
+            'pure refactoring', 'puro', 'estrutural apenas',
+            'sem mudanças funcionais', 'without functional changes',
+            'only structural', 'apenas estrutural', 'structure only',
+            'no functional impact', 'sem impacto funcional',
+            'identical behavior', 'comportamento idêntico'
+        ]
+        
+        # Detectar FLOSS com indicadores específicos
+        floss_indicators = [
+            'floss', 'functional changes', 'mudanças funcionais',
+            'behavioral change', 'mudança comportamental',
+            'logic change', 'mudança de lógica',
+            'algorithm change', 'mudança de algoritmo',
+            'new functionality', 'nova funcionalidade',
+            'functional impact', 'impacto funcional'
+        ]
+        
+        # Detectar tipo de refactoring com base em indicadores específicos
+        pure_score = sum(1 for indicator in pure_indicators if indicator in lower_text)
+        floss_score = sum(1 for indicator in floss_indicators if indicator in lower_text)
+        
+        if pure_score > floss_score and pure_score > 0:
             result["refactoring_type"] = "pure"
-        elif any(word in lower_text for word in ['floss', 'misto', 'functional', 'behavioral']):
+        elif floss_score > pure_score and floss_score > 0:
             result["refactoring_type"] = "floss"
+        else:
+            # Se não há indicadores claros, analisar contexto mais amplo
+            # Procurar por negações de mudanças funcionais (indica PURE)
+            negation_patterns = [
+                'não altera', 'not change', 'no change', 'without changing',
+                'sem alterar', 'maintains', 'preserva', 'mantém'
+            ]
+            
+            negation_count = sum(1 for pattern in negation_patterns if pattern in lower_text)
+            
+            if negation_count > 0:
+                result["refactoring_type"] = "pure"
+            else:
+                # Default conservador para FLOSS quando incerto
+                result["refactoring_type"] = "floss"
         
         # Detectar nível de confiança
         if any(word in lower_text for word in ['high', 'alta', 'certain', 'confident']):
@@ -551,10 +648,8 @@ class OptimizedLLMHandler:
             result["confidence_level"] = "low"
         
         # Usar o texto completo como justificativa se não conseguiu extrair JSON
-        # Limitar a 2000 caracteres para não sobrecarregar o JSON
+        # Capturar resposta completa da LLM sem truncamento
         justification = raw_response.strip()
-        if len(justification) > 2000:
-            justification = justification[:2000] + "... [texto truncado]"
         
         result["justification"] = justification if justification else "Resposta da LLM não contém análise interpretável"
         
@@ -801,10 +896,8 @@ Response format (respond with ONLY this JSON structure):
             # Se temos resposta raw, usá-la como justificativa
             raw_response = json_result.get("llm_raw_response", "")
             if raw_response and len(raw_response.strip()) > 10:
-                # Limitar a 1500 caracteres para justificativa
+                # Capturar resposta completa da LLM sem truncamento
                 justification = raw_response.strip()
-                if len(justification) > 1500:
-                    justification = justification[:1500] + "... [texto truncado]"
                 json_result["justification"] = f"Resposta LLM (JSON parsing falhou): {justification}"
             else:
                 json_result["justification"] = "Analysis failed - insufficient data"
@@ -866,6 +959,42 @@ Response format (respond with ONLY this JSON structure):
         else:
             print(prompt)
         print(f"{header('=' * 50)}\n")
+    
+    def _extract_final_classification(self, response: str) -> Optional[str]:
+        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
+        
+        Returns:
+            'PURE' ou 'FLOSS' se encontrado, None caso contrário
+        """
+        import re
+        
+        # Procurar por padrões FINAL: (case insensitive) - expandido para mais variações
+        patterns = [
+            r'FINAL:\s*(PURE|FLOSS)',
+            r'FINAL:\s*(pure|floss)',
+            r'Final:\s*(PURE|FLOSS)', 
+            r'Final:\s*(pure|floss)',
+            r'CONCLUSÃO:\s*(PURE|FLOSS)',
+            r'CONCLUSÃO:\s*(pure|floss)',
+            r'CLASSIFICATION:\s*(PURE|FLOSS)',
+            r'CLASSIFICATION:\s*(pure|floss)',
+            r'RESULTADO:\s*(PURE|FLOSS)',
+            r'RESULTADO:\s*(pure|floss)',
+            # Padrões mais flexíveis
+            r'\bFINAL[:\s]+([Pp][Uu][Rr][Ee]|[Ff][Ll][Oo][Ss][Ss])\b',
+            r'\b(PURE|FLOSS)\s*$',  # Final da linha
+            r'^\s*(PURE|FLOSS)\s*$',  # Linha isolada
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, response, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                classification = match.upper()
+                # Verificar se é uma classificação válida
+                if classification in ['PURE', 'FLOSS']:
+                    return classification
+                    
+        return None
 
     def get_stats(self) -> dict:
         """

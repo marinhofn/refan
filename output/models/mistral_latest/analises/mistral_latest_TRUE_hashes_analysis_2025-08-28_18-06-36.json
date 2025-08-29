@@ -1,0 +1,21 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T18:02:48.963554",
+    "end_time": "2025-08-28T18:06:36.258431",
+    "total_processed": 1,
+    "successful_analyses": 0,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 36,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [],
+  "summary": {
+    "total_commits": 0,
+    "classifications": {},
+    "convergence_analysis": {}
+  }
+}

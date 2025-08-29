@@ -17,23 +17,44 @@ OPTIMIZED_LLM_PROMPT = """You are an expert software engineering analyst special
 
 ## CLASSIFICATION CRITERIA
 
-### PURE REFACTORING (structural changes only):
-- Code reorganization without behavior changes
-- Variable/method/class renaming that preserves semantics
-- Method extraction that creates identical functionality
-- Code movement between classes/packages without logic changes
-- Formatting and style improvements
-- Pure structural reorganization
+### PURE REFACTORING (structural changes only - BE SPECIFIC):
+**PURE refactoring means ZERO functional changes. Only classify as PURE if:**
+- Variable/method/class renaming with IDENTICAL semantics
+- Method extraction where extracted code is EXACTLY the same
+- Moving code between classes WITHOUT any logic changes
+- Formatting, whitespace, and style improvements only
+- Simple parameter reordering WITHOUT changing behavior
+- Code consolidation that produces identical results
+- Import statement reorganization
+- Access modifier changes (private↔public) without behavior impact
 
-### FLOSS REFACTORING (mixed structural + functional changes):
-- ANY addition of new functionality during restructuring
-- Bug fixes combined with code reorganization  
-- Changes to method signatures that affect behavior
-- Modification of return values or exception handling
-- Addition/removal of parameters that change behavior
-- Logic changes within extracted/moved methods
-- Performance optimizations that alter execution paths
-- Security fixes alongside structural changes
+**Examples of PURE refactoring:**
+- `calculateTotal()` → `computeTotal()` with same logic
+- Moving identical methods between classes
+- Extracting helper methods with exact same code
+- Renaming variables: `temp` → `temporaryValue`
+
+### FLOSS REFACTORING (ANY functional change - DEFAULT assumption):
+**If you find ANY of these, it's FLOSS:**
+- Addition of ANY new functionality
+- Bug fixes (even tiny ones)
+- Changes to method signatures affecting behavior
+- Modification of return values, types, or logic
+- New parameters that change behavior
+- Different exception handling or error conditions
+- Performance optimizations that alter execution
+- Security improvements
+- Validation additions
+- Null checks or defensive programming additions
+- Algorithm improvements or changes
+- Different data structures or approaches
+
+**Examples of FLOSS refactoring:**
+- Adding null checks during extraction
+- Fixing edge cases while reorganizing
+- Changing return types or adding parameters
+- Optimizing algorithms during restructuring
+- Adding logging or error handling
 
 ## CRITICAL TECHNICAL INDICATORS
 
@@ -56,25 +77,60 @@ OPTIMIZED_LLM_PROMPT = """You are an expert software engineering analyst special
 
 ## ANALYSIS METHODOLOGY
 
-**Step 1: Diff Assessment**
-- Large diffs: Focus on method signatures, new classes, and logic changes
-- Small diffs: Analyze every change for behavioral impact
+**Default Assumption: FLOSS** - Only classify as PURE if you are 100% certain no functional changes exist.
 
-**Step 2: Change Pattern Recognition**
-- Look for method signature changes beyond simple renames
-- Identify any new conditional statements or loops
-- Check for modified return statements or exception handling
-- Assess parameter additions/removals for functional impact
+**Step 1: Quick FLOSS Check (if ANY of these exist → FLOSS immediately)**
+- New methods, classes, or interfaces
+- Modified method signatures (parameters, return types)
+- Added conditionals (if, switch, try-catch)
+- New validations or error handling
+- Changes to algorithms or data structures
+- Performance optimizations
+- Bug fixes or improvements
 
-**Step 3: Evidence-Based Classification**
-- FLOSS: If ANY functional change is detected
-- PURE: Only if ALL changes are purely structural
+**Step 2: PURE Verification (ALL must be true for PURE)**
+- ✅ Every line of code has identical before/after functionality
+- ✅ No new logic, conditions, or error handling
+- ✅ Only renames, moves, or formatting changes
+- ✅ Same inputs produce exactly same outputs
+- ✅ No additional features or improvements
 
-## RESPONSE FORMAT (STRICT JSON ONLY)
+**Step 3: Evidence Collection**
+- For FLOSS: Quote specific lines showing functional changes
+- For PURE: Confirm that changes are purely structural
 
-You MUST respond with valid JSON only and nothing else. Do NOT provide explanations, step-by-step reasoning, or chain-of-thought. No markdown, no code fences, no preamble. Any extra text will be treated as invalid.
+**Decision Framework:**
+- **When uncertain → Choose FLOSS** (conservative approach)
+- **PURE only when obvious** - Simple renames/moves with zero logic changes
+- **Mixed changes → Always FLOSS** - Even small functional improvements make it FLOSS
 
-Return exactly one JSON object using the following schema (keys and types MUST match):
+## RESPONSE FORMAT
+
+CRITICAL: You MUST provide a clear classification using this exact format:
+
+1. Start with your brief analysis (2-3 sentences maximum)
+2. End with EXACTLY this line: "FINAL: PURE" or "FINAL: FLOSS" 
+3. Then provide the JSON structure
+
+Example response format:
+```
+This commit shows method extraction without behavior changes. All extracted code maintains identical logic and parameters.
+FINAL: PURE
+
+{
+    "repository": "example-repo",
+    "commit_hash_before": "abc123",
+    "commit_hash_current": "def456", 
+    "refactoring_type": "pure",
+    "justification": "Method extraction preserves all original functionality without modifications",
+    "technical_evidence": "Lines 45-67 extracted to new method with identical parameters and return value",
+    "confidence_level": "high",
+    "diff_source": "direct",
+    "error": null
+}
+```
+
+JSON Schema (ALL fields required):
 
 {
     "repository": "[repository_name]",
@@ -88,10 +144,13 @@ Return exactly one JSON object using the following schema (keys and types MUST m
     "error": null
 }
 
-Minimal generation rules (enforced):
-- Output ONLY the JSON object above. Do NOT include any additional text.
-- Do NOT perform or reveal any internal chain-of-thought or reasoning.
-- Keep "justification" concise (max ~250 words). If unsure, set "confidence_level": "low" and describe the limitation in "error".
+**Generation Requirements:**
+- Follow the exact format: brief analysis → FINAL: PURE/FLOSS → JSON
+- Include the word "FINAL:" followed by either "PURE" or "FLOSS"
+- Provide specific technical evidence in your justification
+- When uncertain, choose FLOSS and set confidence_level to "low"
+
+**Remember: Default to FLOSS unless changes are obviously pure structural moves.**
 - If you cannot produce the schema-compliant JSON for any reason, return the same JSON with "refactoring_type": "floss" and a brief message in "error". Do NOT return plain text.
 
 Priority instruction (very short):
@@ -200,7 +259,7 @@ Instructions:
 2. Analyze ALL changes for behavioral vs structural modifications
 3. Base your classification on the FULL diff content
 4. Use the technical indicators specified in the instructions
-5. Respond with the JSON format including "diff_source": "file"
+5. Provide brief analysis, then FINAL: PURE or FINAL: FLOSS, then JSON with "diff_source": "file"
 
 Analyze the complete diff and provide your classification."""
     else:
@@ -221,7 +280,7 @@ Instructions:
 1. Analyze ALL changes shown in the diff above
 2. Look for behavioral vs structural modifications
 3. Use the technical indicators specified in the instructions
-4. Respond with the JSON format including "diff_source": "direct"
+4. Provide brief analysis, then FINAL: PURE or FINAL: FLOSS, then JSON with "diff_source": "direct"
 
 Analyze this diff and provide your classification."""
     

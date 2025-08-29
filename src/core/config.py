@@ -258,7 +258,14 @@ IMPORTANT: Your task is to examine the Git diff ONLY (ignore the commit message)
 
 Focus exclusively on the actual code changes in the diff to determine if there are any behavioral modifications or purely structural changes. Base your decision ONLY on what you see in the code.
 
-Please classify the commit as either "pure" or "floss" and explain your reasoning in the justification field of the JSON, citing specific parts of the code diff that support your classification."""
+IMPORTANT OUTPUT FORMAT:
+1. First, provide your analysis and reasoning
+2. End with a clear line: FINAL: PURE or FINAL: FLOSS
+3. Then provide the complete JSON with your classification
+
+Please classify the commit as either "pure" or "floss" and explain your reasoning in the justification field of the JSON, citing specific parts of the code diff that support your classification.
+
+Ensure your response contains both the clear "FINAL: [PURE|FLOSS]" line and the complete JSON structure."""
 
 # Estrutura do JSON de saída
 JSON_STRUCTURE = {

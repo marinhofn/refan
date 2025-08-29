@@ -1,0 +1,61 @@
+{
+  "session_info": {
+    "model_used": "mistral:latest",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-28T18:28:25.934936",
+    "end_time": "2025-08-28T18:29:09.549164",
+    "total_processed": 2,
+    "successful_analyses": 2,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 59,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "122b7a128541b3d2bd8e6c0c87a292cbb9abc513",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "javers",
+      "analysis_timestamp": "2025-08-28T18:28:50.651153",
+      "diff_size": 30730,
+      "diff_lines": 618,
+      "llm_raw_response": "{\n  \"diff_source\": \"direct\",\n  \"behavioral_changes\": [\n    {\n      \"description\": \"Added support for asynchronous commit of method arguments when annotated with @JaversAuditableAsync.\",\n      \"locations\": [\"src/main/java/org/javers/spring/auditable/aspect/springdata/JaversSpringDataAuditableRepositoryAspect.groovy\", \"src/test/groovy/org/javers/spring/auditable/integration/JaversAuditableAspectAsyncIntegrationTest.groovy\"]\n    },\n    {\n      \"description\": \"Removed the ability to commit method arguments when it didn't exit normally.\",\n      \"locations\": [\"src/test/groovy/org/javers/spring/auditable/integration/JaversAuditableAspectIntegrationTest.groovy\"]\n    },\n    {\n      \"description\": \"Added support for asynchronous commit of iterable arguments when method is annotated with @JaversAuditableAsync.\",\n      \"locations\": [\"src/test/groovy/org/javers/spring/auditable/integration/JaversAuditableAspectAsyncIntegrationTest.groovy\"]\n    }\n  ],\n  \"structural_changes\": [\n    {\n      \"description\": \"Removed the AuditChangeHandler interface.\",\n      \"locations\": [\"src/main/java/org/javers/spring/auditable/aspect/springdata/AuditChangeHandler.java\"]\n    },\n    {\n      \"description\": \"Modified the DummyAuditedAsyncRepository to use @JaversAuditableAsync annotation instead of @JaversAuditable.\",\n      \"locations\": [\"src/test/groovy/org/javers/spring/repository/DummyAuditedAsyncRepository.groovy\"]\n    },\n    {\n      \"description\": \"Modified the JaversSpringMongoApplicationConfig to create an ExecutorService for asynchronous audit execution.\",\n      \"locations\": [\"src/test/java/org/javers/spring/example/JaversSpringMongoApplicationConfig.java\"]\n    }\n  ]\n}",
+      "repository": "javers",
+      "commit_hash_before": "f1244ce9f91a19afe371676fdd8587a85fd973e4",
+      "commit_hash_current": "122b7a128541b3d2bd8e6c0c87a292cbb9abc513",
+      "technical_evidence": "public handle(repositoryMetadata RepositoryMetadata, domainObjectOrId Object) : void from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect.OnDeleteAuditChangeHandler to package handleDelete(repositoryMetadata RepositoryMetadata, domainObjectOrId Object) : void from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect; private isDomainClass(metadata RepositoryMetadata, o Object) : boolean from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect.OnDeleteAuditChangeHandler to private isDomainClass(metadata RepositoryMetadata, o Object) : boolean from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect; private isIdClass(metadata RepositoryMetadata, o Object) : boolean from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect.OnDeleteAuditChangeHandler to private isIdClass(metadata RepositoryMetadata, o Object) : boolean from class org.javers.spring.auditable.aspect.springdata.AbstractSpringAuditableRepositoryAspect",
+      "diff_source": "direct"
+    },
+    {
+      "hash": "124d60f572d5c2c4b80bb448f5cc6be3ae578905",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jbake",
+      "analysis_timestamp": "2025-08-28T18:29:08.544022",
+      "diff_size": 58301,
+      "diff_lines": 1271,
+      "llm_raw_response": "{\n  \"diff_source\": \"direct\",\n  \"behavioral_changes\": [\n    {\n      \"file\": \"FakeDocumentBuilder.java\",\n      \"changes\": [\n        {\n          \"action\": \"removed\",\n          \"property\": \"withName(String name)\"\n        }\n      ]\n    },\n    {\n      \"file\": \"ContentStoreTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"added\",\n          \"property\": \"emptyTemplateModelList\"\n        }\n      ]\n    },\n    {\n      \"file\": \"DocumentsRendererTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"added\",\n          \"property\": \"emptyTemplateModelList\"\n        },\n        {\n          \"action\": \"modified\",\n          \"property\": \"when(db.getUnrenderedContent(anyString())).thenReturn(emptyTemplateModelList)\"\n        }\n      ]\n    }\n  ],\n  \"structural_changes\": [\n    {\n      \"file\": \"jbake-core/src/test/java/org/jbake/FakeDocumentBuilder.java\",\n      \"changes\": [\n        {\n          \"action\": \"added\",\n          \"property\": \"ModelAttributes\"\n        }\n      ]\n    },\n    {\n      \"file\": \"ContentStoreTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"modified\",\n          \"property\": \"CrawlerTest extends ContentStoreIntegrationTest\"\n        }\n      ]\n    },\n    {\n      \"file\": \"DocumentsRendererTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"added\",\n          \"property\": \"ArgumentCaptor<DocumentModel>\"\n        },\n        {\n          \"action\": \"modified\",\n          \"property\": \"documentsRenderer.render(renderer, db, configuration)\"\n        }\n      ]\n    },\n    {\n      \"file\": \"jbake-core/src/test/java/org/jbake/app/CrawlerTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"modified\",\n          \"property\": \"renderWithPrettyUrls()\"\n        }\n      ]\n    },\n    {\n      \"file\": \"jbake-core/src/test/java/org/jbake/app/PaginationTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"modified\",\n          \"property\": \"emptyDocumentList\"\n        }\n      ]\n    },\n    {\n      \"file\": \"jbake-core/src/test/java/org/jbake/render/DocumentsRendererTest.java\",\n      \"changes\": [\n        {\n          \"action\": \"modified\",\n          \"property\": \"fakeExceptionMessage\"\n        },\n        {\n          \"action\": \"added\",\n          \"property\": \"doThrow(new Exception(fakeExceptionMessage)).when(renderer).render(any(DocumentModel.class))\"\n        }\n      ]\n    }\n  ]\n}",
+      "repository": "jbake",
+      "commit_hash_before": "3e0bc64d7d6d22ea213f349a307c87e393ca769c",
+      "commit_hash_current": "124d60f572d5c2c4b80bb448f5cc6be3ae578905",
+      "technical_evidence": "public getUri() : String from class org.jbake.model.DocumentModel to public getUri() : String from class org.jbake.model.BaseModel; public setUri(uri String) : void from class org.jbake.model.DocumentModel to public setUri(uri String) : void from class org.jbake.model.BaseModel; public setName(name String) : void from class org.jbake.model.DocumentModel to public setName(name String) : void from class org.jbake.model.BaseModel",
+      "diff_source": "direct"
+    }
+  ],
+  "summary": {
+    "total_commits": 2,
+    "classifications": {
+      "FLOSS": 2
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 2
+    }
+  }
+}

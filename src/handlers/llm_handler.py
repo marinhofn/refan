@@ -31,6 +31,19 @@ from src.core.config import (
 )
 from src.utils.colors import *
 import math
+
+# Função auxiliar para extração de JSON (fallback se utilitário não existir)
+def extract_json_from_text(text):
+    """Fallback para extração de JSON se utilitário específico não existir"""
+    import re
+    # Tentar encontrar JSON simples
+    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text)
+    if json_match:
+        try:
+            return json.loads(json_match.group())
+        except:
+            pass
+    return None
 from src.utils.json_parser import extract_json_from_text
 
 def estimate_token_count(text: str) -> int:
@@ -78,8 +91,7 @@ class OllamaAdapter:
             "options": {
                 "num_ctx": num_ctx or 4096,
                 "temperature": 0.1,
-                "num_predict": 5000,
-                "think": False,
+                "num_predict": 20000,  # Permitir respostas mais longas da LLM
                 **base_opts,
             },
             # top-level flag to request no 'think' blocks when supported by server
@@ -196,7 +208,7 @@ class LLMHandler:
                 "commit_message": commit_message,
                 "error": error_msg,
                 "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response[:4000] if raw_response else None,
+                "llm_response_excerpt": raw_response,  # Capturar resposta completa sem truncamento
                 "analysis_attempt": "JSON parsing failed",
                 "parse_attempts": 1,
                 "llm_prompt_excerpt": prompt_excerpt,
@@ -405,6 +417,11 @@ class LLMHandler:
         except Exception as e:
             print(dim(f"extract_json_from_text falhou: {e}"))
 
+        # Tentar extrair classificação do padrão FINAL: primeiro
+        final_classification = self._extract_final_classification(llm_response)
+        if final_classification:
+            print(success(f"Classificação extraída via FINAL: {final_classification}"))
+
         # Fallback para estratégias específicas do handler
         strategies = [
             self._extract_with_patterns,
@@ -416,11 +433,53 @@ class LLMHandler:
             try:
                 result = strategy(llm_response, commit_data)
                 if result and self._validate_basic_structure(result):
+                    # Se encontramos FINAL: classification, usar ela ao invés da extraída
+                    if final_classification and result.get('refactoring_type'):
+                        result['refactoring_type'] = final_classification.lower()
+                        print(info(f"Substituindo classificação por FINAL: {final_classification}"))
                     return result
             except Exception as e:
                 print(dim(f"Estratégia {strategy.__name__} falhou: {e}"))
                 continue
 
+        # Se temos FINAL: mas não conseguimos extrair JSON completo, criar resultado mínimo
+        if final_classification:
+            return {
+                'repository': commit_data.get('repository', 'Unknown'),
+                'commit_hash_before': commit_data.get('commit_hash_before', 'Unknown'),
+                'commit_hash_current': commit_data.get('commit_hash_current', 'Unknown'),
+                'refactoring_type': final_classification.lower(),
+                'justification': f'Classification extracted from FINAL: pattern. Full response: {llm_response[:200]}...',
+                'commit_message': commit_data.get('commit_message', ''),
+                'extraction_method': 'final_pattern'
+            }
+
+        return None
+    
+    def _extract_final_classification(self, response: str) -> Optional[str]:
+        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
+        
+        Returns:
+            'PURE' ou 'FLOSS' se encontrado, None caso contrário
+        """
+        import re
+        
+        # Procurar por padrões FINAL: (case insensitive)
+        patterns = [
+            r'FINAL:\s*(PURE|FLOSS)',
+            r'FINAL:\s*(pure|floss)',
+            r'Final:\s*(PURE|FLOSS)', 
+            r'Final:\s*(pure|floss)',
+            r'CONCLUSÃO:\s*(PURE|FLOSS)',
+            r'CONCLUSÃO:\s*(pure|floss)'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, response, re.IGNORECASE | re.MULTILINE)
+            if match:
+                classification = match.group(1).upper()
+                return classification
+                
         return None
     
     def _extract_with_patterns(self, response: str, commit_data: dict) -> Optional[dict]:
@@ -537,7 +596,7 @@ class LLMHandler:
             if match:
                 justification = match.group(1).strip()
                 if len(justification) > 10:  # Justificação mínima
-                    result['justification'] = justification[:500]  # Limitar tamanho
+                    result['justification'] = justification  # Capturar justificação completa
                     break
         
         return result if 'refactoring_type' in result else None
@@ -591,7 +650,7 @@ class LLMHandler:
             'commit_hash_before': commit_data.get('commit_hash_before', 'Unknown'),
             'commit_hash_current': commit_data.get('commit_hash_current', 'Unknown'),
             'refactoring_type': refactoring_type,
-            'justification': '. '.join(justification_parts)[:500],
+            'justification': '. '.join(justification_parts),  # Capturar justificação completa
             'commit_message': commit_data.get('commit_message', ''),
             'fallback_used': True
         }
