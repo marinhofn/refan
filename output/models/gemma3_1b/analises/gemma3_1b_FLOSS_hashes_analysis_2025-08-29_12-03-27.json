@@ -1,0 +1,44 @@
+{
+  "session_info": {
+    "model_used": "gemma3:1b",
+    "analysis_type": "FLOSS_hashes",
+    "description": "Análise de hashes com classificação Purity=FALSE (FLOSS)",
+    "csv_file_analyzed": "csv/llm_analysis_csv/gemma3_1b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "start_time": "2025-08-29T12:02:58.380853",
+    "end_time": "2025-08-29T12:06:24.152207",
+    "total_processed": 2,
+    "successful_analyses": 1,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 1179,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "31e3f612b113a76ca8c04a3a86aa6df3915ad055",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-29T12:03:27.330684",
+      "diff_size": 359765,
+      "diff_lines": 7598,
+      "llm_raw_response": "```json\n{\n \"diff_source\": \"direct\"\n}\n```\n\n**Classification:**\n\n**FLOSS:** This diff introduces new functions (`AggregateFcts.countRowsFunction`, `TimeFcts.nowFct`, `TimeFcts.minTimeuuidFct`, `TimeFcts.maxTimeuuidFct`, `TimeFcts.dateOfFct`, `TimeFcts.unixTimestampOfFct`, `TimeFcts.timeUuidtoDate`, `TimeFcts.timeUuidToUnixTimestamp`, `TimeFcts.timestampToDate`, `TimeFcts.timestampToUnixTimestamp`, `UuidFcts.uuidFct`) to the `Functions` class.  These are new functions that are intended to be called by the `FunctionsResolver` to perform specific operations.  The code is structured to handle the `FunctionsResolver` and the `FunctionName` to ensure that the correct function is called.  The `TokenFunction` is a special case, as it is the only function whose argument types depend on the table on which the function is called.  The code also includes a `ConcurrentHashMap` to store the declared functions, which is a good practice for managing function names.  The code also includes a `declare` statement to make the functions available.  The diff is a straightforward addition of new functions to the `Functions` class.  The code is well-formatted and easy to understand.",
+      "repository": "cassandra",
+      "commit_hash_before": "a991b64811f4d6adb6c7b31c0df52288eb06cf19",
+      "commit_hash_current": "31e3f612b113a76ca8c04a3a86aa6df3915ad055",
+      "technical_evidence": "public getAllReplicationOptions() : Map<String,String> extracted from public getReplicationStrategyClass() : String in class org.apache.cassandra.cql3.statements.KeyspaceAttributes; public optsWithRF(rf Integer) : Map<String,String> from class org.apache.cassandra.config.KSMetaData to private optsWithRF(rf int) : Map<String,String> from class org.apache.cassandra.locator.OldNetworkTopologyStrategyTest; public getAllReplicationOptions() : Map<String,String> extracted from public getReplicationStrategyClass() : String in class org.apache.cassandra.cql3.statements.KeyspaceAttributes",
+      "diff_source": "direct"
+    }
+  ],
+  "summary": {
+    "total_commits": 1,
+    "classifications": {
+      "FLOSS": 1
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 1
+    }
+  }
+}

@@ -236,13 +236,13 @@ class OptimizedOllamaAdapter:
         prompt_size = len(prompt)
         # Ajustar timeout proporcional ao tamanho
         if prompt_size > 80000:
-            timeout = 6000
+            timeout = 600
         elif prompt_size > 50000:
-            timeout = 4200
+            timeout = 420
         elif prompt_size > 30000:
-            timeout = 3000
+            timeout = 300
         else:
-            timeout = 1800
+            timeout = 300
         for i in range(1, attempts + 1):
             try:
                 print(dim(f"Envio tentativa {i}/{attempts} - prompt {prompt_size} chars timeout {timeout}s"))

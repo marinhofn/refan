@@ -1,0 +1,112 @@
+{
+  "session_info": {
+    "start_time": "2025-08-15T07:30:41.621719",
+    "end_time": "2025-08-16T10:33:22.169048",
+    "total_processed": 8435,
+    "successful_analyses": 7774,
+    "failed_analyses": 661,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "00159507fdead0eff8e7c2b62e17d8257b4313a6",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Changes to the version of datastoreMapping, SessionFactory configuration in GrailsHibernateDomainClass and GrailsAnnotationConfiguration, and addition of sessionFactoryName parameter in GrailsHibernateDomainClass indicate functional changes. These modifications affect the behavior of the application by updating dependencies and configuring Hibernate domain classes.",
+      "llm_confidence": "high",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-16T10:31:50.185286",
+      "diff_size": 14901,
+      "diff_lines": 286
+    },
+    {
+      "hash": "0026e4eeec23367c74c44b23a9586562b939f6f8",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling alterations. Specifically, there are changes to the 'CassandraDaemon' class, where methods like 'init', 'shutdown', and 'main' have been modified. Additionally, new classes such as 'JmxReporter' and 'LoggingErrorHandler' have been introduced.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-16T10:32:00.608488",
+      "diff_size": 964041,
+      "diff_lines": 22039
+    },
+    {
+      "hash": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit contains several functional changes, such as method signature modifications, addition of new conditional logic, and exception handling changes. Specifically, there are changes to the 'com.alibaba.dubbo.common.URL' class where methods like 'getParameter', 'setParameter', and 'removeParameter' have been modified. Additionally, a new method 'addAllParameters' has been added.",
+      "llm_confidence": "high",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-16T10:32:12.597709",
+      "diff_size": 344027,
+      "diff_lines": 7105
+    },
+    {
+      "hash": "0040fea3797ea3e497691e9d1e2660711c60ac4d",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new classes, and alterations to exception handling. Specifically, there are changes in the 'ColumnFamilyStore' class that introduce new methods and modify existing ones, as well as additions to the 'CassandraDaemon' class. Furthermore, there are changes to error handling within the 'ExceptionUtil' class.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-16T10:32:23.481786",
+      "diff_size": 5505794,
+      "diff_lines": 121392
+    },
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": "TRUE",
+      "llm_classification": "PURE",
+      "llm_justification": "The diff shows changes in variable names and method calls, but there are no behavioral modifications. The code still performs the same operations as before.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-16T10:32:34.471972",
+      "diff_size": 15028,
+      "diff_lines": 417
+    },
+    {
+      "hash": "0051a7f17bd2027575c13dac3ace653ecb2513eb",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "The diff shows a large number of changes, primarily in formatting and style improvements. There are no behavioral modifications or functional changes detected. The code maintains the same logic flow, with simple renames and code movement between classes/packages without any logic changes.",
+      "llm_confidence": "high",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-16T10:32:44.795147",
+      "diff_size": 264077,
+      "diff_lines": 7072
+    },
+    {
+      "hash": "0063c1adcf32a04611f9bdfb94c893c7a2222b5f",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Non-mapped nodes/leaves are present in the .gitignore file, indicating changes that don't have direct correspondence between before and after. Additionally, there is a new entry for 'fitnesse.jar' added to the .gitignore file, which suggests a functional change (i.e., excluding a specific file). The FitNesseRoot/properties file also has version updates, indicating behavioral modifications.",
+      "llm_confidence": "high",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-16T10:32:56.378077",
+      "diff_size": 19747,
+      "diff_lines": 562
+    },
+    {
+      "hash": "0065d40a4ee9d8c499699cf6696f1a2ac7a393f4",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and exception handling changes. Specifically, there are changes to the 'org.eclipse.eclim.internal.ui.actions.OpenInEditorAction' class where the 'executeWithContext' method now takes an additional parameter, and there is a new try-catch block added within this method.",
+      "llm_confidence": "high",
+      "project_name": "eclim",
+      "analysis_timestamp": "2025-08-16T10:33:06.323695",
+      "diff_size": 223661,
+      "diff_lines": 5870
+    },
+    {
+      "hash": "006be00803a23b274c9ec073d1352e93c38bd33b",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-16T10:33:22.144190",
+      "diff_size": 79777,
+      "diff_lines": 2371
+    }
+  ]
+}

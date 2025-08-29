@@ -1,0 +1,68 @@
+{
+  "session_info": {
+    "start_time": "2025-08-14T23:30:21.415675",
+    "end_time": "2025-08-14T23:31:18.521572",
+    "total_processed": 5,
+    "successful_analyses": 5,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 45,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "01e0c99c58be90c1465f48b4fd169dc7495ad649",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces new functionalities such as the addition of a 'startRecording' method in the MeetingController class, which was not present in the previous commit. Additionally, there are changes to existing methods like 'getMeeting', 'getParticipant', and 'getRecordings'. These modifications affect behavior and thus classify this refactoring as FLOSS.",
+      "llm_confidence": "high",
+      "project_name": "bigbluebutton",
+      "analysis_timestamp": "2025-08-14T23:30:31.086679",
+      "diff_size": 217828,
+      "diff_lines": 5466
+    },
+    {
+      "hash": "01fa802dd723ea261f4cdff3ad8aa0294bb039dc",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff shows changes to the structure of classes and methods, as well as functional modifications. Specifically, there are additions of final modifiers for instance variables (vmSpec, networkSpec, redirectRules), changes in the way Set<RedirectRule> is handled, and the addition of a new method 'builder()' in NetworkAdapter class. These changes affect the behavior of the code by altering how objects are instantiated and managed.",
+      "llm_confidence": "high",
+      "project_name": "jclouds",
+      "analysis_timestamp": "2025-08-14T23:30:42.585138",
+      "diff_size": 11964,
+      "diff_lines": 259
+    },
+    {
+      "hash": "021ec71be5c32788347cee077034df690a279a34",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling alterations. Specifically, there are changes to the 'CassandraDaemon' class, where methods like 'init', 'shutdown', and 'main' have been modified. Additionally, new methods such as 'startup_hook' and 'shutdown_hook' have been added.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T23:30:53.452699",
+      "diff_size": 117134,
+      "diff_lines": 2304
+    },
+    {
+      "hash": "0225c9c888637f136b162435ecfddacf7ad33a7c",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "jbot",
+      "analysis_timestamp": "2025-08-14T23:31:08.201436",
+      "diff_size": 71041,
+      "diff_lines": 2152
+    },
+    {
+      "hash": "0230f8772d6fa33db0843df36a6119ade574c636",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces new functionality by adding a new method 'getBlockState' and modifying the return type of several methods. Additionally, there are changes to exception handling and conditional logic.",
+      "llm_confidence": "high",
+      "project_name": "BuildCraft",
+      "analysis_timestamp": "2025-08-14T23:31:18.498623",
+      "diff_size": 915311,
+      "diff_lines": 28444
+    }
+  ]
+}
