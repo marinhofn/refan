@@ -1,0 +1,21 @@
+{
+  "session_info": {
+    "model_used": "gemma2:2b",
+    "analysis_type": "FLOSS_hashes",
+    "description": "Análise de hashes com classificação Purity=FALSE (FLOSS)",
+    "csv_file_analyzed": "csv/llm_analysis_csv/gemma2_2b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "start_time": "2025-08-30T15:42:18.607544",
+    "end_time": "2025-08-30T15:48:29.094538",
+    "total_processed": 1,
+    "successful_analyses": 0,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 5588,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [],
+  "summary": {
+    "total_commits": 0,
+    "classifications": {},
+    "convergence_analysis": {}
+  }
+}

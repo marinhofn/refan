@@ -214,7 +214,7 @@ class OptimizedOllamaAdapter:
         self.host = host
         self.model = model
 
-    def complete(self, prompt: str, attempts: int = 3, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+    def complete(self, prompt: str, attempts: int = 1, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
         base_opts = get_generation_base_options()
         payload = {
             "model": self.model,
