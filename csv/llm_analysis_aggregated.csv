@@ -1,0 +1,12 @@
+model,file,total_commits_in_file,analyzed_by_model,purity_true,purity_false,llm_true,llm_false,agreement_true_total,agreement_true_agree,agreement_true_disagree,agreement_false_total,agreement_false_agree,agreement_false_disagree
+deepseek-r1_8b_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/deepseek-r1_8b_floss_hashes_no_rpt_purity_with_analysis.csv,5841,5841,0,2425,210,4492,0,0,0,2425,1871,554
+deepseek-r1_8b_true_purity_hashes_with_analysis,csv/llm_analysis_csv/deepseek-r1_8b_true_purity_hashes_with_analysis.csv,980,160,980,0,51,107,980,51,929,0,0,0
+gemma2_2b_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/gemma2_2b_floss_hashes_no_rpt_purity_with_analysis.csv,5841,5841,0,2425,1084,4736,0,0,0,2425,1986,439
+gemma2_2b_true_purity_hashes_with_analysis,csv/llm_analysis_csv/gemma2_2b_true_purity_hashes_with_analysis.csv,980,195,980,0,40,155,980,40,940,0,0,0
+gemma3_1b_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/gemma3_1b_floss_hashes_no_rpt_purity_with_analysis.csv,5841,1180,0,2425,147,1023,0,0,0,2425,425,2000
+gemma3_4b_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/gemma3_4b_floss_hashes_no_rpt_purity_with_analysis.csv,5841,297,0,2425,66,231,0,0,0,2425,98,2327
+gpt-oss_20b_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/gpt-oss_20b_floss_hashes_no_rpt_purity_with_analysis.csv,5841,1,0,2425,0,0,0,0,0,2425,0,2425
+gpt-oss_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/gpt-oss_floss_hashes_no_rpt_purity_with_analysis.csv,5841,0,0,2425,0,0,0,0,0,2425,0,2425
+mistral_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/mistral_floss_hashes_no_rpt_purity_with_analysis.csv,5841,2,0,2425,0,1,0,0,0,2425,1,2424
+mistral_latest_floss_hashes_no_rpt_purity_with_analysis,csv/llm_analysis_csv/mistral_latest_floss_hashes_no_rpt_purity_with_analysis.csv,5841,5841,0,2425,340,5052,0,0,0,2425,2157,268
+mistral_latest_true_purity_hashes_with_analysis,csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv,980,980,980,0,703,277,980,703,277,0,0,0

@@ -1,0 +1,377 @@
+{
+  "deepseek-r1_8b_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/deepseek-r1_8b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 5841,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FAILED": 1139,
+      "FALSE": 4492,
+      "TRUE": 210
+    },
+    "confusion": {
+      "FALSE": {
+        "FAILED": 529,
+        "FALSE": 1871,
+        "TRUE": 25
+      },
+      "NONE": {
+        "FAILED": 610,
+        "FALSE": 2621,
+        "TRUE": 185
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 1871,
+        "disagree": 554
+      }
+    }
+  },
+  "deepseek-r1_8b_true_purity_hashes_with_analysis": {
+    "file": "csv/llm_analysis_csv/deepseek-r1_8b_true_purity_hashes_with_analysis.csv",
+    "total_commits_in_file": 980,
+    "analyzed_by_model": 160,
+    "purity_counts": {
+      "TRUE": 980
+    },
+    "llm_counts": {
+      "FALSE": 107,
+      "FAILED": 2,
+      "TRUE": 51
+    },
+    "confusion": {
+      "TRUE": {
+        "FALSE": 107,
+        "FAILED": 2,
+        "TRUE": 51,
+        "null": 820
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 980,
+        "agree": 51,
+        "disagree": 929
+      },
+      "FALSE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      }
+    }
+  },
+  "gemma2_2b_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/gemma2_2b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 5841,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FALSE": 4736,
+      "TRUE": 1084,
+      "FAILED": 21
+    },
+    "confusion": {
+      "FALSE": {
+        "FALSE": 1986,
+        "TRUE": 435,
+        "FAILED": 4
+      },
+      "NONE": {
+        "TRUE": 649,
+        "FAILED": 17,
+        "FALSE": 2750
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 1986,
+        "disagree": 439
+      }
+    }
+  },
+  "gemma2_2b_true_purity_hashes_with_analysis": {
+    "file": "csv/llm_analysis_csv/gemma2_2b_true_purity_hashes_with_analysis.csv",
+    "total_commits_in_file": 980,
+    "analyzed_by_model": 195,
+    "purity_counts": {
+      "TRUE": 980
+    },
+    "llm_counts": {
+      "FALSE": 155,
+      "TRUE": 40
+    },
+    "confusion": {
+      "TRUE": {
+        "FALSE": 155,
+        "TRUE": 40,
+        "null": 785
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 980,
+        "agree": 40,
+        "disagree": 940
+      },
+      "FALSE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      }
+    }
+  },
+  "gemma3_1b_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/gemma3_1b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 1180,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FALSE": 1023,
+      "TRUE": 147,
+      "FAILED": 10
+    },
+    "confusion": {
+      "FALSE": {
+        "FALSE": 425,
+        "TRUE": 51,
+        "FAILED": 2,
+        "null": 1947
+      },
+      "NONE": {
+        "TRUE": 96,
+        "FAILED": 8,
+        "FALSE": 598,
+        "null": 2714
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 425,
+        "disagree": 2000
+      }
+    }
+  },
+  "gemma3_4b_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/gemma3_4b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 297,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FALSE": 231,
+      "TRUE": 66
+    },
+    "confusion": {
+      "FALSE": {
+        "FALSE": 98,
+        "TRUE": 26,
+        "null": 2301
+      },
+      "NONE": {
+        "TRUE": 40,
+        "FALSE": 133,
+        "null": 3243
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 98,
+        "disagree": 2327
+      }
+    }
+  },
+  "gpt-oss_20b_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/gpt-oss_20b_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 1,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FAILED": 1
+    },
+    "confusion": {
+      "FALSE": {
+        "FAILED": 1,
+        "null": 2424
+      },
+      "NONE": {
+        "null": 3416
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 0,
+        "disagree": 2425
+      }
+    }
+  },
+  "gpt-oss_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/gpt-oss_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 0,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {},
+    "confusion": {
+      "FALSE": {
+        "null": 2425
+      },
+      "NONE": {
+        "null": 3416
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 0,
+        "disagree": 2425
+      }
+    }
+  },
+  "mistral_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/mistral_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 2,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FALSE": 1,
+      "DRY_RUN": 1
+    },
+    "confusion": {
+      "FALSE": {
+        "FALSE": 1,
+        "null": 2424
+      },
+      "NONE": {
+        "DRY_RUN": 1,
+        "null": 3415
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 1,
+        "disagree": 2424
+      }
+    }
+  },
+  "mistral_latest_floss_hashes_no_rpt_purity_with_analysis": {
+    "file": "csv/llm_analysis_csv/mistral_latest_floss_hashes_no_rpt_purity_with_analysis.csv",
+    "total_commits_in_file": 5841,
+    "analyzed_by_model": 5841,
+    "purity_counts": {
+      "FALSE": 2425
+    },
+    "llm_counts": {
+      "FALSE": 5052,
+      "FAILED": 449,
+      "TRUE": 340
+    },
+    "confusion": {
+      "FALSE": {
+        "FALSE": 2157,
+        "FAILED": 205,
+        "TRUE": 63
+      },
+      "NONE": {
+        "FALSE": 2895,
+        "FAILED": 244,
+        "TRUE": 277
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      },
+      "FALSE": {
+        "total": 2425,
+        "agree": 2157,
+        "disagree": 268
+      }
+    }
+  },
+  "mistral_latest_true_purity_hashes_with_analysis": {
+    "file": "csv/llm_analysis_csv/mistral_latest_true_purity_hashes_with_analysis.csv",
+    "total_commits_in_file": 980,
+    "analyzed_by_model": 980,
+    "purity_counts": {
+      "TRUE": 980
+    },
+    "llm_counts": {
+      "FALSE": 277,
+      "TRUE": 703
+    },
+    "confusion": {
+      "TRUE": {
+        "FALSE": 277,
+        "TRUE": 703
+      }
+    },
+    "agreement": {
+      "TRUE": {
+        "total": 980,
+        "agree": 703,
+        "disagree": 277
+      },
+      "FALSE": {
+        "total": 0,
+        "agree": 0,
+        "disagree": 0
+      }
+    }
+  }
+}

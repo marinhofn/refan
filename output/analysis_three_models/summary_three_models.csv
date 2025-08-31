@@ -1,0 +1,4 @@
+model,agg_key,analyzed,total,missing,purity_true,purity_false,llm_true,llm_false,agreement_true_total,agreement_true_agree,agreement_false_total,agreement_false_agree
+deepseek,deepseek-r1_8b_floss_hashes_no_rpt_purity_with_analysis,5841,5841,0,0,2425,210,4492,0,0,2425,1871
+mistral,mistral_latest_floss_hashes_no_rpt_purity_with_analysis,5841,5841,0,0,2425,340,5052,0,0,2425,2157
+gemma,gemma2_2b_floss_hashes_no_rpt_purity_with_analysis,5841,5841,0,0,2425,1084,4736,0,0,2425,1986
