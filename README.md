@@ -101,7 +101,7 @@ output/models/{modelo}/
 Edite `src/core/config.py`:
 
 ```python
-LLM_MODEL = "gpt-4"  # Altere aqui
+LLM_MODEL = "gpt-4" 
 ```
 
 O sistema criará automaticamente as pastas para o novo modelo.
@@ -113,7 +113,6 @@ O sistema usa caminhos dinâmicos baseados no modelo atual:
 ```python
 from src.core.config import get_model_paths
 
-# Obter caminhos para modelo específico
 paths = get_model_paths("gpt-4")
 analises_dir = paths["ANALISES_DIR"]
 ```
@@ -143,7 +142,7 @@ pip install -r requirements.txt
 - pandas
 - requests
 - plotly
-- ollama (para Mistral local)
+- ollama
 
 ## Estrutura de Dados
 
@@ -161,44 +160,7 @@ pip install -r requirements.txt
 
 O sistema foi completamente reorganizado. Scripts de migração automática foram executados para:
 
-1. ✅ Mover arquivos para estrutura modular
-2. ✅ Corrigir imports automaticamente
-3. ✅ Reorganizar resultados por modelo
-4. ✅ Criar sistema de entrada unificado
-
-## Extensibilidade
-
-### Adicionando Novo Modelo LLM
-
-1. Configure o modelo em `config.py`
-2. O sistema criará automaticamente as pastas
-3. Implemente adapter em `llm_handler.py` se necessário
-
-### Adicionando Nova Análise
-
-1. Crie novo analisador em `src/analyzers/`
-2. Registre no sistema de configuração
-3. Adicione ao menu principal
-
-## Desenvolvimento
-
-### Executando Testes
-
-```bash
-# Executar todos os testes
-python -m pytest tests/
-
-# Teste específico
-python tests/test_specific.py
-```
-
-### Debug
-
-O sistema inclui logs detalhados e modo debug configurável em `config.py`.
-
-## Contribuição
-
-1. Mantenha a estrutura modular
-2. Use imports relativos corretos
-3. Organize resultados por modelo
-4. Documente mudanças significativas
+1.  Mover arquivos para estrutura modular
+2.  Corrigir imports automaticamente
+3.  Reorganizar resultados por modelo
+4.  Criar sistema de entrada unificado
