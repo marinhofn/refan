@@ -1,0 +1,6 @@
+Classificador,Total_Commits,Commits_PURE,Commits_FLOSS,Proporcao_PURE,Proporcao_FLOSS,Percentual_PURE,Percentual_FLOSS
+Purity,2728,978,1750,0.359,0.641,35.85,64.15
+Mistral,2728,766,1962,0.281,0.719,28.08,71.92
+Gemma,2728,561,2167,0.206,0.794,20.56,79.44
+Deepseek,2728,201,2527,0.074,0.926,7.37,92.63
+Consensus,2728,274,1902,0.1,0.697,10.04,69.72

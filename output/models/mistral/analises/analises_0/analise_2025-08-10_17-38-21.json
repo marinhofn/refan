@@ -1,0 +1,18 @@
+[
+    {
+        "repository": "https://github.com/rictic/code_swarm",
+        "commit_hash_before": "e48c42df2026ad93547ffe6794d1142121fdacdf",
+        "commit_hash_current": "ff7751f44b741568397cec6d9dcacd9287cdf54d",
+        "refactoring_type": "pure",
+        "justification": "In this commit, there are no observable changes to the behavior or functionality of the code. The refactoring seems focused on reorganizing and simplifying conditional logic in various methods without altering their outcomes (e.g., removing unnecessary if-else statements, replacing them with ternary operators). Additionally, there is an introduction of new methods but no changes to their existing counterparts that could affect behavior. Therefore, this commit can be classified as 'pure' refactoring.",
+        "commit_message": "Removed duplication, updated to use foreach arrays\n\nMay have slightly improved performance for long-lived visualizations,\nneed to do some comparisons."
+    },
+    {
+        "repository": "https://github.com/android/platform_packages_apps_music",
+        "commit_hash_before": "272eb78d8836f969f7480454167bdffc6a6f6dd7",
+        "commit_hash_current": "2f9a1ce2f3b0ae72d698c240ce8448bc7cfe3a77",
+        "refactoring_type": "pure",
+        "justification": "The commit includes refactoring of the code base by renaming variables, methods, and classes. The code changes do not alter any functionality or behavior of the original code.",
+        "commit_message": "When checking the current playback position against the length\nof the file, make sure the length is valid. Otherwise we can\nend up endlessly (recursively) calling next(), and run out of\nstack."
+    }
+]

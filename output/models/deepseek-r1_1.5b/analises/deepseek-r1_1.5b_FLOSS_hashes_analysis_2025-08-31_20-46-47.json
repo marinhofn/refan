@@ -1,0 +1,73 @@
+{
+  "session_info": {
+    "model_used": "deepseek-r1:1.5b",
+    "analysis_type": "FLOSS_hashes",
+    "description": "Análise de hashes com classificação Purity=FALSE (FLOSS)",
+    "csv_file_analyzed": "csv/floss_hashes_no_rpt_purity_with_analysis.csv",
+    "start_time": "2025-08-31T20:46:20.594012",
+    "end_time": "2025-08-31T20:47:16.033264",
+    "total_processed": 3,
+    "successful_analyses": 3,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 3,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "This diff contains changes to several Dubbo filter modules, including validation and JValidation support, as well as a new filter for asynchronous RPC results. The changes include both behavioral modifications (e.g., updating the return type of some methods to use `AppResponse` instead of `RpcResult`) and structural modifications (e.g., adding new classes and methods).\n\nBehavioral Modifications:\n- Changes in the ValidationFilterTest class involve testing validation with different method signatures, including a method that takes an array argument and another that takes a collection argument.\n- The JValidatorTest class includes tests for validating methods with map arguments.\n\nStructural Modifications:\n- Addition of new classes such as `ValidationFilter`, `JValidator`, and `JValidatorTestTarget`.\n- Changes in the ValidationFilter class, including the introduction of a new method `validate` that takes a list of groups to validate against.\n- Updates to the JValidator class, which now includes a method `methodClassMap` to store method classes for validation.\n\nFinal: PURE (The changes are original and not based on existing open-source software)\n\n```json\n{\n  \"diff_source\": \"direct\"\n}\n```",
+      "llm_confidence": "unknown",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-31T20:46:47.361368",
+      "diff_size": 344027,
+      "diff_lines": 7105,
+      "llm_raw_response": "This diff contains changes to several Dubbo filter modules, including validation and JValidation support, as well as a new filter for asynchronous RPC results. The changes include both behavioral modifications (e.g., updating the return type of some methods to use `AppResponse` instead of `RpcResult`) and structural modifications (e.g., adding new classes and methods).\n\nBehavioral Modifications:\n- Changes in the ValidationFilterTest class involve testing validation with different method signatures, including a method that takes an array argument and another that takes a collection argument.\n- The JValidatorTest class includes tests for validating methods with map arguments.\n\nStructural Modifications:\n- Addition of new classes such as `ValidationFilter`, `JValidator`, and `JValidatorTestTarget`.\n- Changes in the ValidationFilter class, including the introduction of a new method `validate` that takes a list of groups to validate against.\n- Updates to the JValidator class, which now includes a method `methodClassMap` to store method classes for validation.\n\nFinal: PURE (The changes are original and not based on existing open-source software)\n\n```json\n{\n  \"diff_source\": \"direct\"\n}\n```",
+      "repository": "https://github.com/alibaba/dubbo",
+      "commit_hash_before": "91554bc84b8a1f022f6430a8767739673ac60449",
+      "commit_hash_current": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b"
+    },
+    {
+      "hash": "0040fea3797ea3e497691e9d1e2660711c60ac4d",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "This diff contains changes to the Cassandra configuration file (cassandra.yaml) related to messaging, streaming, and transient replication. The changes include adding new configuration options for resource limits on queued messages, enabling Zero Copy streaming, and configuring transient replication.\n\nBehavioral modifications:\n1. Addition of new configuration options for resource limits on queued messages.\n2. Enabling Zero Copy streaming for faster network transfer of SSTables between nodes.\n3. Configuring transient replication to improve data consistency in a cluster.\n\nStructural modifications:\n1. Changes to the existing cassandra.yaml file by adding new configuration options and modifying some existing ones.\n\nTechnical indicators:\n1. Behavioral changes: Addition of new configuration options, enabling Zero Copy streaming, and configuring transient replication.\n2. Structural changes: Modifications to the cassandra.yaml file.\n\nFinal: PURE (changes are part of the original project)\n\nJSON:\n{\n \"diff_source\": \"direct\"\n}",
+      "llm_confidence": "unknown",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-31T20:46:55.588358",
+      "diff_size": 5505794,
+      "diff_lines": 121392,
+      "llm_raw_response": "This diff contains changes to the Cassandra configuration file (cassandra.yaml) related to messaging, streaming, and transient replication. The changes include adding new configuration options for resource limits on queued messages, enabling Zero Copy streaming, and configuring transient replication.\n\nBehavioral modifications:\n1. Addition of new configuration options for resource limits on queued messages.\n2. Enabling Zero Copy streaming for faster network transfer of SSTables between nodes.\n3. Configuring transient replication to improve data consistency in a cluster.\n\nStructural modifications:\n1. Changes to the existing cassandra.yaml file by adding new configuration options and modifying some existing ones.\n\nTechnical indicators:\n1. Behavioral changes: Addition of new configuration options, enabling Zero Copy streaming, and configuring transient replication.\n2. Structural changes: Modifications to the cassandra.yaml file.\n\nFinal: PURE (changes are part of the original project)\n\nJSON:\n{\n \"diff_source\": \"direct\"\n}",
+      "repository": "https://github.com/apache/cassandra",
+      "commit_hash_before": "2b2c6decfafc6235ad537e72073fab2fd4467e2f",
+      "commit_hash_current": "0040fea3797ea3e497691e9d1e2660711c60ac4d"
+    },
+    {
+      "hash": "0051a7f17bd2027575c13dac3ace653ecb2513eb",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "This diff contains changes to several Java files related to the Apache POI project, which is an open-source Java library for reading and writing Microsoft Office file formats. The changes appear to be focused on refactoring and improving the organization of code within the RowRecordsAggregate class, as well as adding new classes and methods.\n\nBehavioral modifications:\n1. The RowRecordsAggregate class has been modified to use a Map data structure for storing rows, instead of directly accessing them through an iterator. This change should improve performance by reducing the number of iterations required to find a specific row.\n2. A new ValueRecordsAggregate class has been added, which appears to be used for managing cell values within a row. This suggests that there may have been changes to how cells are handled in the spreadsheet.\n3. The getRowBlockCount() method has been modified to return the number of blocks containing rows, taking into account the block size and the total number of rows.\n4. A new getStartRowNumberForBlock() method has been added, which returns the physical row number of the first row in a specific block.\n5. The RowRecord class has been modified to have a static ENCODED_SIZE constant, which may be used for calculating the size of a row block.\n6. The DBCellRecord class has been modified to have a BLOCK_SIZE constant, which may be used for determining the number of rows in a block and the size of a block.\n\nStructural modifications:\n1. The RowRecordsAggregate class now extends RecordAggregate instead of Record. This suggests that it is part of a larger aggregation structure within the Apache POI project.\n2. A new import statement has been added for the ValueRecordsAggregate class, which was not present in the original code.\n3. Several comments have been added throughout the files to explain various aspects of the code and its behavior.\n4. The RowRecord class now includes a private constructor, which may be used for internal purposes within the Apache POI project.\n5. The getRow() method has been modified to return a RowRecord object directly from the Map, instead of creating a new instance of the RowRecord class and searching for it in the Map.\n6. The getFirstRowNum(), getLastRowNum(), and getPhysicalNumberOfRows() methods have been moved from the RowRecordsAggregate class to the RecordAggregate superclass.\n7. The getRowBlockSize() method has been modified to return the size of a row block in terms of RowRecord's ENCODED_SIZE, instead of a hardcoded value of 20.\n8. The getRowCountForBlock() method has been modified to use the new RowRecord.ENCODED_SIZE constant for calculating the number of rows in a block.\n9. The getStartRowNumberForBlock() method has been moved from the RecordAggregate superclass to the RowRecordsAggregate class.\n10. The getRowBlockCount() method has been modified to use the new RowRecord.ENCODED_SIZE constant for calculating the size of a row block.\n\nBased on the behavioral and structural modifications, it appears that these changes are primarily focused on improving the organization and performance of the code within the Apache POI project. The changes do not appear to introduce any significant new functionality or alter the overall behavior of the library.\n\nFinal: FLOSS (Free/Libre Open Source Software)",
+      "llm_confidence": "unknown",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-31T20:47:15.017980",
+      "diff_size": 264077,
+      "diff_lines": 7072,
+      "llm_raw_response": "This diff contains changes to several Java files related to the Apache POI project, which is an open-source Java library for reading and writing Microsoft Office file formats. The changes appear to be focused on refactoring and improving the organization of code within the RowRecordsAggregate class, as well as adding new classes and methods.\n\nBehavioral modifications:\n1. The RowRecordsAggregate class has been modified to use a Map data structure for storing rows, instead of directly accessing them through an iterator. This change should improve performance by reducing the number of iterations required to find a specific row.\n2. A new ValueRecordsAggregate class has been added, which appears to be used for managing cell values within a row. This suggests that there may have been changes to how cells are handled in the spreadsheet.\n3. The getRowBlockCount() method has been modified to return the number of blocks containing rows, taking into account the block size and the total number of rows.\n4. A new getStartRowNumberForBlock() method has been added, which returns the physical row number of the first row in a specific block.\n5. The RowRecord class has been modified to have a static ENCODED_SIZE constant, which may be used for calculating the size of a row block.\n6. The DBCellRecord class has been modified to have a BLOCK_SIZE constant, which may be used for determining the number of rows in a block and the size of a block.\n\nStructural modifications:\n1. The RowRecordsAggregate class now extends RecordAggregate instead of Record. This suggests that it is part of a larger aggregation structure within the Apache POI project.\n2. A new import statement has been added for the ValueRecordsAggregate class, which was not present in the original code.\n3. Several comments have been added throughout the files to explain various aspects of the code and its behavior.\n4. The RowRecord class now includes a private constructor, which may be used for internal purposes within the Apache POI project.\n5. The getRow() method has been modified to return a RowRecord object directly from the Map, instead of creating a new instance of the RowRecord class and searching for it in the Map.\n6. The getFirstRowNum(), getLastRowNum(), and getPhysicalNumberOfRows() methods have been moved from the RowRecordsAggregate class to the RecordAggregate superclass.\n7. The getRowBlockSize() method has been modified to return the size of a row block in terms of RowRecord's ENCODED_SIZE, instead of a hardcoded value of 20.\n8. The getRowCountForBlock() method has been modified to use the new RowRecord.ENCODED_SIZE constant for calculating the number of rows in a block.\n9. The getStartRowNumberForBlock() method has been moved from the RecordAggregate superclass to the RowRecordsAggregate class.\n10. The getRowBlockCount() method has been modified to use the new RowRecord.ENCODED_SIZE constant for calculating the size of a row block.\n\nBased on the behavioral and structural modifications, it appears that these changes are primarily focused on improving the organization and performance of the code within the Apache POI project. The changes do not appear to introduce any significant new functionality or alter the overall behavior of the library.\n\nFinal: FLOSS (Free/Libre Open Source Software)",
+      "repository": "https://github.com/apache/poi",
+      "commit_hash_before": "aa18b4c2b2e8855c985f5e7ab06b93bfa41d55a0",
+      "commit_hash_current": "0051a7f17bd2027575c13dac3ace653ecb2513eb"
+    }
+  ],
+  "summary": {
+    "total_commits": 3,
+    "classifications": {
+      "PURE": 2,
+      "FLOSS": 1
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 3
+    }
+  }
+}

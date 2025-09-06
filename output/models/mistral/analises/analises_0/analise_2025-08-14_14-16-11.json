@@ -1,0 +1,99 @@
+[
+    {
+        "repository": "javers",
+        "commit_hash_before": "ab328129bad60bd61530b9756b3ae89acdd44f35",
+        "commit_hash_current": "4092519b4a81fadce2f4c68b1950d65928b155f8",
+        "refactoring_type": "floss",
+        "justification": "The commit adds a new column 'version' to the 'jv_snapshot' table in various databases. This modification affects the behavior of the database schema, as it introduces a new column that did not exist before.",
+        "technical_evidence": "Addition of 'addSnapshotVersionColumnIfNeeded()' method and the subsequent 'addLongColumn(String tableName, String colName)' method. The code also includes SQL statements to add the 'version' column in different databases.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "https://github.com/javers/javers/issues/361",
+        "diff_size_chars": 1952,
+        "diff_lines": 40,
+        "processing_method": "direct"
+    },
+    {
+        "diff_source": "direct",
+        "behavioral_changes": [
+            {
+                "file": "src/main/java/org/javers/repository/sql/finders/CdoSnapshotsEnricher.java",
+                "additions": [],
+                "deletions": [
+                    "CommitPropertyFinder.class"
+                ],
+                "description": "Removed CommitPropertyFinder from the list of classes to be bound in JaversSqlModule"
+            },
+            {
+                "file": "src/main/java/org/javers/repository/sql/finders/CdoSnapshotsEnricher.java",
+                "additions": [],
+                "deletions": [
+                    "CdoSnapshotsEnricher.class"
+                ],
+                "description": "Removed CdoSnapshotsEnricher from the list of classes to be bound in JaversSqlModule"
+            },
+            {
+                "file": "src/main/java/org/javers/repository/sql/finders/CommitPropertyFinder.java",
+                "additions": [],
+                "deletions": [],
+                "description": "No changes in CommitPropertyFinder class, but it is no longer bound in JaversSqlModule"
+            },
+            {
+                "file": "src/main/java/org/javers/repository/sql/pico/JaversSqlModule.java",
+                "additions": [
+                    "CdoSnapshotsBuilder.class"
+                ],
+                "deletions": [
+                    "CdoSnapshotsEnricher.class"
+                ],
+                "description": "Added CdoSnapshotsBuilder to the list of classes to be bound in JaversSqlModule and removed CdoSnapshotsEnricher"
+            },
+            {
+                "file": "src/main/java/org/javers/spring/jpa/JaversTransactionalDecorator.java",
+                "additions": [],
+                "deletions": [
+                    "Map<String, String> properties"
+                ],
+                "description": "Removed the 'properties' parameter from the commit method signature in JaversTransactionalDecorator"
+            }
+        ],
+        "structural_changes": [
+            {
+                "file": "src/main/java/org/javers/repository/sql/finders/CommitPropertyDTOMapper.java",
+                "additions": [],
+                "deletions": [
+                    "CommitPropertyDTOMapper"
+                ],
+                "description": "Deleted CommitPropertyDTOMapper class"
+            }
+        ],
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "CR fixes",
+        "diff_size_chars": 44416,
+        "diff_lines": 917,
+        "processing_method": "direct"
+    },
+    {
+        "diff_source": "direct",
+        "behavioral_changes": 6,
+        "structural_changes": 5,
+        "overall_changes": 11,
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "-Concurrency bug in getNextTask() solved\n-Java Timer to handle edge case\n-Changes in SPSC and MPSC queue",
+        "diff_size_chars": 29170,
+        "diff_lines": 792,
+        "processing_method": "direct"
+    }
+]

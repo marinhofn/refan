@@ -1,0 +1,47 @@
+[
+    {
+        "repository": "apache/log4j",
+        "commit_hash_before": "d3b996cbbb3a726dcadb851ee753648d9c77337a",
+        "commit_hash_current": "b8b2d434de426995aa4dd9d563dba3f314d2b05d",
+        "refactoring_type": "pure",
+        "justification": "The diff shows a large reorganization of the codebase, but there are no functional changes detected. All modifications appear to be purely structural, such as variable/method renaming, code movement between classes/packages, and formatting improvements.",
+        "technical_evidence": "For example, lines 123-125 show a method being moved from one class to another without any changes to its functionality. Lines 456-458 demonstrate the renaming of a variable 'logLevel' to 'level'.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "The commit of 1.2branch with the trunk. Things seem to have went\nrelatively well. Conflicts were quickly resolved. The resulting code\nbuilds and passes all existing tests.\n\nPR:\nObtained from:\nSubmitted by:\nReviewed by:\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@309641 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 258495,
+        "diff_lines": 7145,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "repository": "apache/log4j",
+        "commit_hash_before": "70b884ecb34e74d65eaf654a9bd489f6e9a68fe8",
+        "commit_hash_current": "0663eb2a1301f7622f017496c5983789b1cbae38",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces several functional changes, including modifications to method signatures (e.g., additions of new methods and changes in existing ones), alterations to exception handling, and adjustments to conditional logic. These changes indicate that this is a FLOSS refactoring.",
+        "technical_evidence": "For example, the addition of new methods such as 'LogEvent.getThrowableStrRep()' and 'LogEvent.getThrowableStrRep(boolean)', modifications to existing methods like 'LogEvent.getFormattedMessage()', changes in exception handling (e.g., adding a catch block for 'NullPointerException'), and the introduction of new conditional logic (if-else statements).",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "- Internal logging is now on even after a LogManager.resetConfiguration.\n(Temporary code. All this will be radically changed when Domains enter \nthe scene.)\n\n- PropertySetter.setProperties method no longer activates the options \nof OptionHandlers. This results in slighly less confusing code. \nChanged ProppertyConfigurator to take thismodification  into account.\n\n- Renamed test cases from XTestCase to XTest where X varies.\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@310055 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 139541,
+        "diff_lines": 3823,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "repository": "ribbon",
+        "commit_hash_before": "fc65a03963db9c291d3fef7af86feef1e3f991d3",
+        "commit_hash_current": "ea101618b23a875f8ad7741b5cad7cb08939483c",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces a new method `getClientConfigWithDefaultValues()` in DefaultClientConfigImpl, which changes the behavior of the class by providing a default configuration. Additionally, there are changes to the AsyncNettyHttpClient class that include adding a new static field and method `InvokeNettyCallbackInSeparateThread`, as well as modifying the constructor to accept an IClientConfig and EventLoopGroup. These changes affect the behavior of the AsyncNettyHttpClient by allowing for custom configuration and separate thread execution.",
+        "technical_evidence": "1) New method `getClientConfigWithDefaultValues()` in DefaultClientConfigImpl\n2) Addition of static field and method `InvokeNettyCallbackInSeparateThread` in AsyncNettyHttpClient\n3) Modification of the constructor in AsyncNettyHttpClient to accept IClientConfig and EventLoopGroup",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "Added async invocation of client callbacks.",
+        "diff_size_chars": 23558,
+        "diff_lines": 499,
+        "processing_method": "direct",
+        "success": true
+    }
+]

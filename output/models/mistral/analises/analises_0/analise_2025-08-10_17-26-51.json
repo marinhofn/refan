@@ -1,0 +1,42 @@
+[
+    {
+        "repository": "https://github.com/apache/maven-plugins",
+        "commit_hash_before": "18bfeea8fa7d7d272ff44ebf3cb94ad8094a5f8e",
+        "commit_hash_current": "80cd6ec4b310f0eb19ad0099b1f18158ce213f8e",
+        "refactoring_type": "pure",
+        "justification": "In the provided code diff, there are no apparent changes to behavior or functionality. The additions of a new dependency (maven-reporting-api) and minor changes in import statements do not seem to impact the existing functionalities. Additionally, there are no bug fixes or modifications to existing methods' outputs. Therefore, this commit can be classified as 'pure' refactoring.",
+        "commit_message": "Initial version of site generation with repots.\n\ngit-svn-id: https://svn.apache.org/repos/asf/maven/components/trunk/maven-plugins/maven-site-plugin@168031 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/jmeter",
+        "commit_hash_before": "507744c5149943fe1ebd19b0c14759c295c01d41",
+        "commit_hash_current": "2b7d644d8e3da043e44f85c72b48d8fa7faffd73",
+        "refactoring_type": "pure",
+        "justification": "The commit introduces new constants (ONETIMESETUP and ONETIMETEARDOWN) in the JUnitTestSamplerGui.java file, but there are no changes to existing methods or behavior. Additionally, in JUnitSampler.java, the changes relate solely to removing comments and modifying the inheritance of the class (removing TestListener), which does not affect functionality. These changes fall under pure refactoring as they only improve code structure without modifying behavior.",
+        "commit_message": "changed the implementation for oneTimeSetup and oneTimeTearDown. Since these\ntwo methods should only be called once, it doesn't make sense to call it per class\ninstance. Instead, I've made the GUI include the method so that test plans can\ncreate a thread group to call it once.\npeter\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/jakarta/jmeter/trunk@325578 13f79535-47bb-0310-9956-ffa450edef68\n\nFormer-commit-id: 77a02c441664905673ac1dee3dcdddef43cc6678"
+    },
+    {
+        "repository": "https://github.com/apache/jmeter",
+        "commit_hash_before": "bc241df80b55f4184eee6ba60ccfa33a2c8324b7",
+        "commit_hash_current": "36af80b4ffbaea39563c24a12abec1f3ccba9dc8",
+        "refactoring_type": "pure",
+        "justification": "In this commit, the code refactoring involves replacing a block of code that creates a TestCase instance using reflection with a call to a static method `getClassInstance(className)` in another class `JUnitSampler`. This change simplifies the code by removing instances of `Class.forName`, `Constructor`, and `newInstance`. Additionally, the new method also handles both constructor scenarios (empty and string constructor) as compared to the old approach which only attempted to create an instance using the empty constructor initially. However, this refactoring does not change any behavior or functionality of the code, making it a 'pure' refactoring.",
+        "commit_message": "updated the junitsampler so it correctly handles classes that do not declare an\nempty constructor, or declare the empty constructor private. If a class does\neither case, the sampler will log it and attempt to create a new instance with\nstring constructor. if both fail, it isn't a valid JUnit test.\npeter\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/jakarta/jmeter/trunk@325582 13f79535-47bb-0310-9956-ffa450edef68\n\nFormer-commit-id: fc4bba760eb1163b6d15a2ed1af5706580644319"
+    },
+    {
+        "repository": "https://github.com/apache/struts",
+        "commit_hash_before": "92184a6850fdffb6d543bc85e26f058c2fd6a0ea",
+        "commit_hash_current": "f111ea4bbb64d37743e408158f326d1e2211d659",
+        "refactoring_type": "pure",
+        "justification": "The commit appears to contain only structural changes in the code without any functional modifications. For example, some files have been removed (tree-1.txt and tree-2.txt) and a new one added (tabcontainer-1.txt), but none of these alterations seem to affect the behavior or functionality of the Struts application. There are no bug fixes, addition of new features, or changes in method signatures or behavior observed.",
+        "commit_message": "WW-1607 Separate dojo-related tags into their own plugin\n\ngit-svn-id: https://svn.apache.org/repos/asf/struts/struts2/trunk@514082 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/struts",
+        "commit_hash_before": "de09c2ca535757a0b94564a3ecfb4e019d65c7a2",
+        "commit_hash_current": "65131d66a5d94cc27fcc82853ed5a6465069a9a3",
+        "refactoring_type": "pure",
+        "justification": "The commit does not seem to include any changes that would affect the behavior or functionality of the code. The class names, method names, and variable names have been changed, but their function appears to remain unaltered. This is consistent with a pure refactoring.",
+        "commit_message": "Move classes to \"dojo\" package so they don't conflict with the ones from core \n\ngit-svn-id: https://svn.apache.org/repos/asf/struts/struts2/trunk@514940 13f79535-47bb-0310-9956-ffa450edef68"
+    }
+]

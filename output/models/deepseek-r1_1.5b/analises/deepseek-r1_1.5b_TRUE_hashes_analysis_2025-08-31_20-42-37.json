@@ -1,0 +1,21 @@
+{
+  "session_info": {
+    "model_used": "deepseek-r1:1.5b",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/deepseek-r1_1.5b_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-31T20:40:42.575678",
+    "end_time": "2025-08-31T20:42:37.789079",
+    "total_processed": 1,
+    "successful_analyses": 0,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 554,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [],
+  "summary": {
+    "total_commits": 0,
+    "classifications": {},
+    "convergence_analysis": {}
+  }
+}

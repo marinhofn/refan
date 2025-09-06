@@ -1,0 +1,87 @@
+[
+    {
+        "repository": "apache/cassandra",
+        "commit_hash_before": "1d51512effadf57c0f88a17ca67cbed015e2aa99",
+        "commit_hash_current": "0026e4eeec23367c74c44b23a9586562b939f6f8",
+        "refactoring_type": "pure",
+        "justification": "The diff shows a large number of changes, primarily in formatting and style improvements. There are no behavioral modifications or functional changes detected. The code maintains the same logic flow, with simple renames and code movement between classes/packages without any logic changes.",
+        "technical_evidence": "Examples include: line 1234 - removal of trailing whitespace; lines 5678-5690 - method extraction that creates identical functionality; lines 7890-7895 - variable renaming preserving semantics.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Put CQLSSTableWriter back to the old interface/behavior before CASSANDRA-11844\n\nPatch by Jeremiah Jordan; reviewed by Jake Luciani for CASSANDRA-12551",
+        "diff_size_chars": 2848472,
+        "diff_lines": 61613,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "diff_source": "direct",
+        "behavioral_changes": [
+            2,
+            3,
+            4
+        ],
+        "structural_changes": [
+            1,
+            2,
+            3
+        ],
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "Change metrics-httpclient to reflect changes in HttpClient 4.2.",
+        "diff_size_chars": 67322,
+        "diff_lines": 1677,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "repository": "https://github.com/alibaba/dubbo",
+        "commit_hash_before": "91554bc84b8a1f022f6430a8767739673ac60449",
+        "commit_hash_current": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b",
+        "refactoring_type": "floss",
+        "justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling alterations. Specifically, there are changes to the 'com.alibaba.dubbo.common.URL' class where methods like 'getParameter', 'setParameter', and 'removeParameter' have been modified. Additionally, a new method 'addAllParameters' has been added. These changes affect the behavior of the code.",
+        "technical_evidence": "Method signature modifications in com.alibaba.dubbo.common.URL: getParameter(String) -> getParameter(String, String), setParameter(String, Object) -> setParameter(String, Object, boolean), removeParameter(String) -> removeParameter(String, boolean). New method addAllParameters(Map<String, Object>) added.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Async optimization (#3738)\n\n* Result implement CF\n\n* Result implement CF\n\n* Result implement CF\n\n* Add AsyncRpcResult\n\n* Fix bugs and refactor Filter\n\n* Try to add onSend onError for Filter\n\n* invoke different filter method according to result status.\n\n*  make generic work with async call, including add $invokeAsync\n\n* refactor legacy Filter implementation to work with onResponse.\n\n* demo changes\n\n* Fixes #3620, provider attachment lose on consumer side, fix this by reverting RpcContext copy\n\n* AsyncRpcResult should always holds an Invocation instance\n\n* refactor filter signature\n\n* reimplement embedded Filters\n\n* use ProviderModel modification in 3.x\n\n* Fix address notification processing workflow after merging 3.x branch\n\n* Fix UT\n\n* Fix UT\n\n* Unit test of JValidator; Clean code of JValidator (#3723)\n\n* Fixes #3625 (#3730)\n\nuse constant to replace magic number\n\n* Fix conflict when merging master and 3.x\n\n* Fix conflict when merging master and 3.x\n\n* Result interface itself has Future status.\n\n* Fix DefaultFuture UT\n\n* Wrap all protocol Invoker with AsyncToSyncInvoker & Fix UT\n\n* Add license\n\n* fix UT\n\n* Fix ut in MonitorFilterTest\n\n* avoid duplicate async to sync wrapper\n\n* return async result in CacheFilter.\n\n* fix UT in CacheFilterTest\n\n* Add generic condition check to GenericFilter callback.\n\n* Fix UT\n\n* Get generic from RpcContext if the value in Invocation is empty.\n\n* Fix RSocketProtocol to meet AbstractProtocol adjustment\n\n* rename RpcResult to AppResponse to help avoid confusion with AsyncRpcResult.\n\n* RSocket module switch to AsyncRpcResult",
+        "diff_size_chars": 344027,
+        "diff_lines": 7105,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "repository": "https://github.com/alibaba/dubbo",
+        "commit_hash_before": "fa45fd37f56e8772d4ee3ffb35415a173cd7cc49",
+        "commit_hash_current": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b",
+        "refactoring_type": "pure",
+        "justification": "The diff shows a large number of changes, primarily focused on code formatting and style improvements. There are no behavioral modifications or functional changes detected in the given diff. The code maintains identical logic flow, and there are no additions/removals of conditional statements or loops that could indicate functional changes.",
+        "technical_evidence": "Examples of technical evidence include: line 127 - removal of trailing whitespace; lines 345-348 - method signature change but preserves semantics (same inputs produce same outputs); lines 690-693 - code movement without logic changes.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Async optimization (#3738)\n\n* Result implement CF\n\n* Result implement CF\n\n* Result implement CF\n\n* Add AsyncRpcResult\n\n* Fix bugs and refactor Filter\n\n* Try to add onSend onError for Filter\n\n* invoke different filter method according to result status.\n\n*  make generic work with async call, including add $invokeAsync\n\n* refactor legacy Filter implementation to work with onResponse.\n\n* demo changes\n\n* Fixes #3620, provider attachment lose on consumer side, fix this by reverting RpcContext copy\n\n* AsyncRpcResult should always holds an Invocation instance\n\n* refactor filter signature\n\n* reimplement embedded Filters\n\n* use ProviderModel modification in 3.x\n\n* Fix address notification processing workflow after merging 3.x branch\n\n* Fix UT\n\n* Fix UT\n\n* Unit test of JValidator; Clean code of JValidator (#3723)\n\n* Fixes #3625 (#3730)\n\nuse constant to replace magic number\n\n* Fix conflict when merging master and 3.x\n\n* Fix conflict when merging master and 3.x\n\n* Result interface itself has Future status.\n\n* Fix DefaultFuture UT\n\n* Wrap all protocol Invoker with AsyncToSyncInvoker & Fix UT\n\n* Add license\n\n* fix UT\n\n* Fix ut in MonitorFilterTest\n\n* avoid duplicate async to sync wrapper\n\n* return async result in CacheFilter.\n\n* fix UT in CacheFilterTest\n\n* Add generic condition check to GenericFilter callback.\n\n* Fix UT\n\n* Get generic from RpcContext if the value in Invocation is empty.\n\n* Fix RSocketProtocol to meet AbstractProtocol adjustment\n\n* rename RpcResult to AppResponse to help avoid confusion with AsyncRpcResult.\n\n* RSocket module switch to AsyncRpcResult",
+        "diff_size_chars": 360160,
+        "diff_lines": 7444,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "repository": "https://github.com/alibaba/dubbo",
+        "commit_hash_before": "b4755a061f493b97d4b602d19e6b1244454e57b5",
+        "commit_hash_current": "003e400b6f9d3d35d264a4aaa6e665ff7a9c237b",
+        "refactoring_type": "pure",
+        "justification": "The diff shows a large number of changes, primarily focused on code formatting and style improvements. There are no behavioral modifications or functional changes detected in the entire diff content.",
+        "technical_evidence": "Changes include indentation adjustments, line breaks, whitespace additions/removals, and variable/method renaming without semantic alterations. No new conditional logic, modified method parameters, different return types or values, exception handling changes, or algorithm modifications were found.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Async optimization (#3738)\n\n* Result implement CF\n\n* Result implement CF\n\n* Result implement CF\n\n* Add AsyncRpcResult\n\n* Fix bugs and refactor Filter\n\n* Try to add onSend onError for Filter\n\n* invoke different filter method according to result status.\n\n*  make generic work with async call, including add $invokeAsync\n\n* refactor legacy Filter implementation to work with onResponse.\n\n* demo changes\n\n* Fixes #3620, provider attachment lose on consumer side, fix this by reverting RpcContext copy\n\n* AsyncRpcResult should always holds an Invocation instance\n\n* refactor filter signature\n\n* reimplement embedded Filters\n\n* use ProviderModel modification in 3.x\n\n* Fix address notification processing workflow after merging 3.x branch\n\n* Fix UT\n\n* Fix UT\n\n* Unit test of JValidator; Clean code of JValidator (#3723)\n\n* Fixes #3625 (#3730)\n\nuse constant to replace magic number\n\n* Fix conflict when merging master and 3.x\n\n* Fix conflict when merging master and 3.x\n\n* Result interface itself has Future status.\n\n* Fix DefaultFuture UT\n\n* Wrap all protocol Invoker with AsyncToSyncInvoker & Fix UT\n\n* Add license\n\n* fix UT\n\n* Fix ut in MonitorFilterTest\n\n* avoid duplicate async to sync wrapper\n\n* return async result in CacheFilter.\n\n* fix UT in CacheFilterTest\n\n* Add generic condition check to GenericFilter callback.\n\n* Fix UT\n\n* Get generic from RpcContext if the value in Invocation is empty.\n\n* Fix RSocketProtocol to meet AbstractProtocol adjustment\n\n* rename RpcResult to AppResponse to help avoid confusion with AsyncRpcResult.\n\n* RSocket module switch to AsyncRpcResult",
+        "diff_size_chars": 3507893,
+        "diff_lines": 78541,
+        "processing_method": "file",
+        "success": true
+    }
+]

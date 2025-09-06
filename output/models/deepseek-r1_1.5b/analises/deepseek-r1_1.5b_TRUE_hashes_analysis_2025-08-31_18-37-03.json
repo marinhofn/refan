@@ -1,0 +1,111 @@
+{
+  "session_info": {
+    "model_used": "deepseek-r1:1.5b",
+    "analysis_type": "TRUE_hashes",
+    "description": "Análise de hashes com classificação Purity=TRUE",
+    "csv_file_analyzed": "csv/llm_analysis_csv/deepseek-r1_1.5b_true_purity_hashes_with_analysis.csv",
+    "start_time": "2025-08-31T18:36:37.482959",
+    "end_time": "2025-08-31T18:37:35.687265",
+    "total_processed": 5,
+    "successful_analyses": 5,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": true,
+      "llm_classification": "PURE",
+      "llm_justification": "```\nFinal: Pure\n```\n\n```diff\n--- a/OpenBitSet.java\n+++ b/OpenBitSet.java\n@@ -1,4 +1,5 @@\n // This file is part of the OpenJPA project and is released under the\n // terms of the Apache 2.0 license (see http://www.openjpa.org license)\n+\n+// See http://www.openjpa.org for documentation on OpenJPA and related technologies.\n \n package org.apache.jpa;\n \n@@ -16,7 +17,8 @@\n }\n \n /**\n-  * A bit set in this OpenBitSet is represented by a single long word,\n+  * A bit set in this OpenBitSet is represented by a single long word,\n * which contains the index of that word. The index should be less than\n * the OpenBitSet size.\n */\n@@ -23,10 +25,14 @@\n \n public class OpenBitSet implements Serializable {\n-  @Override\n+  @Override\n   public int getNumWords() { return wlen; }\n+\n+  @Override\n   public boolean get(long index) {\n     int i = (int)(index >> 6);\n     if (i >=wlen) return false;\n@@ -31,20 +39,15 @@\n \n-  /** Set a bit in this OpenBitSet.\n-    * The index should be less than the OpenBitSet size.\n+  /** Set a bit at the specified index.\n   * The index should be less than the OpenBitSet size.\n   */\n-  public void set(long index) {\n+  public void set(int index) {\n     int wordNum = (int)(index >>6);\n     int bit = (int)index &0x3f;\n     long bitmask =1L <<bit;\n@@ -45,27 +41,18 @@\n \n-  /** Set a range of bits in this OpenBitSet.\n+  /** Clear a range of bits in this OpenBitSet.\n   * The index should be less than the OpenBitSet size.\n   */\n-  public void setRange(long startIndex, long endIndex) {\n+  public void clearRange(long startIndex, long endIndex) {\n     if (endIndex <=startIndex) return;\n-\n-    int startWord = (int)(startIndex>>6);\n+    int endWord = expandingWordNum(endIndex-1);\n+\n-    // since endIndex is one past the end, this is index of the last\n-    // word to be set.\n     long startmask = -1L << (startIndex &0x3f);\n     long endmask = -1L >>> (-endIndex);\n-\n-    if (startWord == endWord) {\n+    bits[startWord / PAGE_SIZE][startWord % PAGE_SIZE] |= (startmask & endmask);\n+    return;\n+\n+    for (int i=startWord+1; i<endWord; i++) {\n+      bits[i/ PAGE_SIZE][i% PAGE_SIZE] = ~bits[i/ PAGE_SIZE][i% PAGE_SIZE];\n+    }\n+\n     bits[endWord / PAGE_SIZE][endWord % PAGE_SIZE] |= endmask;\n-  }\n-\n-  /** Flips a range of bits in this OpenBitSet.\n+  }\n \n   public boolean flipRange(long startIndex, long endIndex) {\n     if (endIndex <=startIndex) return false;\n@@ -73,10 +59,6 @@\n \n   @Override\n-  public void clearCapacity() {\n+  public void ensureCapacityWords(int numWords) {\n      assert numWords<=wlen : \"Growing of paged bitset is not supported\";\n   }\n \n   @Override\n-  public long cardinality() { return wlen; }\n+  public long getCardinality() { return wlen; }\n\n private int expandingWordNum(long index) {\n   int wordNum = (int)(index >>6);\n   if (wordNum >=wlen) {\n```",
+      "llm_confidence": "unknown",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-31T18:37:03.666103",
+      "diff_size": 15028,
+      "diff_lines": 417,
+      "llm_raw_response": "```\nFinal: Pure\n```\n\n```diff\n--- a/OpenBitSet.java\n+++ b/OpenBitSet.java\n@@ -1,4 +1,5 @@\n // This file is part of the OpenJPA project and is released under the\n // terms of the Apache 2.0 license (see http://www.openjpa.org license)\n+\n+// See http://www.openjpa.org for documentation on OpenJPA and related technologies.\n \n package org.apache.jpa;\n \n@@ -16,7 +17,8 @@\n }\n \n /**\n-  * A bit set in this OpenBitSet is represented by a single long word,\n+  * A bit set in this OpenBitSet is represented by a single long word,\n * which contains the index of that word. The index should be less than\n * the OpenBitSet size.\n */\n@@ -23,10 +25,14 @@\n \n public class OpenBitSet implements Serializable {\n-  @Override\n+  @Override\n   public int getNumWords() { return wlen; }\n+\n+  @Override\n   public boolean get(long index) {\n     int i = (int)(index >> 6);\n     if (i >=wlen) return false;\n@@ -31,20 +39,15 @@\n \n-  /** Set a bit in this OpenBitSet.\n-    * The index should be less than the OpenBitSet size.\n+  /** Set a bit at the specified index.\n   * The index should be less than the OpenBitSet size.\n   */\n-  public void set(long index) {\n+  public void set(int index) {\n     int wordNum = (int)(index >>6);\n     int bit = (int)index &0x3f;\n     long bitmask =1L <<bit;\n@@ -45,27 +41,18 @@\n \n-  /** Set a range of bits in this OpenBitSet.\n+  /** Clear a range of bits in this OpenBitSet.\n   * The index should be less than the OpenBitSet size.\n   */\n-  public void setRange(long startIndex, long endIndex) {\n+  public void clearRange(long startIndex, long endIndex) {\n     if (endIndex <=startIndex) return;\n-\n-    int startWord = (int)(startIndex>>6);\n+    int endWord = expandingWordNum(endIndex-1);\n+\n-    // since endIndex is one past the end, this is index of the last\n-    // word to be set.\n     long startmask = -1L << (startIndex &0x3f);\n     long endmask = -1L >>> (-endIndex);\n-\n-    if (startWord == endWord) {\n+    bits[startWord / PAGE_SIZE][startWord % PAGE_SIZE] |= (startmask & endmask);\n+    return;\n+\n+    for (int i=startWord+1; i<endWord; i++) {\n+      bits[i/ PAGE_SIZE][i% PAGE_SIZE] = ~bits[i/ PAGE_SIZE][i% PAGE_SIZE];\n+    }\n+\n     bits[endWord / PAGE_SIZE][endWord % PAGE_SIZE] |= endmask;\n-  }\n-\n-  /** Flips a range of bits in this OpenBitSet.\n+  }\n \n   public boolean flipRange(long startIndex, long endIndex) {\n     if (endIndex <=startIndex) return false;\n@@ -73,10 +59,6 @@\n \n   @Override\n-  public void clearCapacity() {\n+  public void ensureCapacityWords(int numWords) {\n      assert numWords<=wlen : \"Growing of paged bitset is not supported\";\n   }\n \n   @Override\n-  public long cardinality() { return wlen; }\n+  public long getCardinality() { return wlen; }\n\n private int expandingWordNum(long index) {\n   int wordNum = (int)(index >>6);\n   if (wordNum >=wlen) {\n```",
+      "repository": "https://github.com/apache/cassandra",
+      "commit_hash_before": "e37bd7e8d344332ff41bd1015e6018c81ca81fa3",
+      "commit_hash_current": "00436c08bfe682b727c77c1d734c3c73a78a9590"
+    },
+    {
+      "hash": "009f536772a2cd771755e6a31d5e56a30d0a6358",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "android-calculatorpp",
+      "analysis_timestamp": "2025-08-31T18:37:15.268592",
+      "diff_size": 40524,
+      "diff_lines": 745,
+      "llm_raw_response": "The analysis of the `CalculatorKeyboardFragment.java` file is as follows:\n\n1. **Behavioral vs Structural Modifications**:\n   - The class implements `Fragment` interface but extends `SharedPrefer`. This indicates behavioral modification.\n   - It uses `View` for root handling, which is a structural approach.\n\n2. **Analysis**:\n   - Behavioral modifications include adding drag listeners and setting view references.\n   - Structural changes involve using `DirectionDragButton` and implementing drag directions.\n\n3. **JSON Classification**:\n```json\n{\n  \"classification\": {\n    \"behavioral\": true,\n    \"structural\": true\n  }\n}\n```\n\nFinal classification: `FLOSS`.",
+      "repository": "android-calculatorpp",
+      "commit_hash_before": "c1e638902483a59155fd9be457c712a067b45a90",
+      "commit_hash_current": "009f536772a2cd771755e6a31d5e56a30d0a6358",
+      "technical_evidence": "private getButton(root View, buttonId int) : T extracted from public onViewCreated(root View, savedInstanceState Bundle) : void in class org.solovyev.android.calculator.CalculatorKeyboardFragment; private getButton(root View, buttonId int) : T extracted from public onViewCreated(root View, savedInstanceState Bundle) : void in class org.solovyev.android.calculator.CalculatorKeyboardFragment; private getButton(root View, buttonId int) : T extracted from public onViewCreated(root View, savedInstanceState Bundle) : void in class org.solovyev.android.calculator.CalculatorKeyboardFragment",
+      "diff_source": "direct"
+    },
+    {
+      "hash": "00b15a44c61f88da69670b6f2f1357736eb8776e",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-31T18:37:23.748457",
+      "diff_size": 306834,
+      "diff_lines": 6461,
+      "llm_raw_response": "The analysis of the provided diff shows a few key changes:\n\n1. **ClassHelper.java**:\n   - Added `isSetter`, `isGetter`, and `isPrimitive` methods to determine if a method is a setter or getter, whether it's primitive (like boolean), etc.\n   - This improves type checking in configuration handling.\n\n2. **ExtensionLoader.java**:\n   - Updated the `getSupportedExtensions()` method to return unmodifiable set of extensions using `ImmutableSet`.\n   - This prevents external modifications and ensures consistency.\n\n3. **ConfigUtils.java**:\n   - Added a new static method `loadProperties()` that loads properties from dubbo.properties.\n   - This expands property loading capabilities beyond SystemConfiguration.\n\nThe changes are focused on enhancing configuration handling, improving type safety, and expanding property loading. These are all pure modifications without any loss of functionality or performance.\n\n```json\n{\n  \"classification\": {\n    \"final\": \"FLOSS\",\n    \"source\": \"src/main/java/org/apache/dubbo/common/utils/ClassHelper.java\"\n  }\n}\n```",
+      "repository": "dubbo",
+      "commit_hash_before": "1bebd2d28daa4573a0edecbf4b9d871827d5d9f0",
+      "commit_hash_current": "00b15a44c61f88da69670b6f2f1357736eb8776e",
+      "technical_evidence": "private overrideDirectoryUrl() : void extracted from public notify(urls List<URL>) : void in class org.apache.dubbo.registry.integration.RegistryDirectory; public initWith(url URL) : void from class org.apache.dubbo.configcenter.DynamicConfiguration to protected abstract initWith(url URL) : void from class org.apache.dubbo.configcenter.AbstractDynamicConfiguration",
+      "diff_source": "direct"
+    },
+    {
+      "hash": "014a1c7899502ec6a515acde4d285505b0c70788",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "ribbon",
+      "analysis_timestamp": "2025-08-31T18:37:29.732630",
+      "diff_size": 55712,
+      "diff_lines": 1282,
+      "llm_raw_response": "The provided diff shows a series of changes made to the ` ribbon-httpasyncclient` package. Here's the detailed analysis:\n\n1. **Behavioral vs Structural Modifications**:\n   - The `AsyncHttpClientBuilder` class is modified to include error handling for exceptions, which are caught and logged.\n   - The `RibbonHttpAsyncClient` overrides the `execute` method to handle asynchronous HTTP requests.\n\n2. **Structural Changes**:\n   - Added a `loadBalancer` field in `RibbonHttpAsyncClient`.\n   - Updated the `execute` method to accept an optional load balancing client and use it for async requests.\n   - The `loadBalancingClient` class now includes methods for setting up the load balancing client, checking stats, and executing requests.\n\n3. **Behavioral Changes**:\n   - Added error handling in the `execute` method to catch exceptions and log them.\n   - Included additional test cases for load balancing functionality.\n\n4. **Final Classification**:\n   - The changes are **FLOSS (Final Loss of Function)** as they introduce significant behavioral modifications, including error handling and enhanced client-side functionality.\n\n```json\n{\n  \"classification\": \"FLOSS\",\n  \"source\": \"src/main/java/com/netflix/client/http/AsyncHttpClientBuilder.java\",\n  \"diff_source\": \"1,29,30\"\n}\n```",
+      "repository": "ribbon",
+      "commit_hash_before": "bdf491a2a60929a69bffcaad7f3d96fa82c469ed",
+      "commit_hash_current": "014a1c7899502ec6a515acde4d285505b0c70788",
+      "technical_evidence": "public execute(request HttpRequest) : Future<com.netflix.client.http.HttpResponse> extracted from public testFuture() : void in class com.netflix.httpasyncclient.HttpAsyncClientTest & moved to class com.netflix.httpasyncclient.RibbonHttpAsyncClient",
+      "diff_source": "1,29,30"
+    },
+    {
+      "hash": "01a11fd2626d57bf0c8d0bce1e43060017592896",
+      "purity_classification": true,
+      "llm_classification": "FLOSS",
+      "llm_justification": "The changes made to the code are a combination of behavioral and structural modifications.\n\n1. **Behavioral Modifications**:\n   - Added `with_statement` import for CQL-specific syntax highlighting.\n   - Modified exception handling using `sys.exit()` instead of `sys signals`.\n   - Updated file paths and imports, including absolute paths with backslashes.\n   - Adjusted directory inclusion logic when specifying library dependencies.\n\n2. **Structural Modifications**:\n   - Reorganized the code structure by moving CQL-specific functions to a dedicated module (`cqlsh`).\n   - Added logging for better debugging and user feedback.\n   - Improved error handling and message formatting.\n   - Streamlined exception propagation and file operations.\n\nThe changes aim to enhance readability, maintainability, and testability while adhering to best practices.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-31T18:37:34.671632",
+      "diff_size": 3638740,
+      "diff_lines": 81863,
+      "llm_raw_response": "The changes made to the code are a combination of behavioral and structural modifications.\n\n1. **Behavioral Modifications**:\n   - Added `with_statement` import for CQL-specific syntax highlighting.\n   - Modified exception handling using `sys.exit()` instead of `sys signals`.\n   - Updated file paths and imports, including absolute paths with backslashes.\n   - Adjusted directory inclusion logic when specifying library dependencies.\n\n2. **Structural Modifications**:\n   - Reorganized the code structure by moving CQL-specific functions to a dedicated module (`cqlsh`).\n   - Added logging for better debugging and user feedback.\n   - Improved error handling and message formatting.\n   - Streamlined exception propagation and file operations.\n\nThe changes aim to enhance readability, maintainability, and testability while adhering to best practices.",
+      "repository": "cassandra",
+      "commit_hash_before": "774bd0bceeee56abd97a122c563852210cf54bbc",
+      "commit_hash_current": "01a11fd2626d57bf0c8d0bce1e43060017592896",
+      "technical_evidence": "package start() : CommitLog extracted from public startUnsafe() : int in class org.apache.cassandra.db.commitlog.CommitLog; public startUnsafe() : void moved from class org.apache.cassandra.db.commitlog.CommitLogSegmentManager to class org.apache.cassandra.db.commitlog.CommitLog & inlined to public restartUnsafe() : int",
+      "diff_source": "direct"
+    }
+  ],
+  "summary": {
+    "total_commits": 5,
+    "classifications": {
+      "PURE": 1,
+      "FLOSS": 4
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 5
+    }
+  }
+}

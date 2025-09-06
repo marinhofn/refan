@@ -1,0 +1,10 @@
+[
+    {
+        "repository": "https://github.com/jmxtrans/jmxtrans",
+        "commit_hash_before": "5c11868fd14f17cb08e9a3f08d30a6d62fd7140a",
+        "commit_hash_current": "ef5ea4870e56e3657902b3e512632c16e129059e",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a new class `JmxConnectionFactory` and modifies an existing one `JmxUtils`. However, the changes do not seem to affect the behavior or functionality of either class. The new class is likely added for managing JMX connections in a pooled manner, which could be considered an improvement in organization but not a change to the core functionality. In the `JmxUtils` class, there are refactoring changes such as renaming variables and methods, extracting methods, and simplifying conditional logic - all of which are examples of 'pure' refactoring.",
+        "commit_message": "Split OpenTSDBWriter and merge Kieren Hynd's TCollectorUDPWriter into the class hierarchy to ensure consistent handling of tags, settings, and more.\nAlso applied checks for numeric values and cleanup of quotes and other special characters to both writers."
+    }
+]

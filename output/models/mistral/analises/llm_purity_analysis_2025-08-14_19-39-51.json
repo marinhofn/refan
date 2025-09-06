@@ -1,0 +1,112 @@
+{
+  "session_info": {
+    "start_time": "2025-08-14T19:38:46.937346",
+    "end_time": "2025-08-14T19:40:45.678882",
+    "total_processed": 10,
+    "successful_analyses": 9,
+    "failed_analyses": 1,
+    "skipped_already_analyzed": 15,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "00b15a44c61f88da69670b6f2f1357736eb8776e",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and exception handling changes. Specifically, there are changes to the 'com.alibaba.dubbo.common.URL' class where methods like 'getParameter', 'setParameter', and 'removeParameters' have been modified. Additionally, a new method 'addAllParameters' has been added. These changes affect the behavior of the code.",
+      "llm_confidence": "high",
+      "project_name": "dubbo",
+      "analysis_timestamp": "2025-08-14T19:39:15.056023",
+      "diff_size": 306834,
+      "diff_lines": 6461
+    },
+    {
+      "hash": "00b4289c839804ac32d49d9b91a99490247da3cb",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "log4j",
+      "analysis_timestamp": "2025-08-14T19:39:25.637478",
+      "diff_size": 65158,
+      "diff_lines": 1779
+    },
+    {
+      "hash": "00b8c1a39d75c1b4626dc987bd1a51cfaf7c9be1",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling alterations. Specifically, there are changes to the CalendarProvider class's methods (e.g., getCalendarDisplayName, getCalendarId), as well as additions of if statements and try/catch blocks.",
+      "llm_confidence": "high",
+      "project_name": "platform_packages_apps_calendar",
+      "analysis_timestamp": "2025-08-14T19:39:37.474696",
+      "diff_size": 1089031,
+      "diff_lines": 23846
+    },
+    {
+      "hash": "00bc7fcd0df7f13cfa0df8985889240dfd3728fe",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "Catroid",
+      "analysis_timestamp": "2025-08-14T19:39:51.173654",
+      "diff_size": 30605,
+      "diff_lines": 413
+    },
+    {
+      "hash": "00d8ef6e2d2723ce5988d62435df1fd914b433a1",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "New methods 'categorizeReports()', 'generateProjectInfoPage(...)', and 'generateProjectReportsPage(...)' were added, indicating the addition of new functionality. Additionally, changes to method signatures (e.g., projectInfos and projectReports lists) and logic within these newly extracted methods demonstrate behavioral modifications.",
+      "llm_confidence": "high",
+      "project_name": "maven-plugins",
+      "analysis_timestamp": "2025-08-14T19:40:02.840432",
+      "diff_size": 10073,
+      "diff_lines": 299
+    },
+    {
+      "hash": "0106db25694a7604c6a36c6fe4e4ef282059d75e",
+      "purity_classification": "NONE",
+      "llm_classification": "PURE",
+      "llm_justification": "All changes in this diff are purely structural, with no behavioral modifications. The code comments have been updated for clarity and consistency, but the functionality remains unchanged.",
+      "llm_confidence": "high",
+      "project_name": "pdfbox",
+      "analysis_timestamp": "2025-08-14T19:40:14.440075",
+      "diff_size": 11055,
+      "diff_lines": 191
+    },
+    {
+      "hash": "010e4ac16664f5cee57402269c28d7b764580d60",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications (lines 13-15), new conditional logic (lines 29-31), and exception handling changes (lines 47-49). These changes indicate that the refactoring is not purely structural.",
+      "llm_confidence": "high",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-14T19:40:24.167394",
+      "diff_size": 171289,
+      "diff_lines": 4189
+    },
+    {
+      "hash": "0118f33f46462efb02a3439c9d189714f8345449",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and exception handling changes. Specifically, the 'MojoExecution' class has multiple methods with altered signatures, such as 'execute' and 'getLog', which now accept additional parameters. Furthermore, there are new try-catch blocks added in various places throughout the codebase.",
+      "llm_confidence": "high",
+      "project_name": "maven-plugins",
+      "analysis_timestamp": "2025-08-14T19:40:34.802107",
+      "diff_size": 156074,
+      "diff_lines": 4247
+    },
+    {
+      "hash": "01263733de032973fbb79cb340a19d62eff5b110",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling changes. Specifically, there are additions of if statements, try-catch blocks, and changes to method parameters and return types.",
+      "llm_confidence": "high",
+      "project_name": "basex",
+      "analysis_timestamp": "2025-08-14T19:40:44.616792",
+      "diff_size": 228587,
+      "diff_lines": 5752
+    }
+  ]
+}

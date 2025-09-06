@@ -1,0 +1,18 @@
+[
+    {
+        "repository": "https://github.com/apache/poi",
+        "commit_hash_before": "407a62f2bc90b7e635b689ee116845ab22f0dc9e",
+        "commit_hash_current": "4ab00acc7cf8a56a22153c84ec203707cd413846",
+        "refactoring_type": "pure",
+        "justification": "The commit adds a new class (HSSFHyperlink) and modifies the existing HSSFWorkbook, but it does not change any behavior or functionality. Instead, it extends the capabilities of the workbook by allowing for the creation and modification of hyperlinks in sheets.",
+        "commit_message": "support for excel hypelrinks\n\ngit-svn-id: https://svn.apache.org/repos/asf/poi/trunk@619310 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/rictic/code_swarm",
+        "commit_hash_before": "6a48e14ad76015ccc3644ade6589ca43b7777fd7",
+        "commit_hash_current": "ca5eaa0ad39ec30272bf906f93d4958eccf66b28",
+        "refactoring_type": "pure",
+        "justification": "The commit contains new files and classes, but they all seem to be related to organizing the code structure without altering its behavior. The Event, EventList, and org.codeswarm.repositoryevents package are newly added for better organization of the repository events handling code. There are no changes in method signatures or behavior that would indicate a functional change.",
+        "commit_message": "Removed more duplication and eliminated warnings"
+    }
+]

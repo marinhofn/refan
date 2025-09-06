@@ -1,0 +1,123 @@
+{
+  "session_info": {
+    "start_time": "2025-08-14T19:58:30.267921",
+    "end_time": "2025-08-14T20:00:42.316574",
+    "total_processed": 10,
+    "successful_analyses": 10,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 30,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "013a98179a7e0a466c7f44f4c0e22ea3e9806d04",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "New parameter 'basedir' added, which affects the behavior of the DoxiaMojo class. Additionally, a new method 'getSiteDescriptor()' is introduced to read the site descriptor file.",
+      "llm_confidence": "high",
+      "project_name": "maven-plugins",
+      "analysis_timestamp": "2025-08-14T19:58:38.582855",
+      "diff_size": 4008,
+      "diff_lines": 112
+    },
+    {
+      "hash": "0148d1031a6779d2a9e8980f80d2e7a0c4d9900a",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new conditional statement in the ChunkGeneratorFlora.java file, which changes the behavior of the generateGrassAndFlowers method. Additionally, there is a new file added (Camera.java) and a new class FirstPersonCamera.java, indicating functional changes. The removal of applyPerspective() method from Blockmania.java also suggests a change in camera handling.",
+      "llm_confidence": "high",
+      "project_name": "Terasology",
+      "analysis_timestamp": "2025-08-14T19:58:51.625103",
+      "diff_size": 15860,
+      "diff_lines": 394
+    },
+    {
+      "hash": "015c2e1364cd285471981a9ce3c47bbeed60eb38",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional statements, and exception handling changes. Specifically, there are additions of if/else blocks, try/catch blocks, and modified return statements.",
+      "llm_confidence": "high",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-14T19:59:01.622484",
+      "diff_size": 149407,
+      "diff_lines": 3639
+    },
+    {
+      "hash": "015c94c60313cbad00336f8ed14f922cb315f9eb",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "New functionality has been added in the CHANGES.txt file (always hint counters - CASSANDRA-3099). Additionally, there is a structural change in StorageProxy.java where local address is removed from the hintedEndpoints list using InetAddress local instead of FBUtilities.getLocalAddress(). However, this change does not affect behavior as it only changes how the local address is retrieved.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:59:11.902226",
+      "diff_size": 1339,
+      "diff_lines": 26
+    },
+    {
+      "hash": "016068ab27cd6735309e44837b09d77a2387d4c2",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:59:27.749112",
+      "diff_size": 87346,
+      "diff_lines": 2212
+    },
+    {
+      "hash": "01883da5fc68b6570fac934fbfe5e5340b5b98de",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:59:42.169495",
+      "diff_size": 58472,
+      "diff_lines": 1348
+    },
+    {
+      "hash": "01951810ae1b3a0e4fefab7d55c090fc8f776ce5",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces new functional changes by adding a return statement and modifying the method parameter mKR. This results in different control flow paths, making it a FLOSS refactoring.",
+      "llm_confidence": "high",
+      "project_name": "apg",
+      "analysis_timestamp": "2025-08-14T19:59:51.611692",
+      "diff_size": 5385,
+      "diff_lines": 83
+    },
+    {
+      "hash": "019d77f3750a472b9a95c5cc7f5125525d460e6f",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling changes. Specifically, there are additions of if statements, try-catch blocks, and changes to return types and values.",
+      "llm_confidence": "high",
+      "project_name": "autopsy",
+      "analysis_timestamp": "2025-08-14T20:00:02.529648",
+      "diff_size": 3377185,
+      "diff_lines": 68097
+    },
+    {
+      "hash": "01a0657ecfc2509cbe61491d63c2381c5863592b",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling changes. Specifically, there are additions of if statements, try-catch blocks, and changes to return types and values.",
+      "llm_confidence": "high",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-14T20:00:16.975512",
+      "diff_size": 140183,
+      "diff_lines": 4080
+    },
+    {
+      "hash": "01b12794980eed7443a5a4c403e1280cac4cd857",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "droidplanner",
+      "analysis_timestamp": "2025-08-14T20:00:41.255338",
+      "diff_size": 55088,
+      "diff_lines": 1503
+    }
+  ]
+}

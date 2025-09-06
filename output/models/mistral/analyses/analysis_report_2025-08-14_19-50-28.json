@@ -1,0 +1,32 @@
+{
+  "generation_timestamp": "2025-08-14T19:50:28.912457",
+  "source_file": "csv/hashes_no_rpt_purity_with_analysis.csv",
+  "output_csv": "csv/dual_classification_comparison_2025-08-14_19-50-28.csv",
+  "statistics": {
+    "total_comparisons": 25,
+    "agreements": "8",
+    "disagreements": "17",
+    "agreement_rate": 32.0,
+    "confusion_matrix": {
+      "FLOSS": {
+        "FLOSS": 7,
+        "PURE": 6,
+        "UNKNOWN": 8,
+        "All": 21
+      },
+      "PURE": {
+        "FLOSS": 2,
+        "PURE": 1,
+        "UNKNOWN": 1,
+        "All": 4
+      },
+      "All": {
+        "FLOSS": 9,
+        "PURE": 7,
+        "UNKNOWN": 9,
+        "All": 25
+      }
+    }
+  },
+  "description": "An\u00e1lise comparativa entre classifica\u00e7\u00f5es Purity e LLM para commits com ambas classifica\u00e7\u00f5es"
+}

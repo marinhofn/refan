@@ -1,0 +1,17 @@
+RELATÓRIO DA ANÁLISE COMPLETA
+==================================================
+
+Data/Hora Início: 2025-08-15 07:30:43.676268
+Data/Hora Fim: 2025-08-16 10:34:00.405558
+Duração Total: 1 day, 3:03:16.729290
+
+ESTATÍSTICAS FINAIS:
+Total de lotes: 337
+Total processado: 1,423,825 commits
+Total de sucessos: 1,315,804
+Total de falhas: 108,021
+Taxa de sucesso: 92.4%
+
+ARQUIVOS GERADOS:
+Resultado CSV: analises_completas/analise_completa_2025-08-15_07-30-41.csv
+Backup original: csv/hashes_no_rpt_purity_with_analysis.csv.backup_complete_2025-08-15_07-30-41

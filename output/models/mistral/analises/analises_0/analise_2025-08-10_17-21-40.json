@@ -1,0 +1,26 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "d3b996cbbb3a726dcadb851ee753648d9c77337a",
+        "commit_hash_current": "b8b2d434de426995aa4dd9d563dba3f314d2b05d",
+        "refactoring_type": "pure",
+        "justification": "The code changes are purely structural, with no evidence of functional or behavioral modifications. The changes include renaming 'category' to 'logger', which does not affect the functionality, and adding a new test case for handling CDATA sections in log messages. This can be considered as a refactoring aimed at improving readability and maintaining code organization, without impacting the overall system functionality.",
+        "commit_message": "The commit of 1.2branch with the trunk. Things seem to have went\nrelatively well. Conflicts were quickly resolved. The resulting code\nbuilds and passes all existing tests.\n\nPR:\nObtained from:\nSubmitted by:\nReviewed by:\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@309641 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "57b5f0f56b11bbcc0e8aa51b32e3a3f5102c43e1",
+        "commit_hash_current": "16fbd1436b274a302aaa979ece735fca52071158",
+        "refactoring_type": "pure",
+        "justification": "The changes in the commit primarily involve adding a new class (SunReflectFilter) and including it in various filters. However, this addition does not seem to alter the existing functionality of the code as it is being added as an optional filter. Existing filters remain unchanged, and there are no evident behavior or output modifications. Therefore, it appears to be a 'pure' refactoring.",
+        "commit_message": "Added SunReflectFilter.java which removes stack trace lines containing the pattern\n\n/at sun.reflect/\n\nThis filter has been added to many of our existing test cases in order to\ncompensate the differences between JDK 1.3 and JDK 1.4 allowing them to run\non both platforms indiscriminately.\n\nTest failures that have been occuring since gump moved to JDK 1.4 should not disappear.\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@309669 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/apache/maven-plugins",
+        "commit_hash_before": "96127d30009e95ca1ad1969f88ec3021f45c314d",
+        "commit_hash_current": "18bfeea8fa7d7d272ff44ebf3cb94ad8094a5f8e",
+        "refactoring_type": "pure",
+        "justification": "The commit does not introduce any functional changes or bug fixes, but instead updates the version numbers of several dependencies and modifies some parameters within MavenProject-related classes. These changes focus only on improving code structure and maintainability without affecting behavior or functionality. This qualifies the commit as 'pure' refactoring.",
+        "commit_message": "o check if plugin version is defined\no refactor the report execution, it use only the MavenReportConfiguration\no obtain reports list via reportManager.getReports\n\ngit-svn-id: https://svn.apache.org/repos/asf/maven/components/trunk/maven-plugins/maven-site-plugin@165232 13f79535-47bb-0310-9956-ffa450edef68"
+    }
+]

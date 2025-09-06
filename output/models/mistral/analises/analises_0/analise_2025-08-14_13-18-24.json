@@ -1,0 +1,90 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "70b884ecb34e74d65eaf654a9bd489f6e9a68fe8",
+        "commit_hash_current": "0663eb2a1301f7622f017496c5983789b1cbae38",
+        "refactoring_type": "pure",
+        "justification": "The commit only consists of renaming a class and a test case without any changes in their behavior or functionality. This refactoring does not affect the code's output or logic.",
+        "commit_message": "- Internal logging is now on even after a LogManager.resetConfiguration.\n(Temporary code. All this will be radically changed when Domains enter \nthe scene.)\n\n- PropertySetter.setProperties method no longer activates the options \nof OptionHandlers. This results in slighly less confusing code. \nChanged ProppertyConfigurator to take thismodification  into account.\n\n- Renamed test cases from XTestCase to XTest where X varies.\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@310055 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+        "repository": "https://github.com/kohsuke/hudson",
+        "commit_hash_before": "b0c8e2bea2ff018f62bb91ce4a21238eb79ef447",
+        "commit_hash_current": "70c10658148c3eab3b4c4122705e1ed3a12e193d",
+        "refactoring_type": "pure",
+        "justification": "The commit does not contain any changes to behavior or functionality. The code is mainly focused on renaming, moving methods and adding comments. There are no new features added, bug fixes, or changes in method signatures that could affect behavior.",
+        "commit_message": "Stage 1 : Create hudson.model.Jenkins, make Hudson derive from Jenkins.\n\nSigned-off-by: Nigel Magnay <nigel.magnay@gmail.com>"
+    },
+    {
+        "repository": "https://github.com/kohsuke/hudson",
+        "commit_hash_before": "b0c8e2bea2ff018f62bb91ce4a21238eb79ef447",
+        "commit_hash_current": "70c10658148c3eab3b4c4122705e1ed3a12e193d",
+        "refactoring_type": "pure",
+        "justification": "The commit mainly consists of adding new methods and variables without changing the functionality or behavior of the existing code. There are no changes to existing methods, no bug fixes, and no alterations in the outputs. Instead, there is an addition of new features (isWindows(), isDarwin()) while restructuring the code, which indicates 'pure' refactoring.",
+        "commit_message": "Stage 1 : Create hudson.model.Jenkins, make Hudson derive from Jenkins.\n\nSigned-off-by: Nigel Magnay <nigel.magnay@gmail.com>"
+    },
+    {
+        "repository": "https://github.com/Netflix/ribbon",
+        "commit_hash_before": "2ba22b809df9413dbb08fe19ae922f58a912480d",
+        "commit_hash_current": "bb38ed1875d2c0d2cdadc554a2561c6222e4c4a6",
+        "refactoring_type": "pure",
+        "justification": "The commit introduces changes only to the import statements and class hierarchy, while maintaining the same functionality. The code does not exhibit any behavior or functionality modifications, nor is there evidence of bug fixes alongside refactoring. These changes are purely organizational in nature.",
+        "commit_message": "Refactor and consolidation. Use HttpReuqest and HttpResponse for RestClient. Fix PMD, find bugs."
+    },
+    {
+        "repository": "https://github.com/Netflix/ribbon",
+        "commit_hash_before": "3401c7be36ceae942b9b4297628094232add0750",
+        "commit_hash_current": "b6d07b56134bc833678a31165661d3c496e3cf60",
+        "refactoring_type": "pure",
+        "justification": "The changes made in this commit seem to be primarily focused on updating the request structure, using HttpRequest<ByteBuf> instead of HttpRequest. This is a structural change without altering functionality, as it appears the code still behaves identically when making requests. Additionally, there are no bug fixes or new features added that would indicate floss refactoring.",
+        "commit_message": "Changes to use RxNetty\u2019s new HttpRequest, HttpResponse."
+    },
+    {
+        "repository": "https://github.com/Netflix/ribbon",
+        "commit_hash_before": "5f53976b0282954cf038972b3a22b2b44e0a75ed",
+        "commit_hash_current": "cc75132319e59363204055e9c0eb23b6a3f8e6ac",
+        "refactoring_type": "pure",
+        "justification": "The commit does not appear to change any behavior or functionality. It modifies the creation of HttpClient objects, but the changes are purely structural (using NettyHttpClient instead of HttpClient). The new classes and methods introduced do not seem to affect existing functionality.",
+        "commit_message": "Change rxnetty version to 0.3.6. Implementation of ResourceGroup. Change to ConfigurationBasedServerList to make the server list part of client configuration."
+    },
+    {
+        "repository": "https://github.com/javers/javers",
+        "commit_hash_before": "cfb4f202b625c71b7a9ca3b9e19a0855ae6fcb1b",
+        "commit_hash_current": "7b1d91dfd69e06cbee3eda88fddad4b16f23d8f0",
+        "refactoring_type": "pure",
+        "justification": "The code changes appear to be purely organizational in nature. The MongoRepository class has been modified to use a different collection name, but the functionality remains the same. There are no indication of new features being added, bugs being fixed or any alterations that could affect behavior or functionality. As such, this refactoring can be classified as 'pure'.",
+        "commit_message": "added support for querying by ValueObjectID in MongoRepository, added index on snapshots.global_id"
+    },
+    {
+        "repository": "https://github.com/javers/javers",
+        "commit_hash_before": "714feabac2242d9a1b5d9c795a64ecc16011ea5b",
+        "commit_hash_current": "3922a00267ade30b58e472e5526318dfafbf0bd4",
+        "refactoring_type": "pure",
+        "justification": "The commit changes the dialect from H2 to PostgreSQL, but it doesn't seem to affect the behavior or functionality of the code. It appears to be a change in configuration rather than altering existing functionality.",
+        "commit_message": "https://github.com/javers/javers/issues/103\nfrom-JSON workaround removed"
+    },
+    {
+        "repository": "https://github.com/javers/javers",
+        "commit_hash_before": "5729426b7465f3fc4555420b919775fdca42023d",
+        "commit_hash_current": "dbc5719f090d22e8c0ae2a98c0a03bac16b49e04",
+        "refactoring_type": "pure",
+        "justification": "The commit involves changes in the test cases, adding new tests and renaming some variables and classes, but there is no evidence of changes to functionality or behavior. The purpose seems to be for better organization, readability, and clarity.",
+        "commit_message": "missing properties are treated as nulls"
+    },
+    {
+        "repository": "https://github.com/javers/javers",
+        "commit_hash_before": "862d2cf47faec4849ee46191c74ffeb2f4a4b95f",
+        "commit_hash_current": "7b3f91c30f5f11be82f2dc8a53c4b54955b9e814",
+        "refactoring_type": "pure",
+        "justification": "The commit includes renaming of classes and imports, as well as minor refactorings in various methods. However, none of these changes seem to alter the functionality or behavior of the code. Instead, it appears to be a maintenance update for improved organization and readability.",
+        "commit_message": "work in progress"
+    },
+    {
+        "repository": "https://github.com/javers/javers",
+        "commit_hash_before": "45c80ac79e62f538d8140a023bf6c2eb0d469f11",
+        "commit_hash_current": "3181474113fc5bcff251e6217ca07ccb756f2172",
+        "refactoring_type": "pure",
+        "justification": "In this commit, there are no functional changes or bug fixes. The code refactoring involves changing the way the ALTER TABLE statements are executed by removing the dialect-specific conditional checks and replacing them with a more generic method called `addStringColumn`. Additionally, the SQL update statements for `populateSnapshotManagedType` and `populateGlobalIdTypeName` methods have been restructured. However, these changes do not alter the functionality of the code; they only improve its structure and maintainability. Therefore, this commit is classified as 'pure' refactoring.",
+        "commit_message": "JaversSchemaManager.addStringColumn()"
+    }
+]

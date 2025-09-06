@@ -1,0 +1,68 @@
+{
+  "session_info": {
+    "start_time": "2025-08-14T19:41:56.932125",
+    "end_time": "2025-08-14T19:42:56.264238",
+    "total_processed": 5,
+    "successful_analyses": 5,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 3,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "014a1c7899502ec6a515acde4d285505b0c70788",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "ribbon",
+      "analysis_timestamp": "2025-08-14T19:42:11.624809",
+      "diff_size": 55712,
+      "diff_lines": 1282
+    },
+    {
+      "hash": "01a11fd2626d57bf0c8d0bce1e43060017592896",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling alterations. Specifically, there are changes to the 'CassandraDaemon' class, such as the addition of a new method 'isRunning()', modification of the 'run()' method, and changes to exception handling within the 'main()' method.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:42:22.678633",
+      "diff_size": 3638740,
+      "diff_lines": 81863
+    },
+    {
+      "hash": "01cb9121acf296c6205a88106c2f3495602d4e6e",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces several functional changes, such as the addition of new classes (PeerManager and Peer), modification of method parameters, and alteration of return types. These changes affect the behavior of the code.",
+      "llm_confidence": "high",
+      "project_name": "TomP2P",
+      "analysis_timestamp": "2025-08-14T19:42:32.457741",
+      "diff_size": 135580,
+      "diff_lines": 3201
+    },
+    {
+      "hash": "020bde0d66344623150ef57562523f514d011f70",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, new conditional statements, and exception handling alterations. Specifically, the 'HSSFPatriarch' class has a method 'createContainerShape' that now takes an additional parameter, and there are changes to the 'HSLFShape' class related to exception handling.",
+      "llm_confidence": "high",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-14T19:42:43.526381",
+      "diff_size": 228396,
+      "diff_lines": 5804
+    },
+    {
+      "hash": "02243165f1d9bb47c428921d99bcf16e8a944cfe",
+      "purity_classification": "TRUE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "play-authenticate",
+      "analysis_timestamp": "2025-08-14T19:42:55.218166",
+      "diff_size": 78218,
+      "diff_lines": 1885
+    }
+  ]
+}

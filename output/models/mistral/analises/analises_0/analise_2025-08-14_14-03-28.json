@@ -1,0 +1,30 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "397e5f50c3313f8c757495beb771d6ed9db92838",
+        "commit_hash_current": "4c77e0a0b8489c67c96c5973363b0432e9414494",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces a new functionality to limit packet size in SyslogAppender to 1024 bytes. This is evident from the addition of the 'splitPacket' method and the test case for testing big packets (testBigPackets()).",
+        "technical_evidence": "Addition of splitPacket method in SyslogWriter.java, testBigPackets() method in SyslogAppenderTest.java, and the corresponding bug fix reference (42087) in download.xml.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "Bug 42087: SyslogAppender packets not limited to 1024 bytes\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@530990 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 6916,
+        "diff_lines": 179,
+        "processing_method": "direct"
+    },
+    {
+        "repository": "https://github.com/apache/maven-plugins",
+        "commit_hash_before": "d1132ebf10914bc666db42499d6beb858d0cf282",
+        "commit_hash_current": "05e14fc6b81918a5e581940f119246c828d50a65",
+        "refactoring_type": "pure",
+        "justification": "All changes are purely structural. The version numbers have been updated in the pom.xml file, but there is no behavioral modification as a result. Additionally, a new import statement has been added for StringOutputStream, which does not affect functionality.",
+        "technical_evidence": "Version number updates in pom.xml do not change behavior; addition of StringOutputStream import does not alter logic flow or introduce new conditional statements.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "PR: MNG-1111\nSubmitted by: Edwin Punzalan\nReviewed by:  Brett Porter\nhonour use file directive (output to a string which is logged).\nmodifed: original patch used system.out\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/maven/components/trunk/maven-plugins/maven-checkstyle-plugin@307349 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 4988,
+        "diff_lines": 143,
+        "processing_method": "direct"
+    }
+]

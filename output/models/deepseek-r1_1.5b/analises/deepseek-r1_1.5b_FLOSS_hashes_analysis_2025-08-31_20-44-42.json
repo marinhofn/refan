@@ -1,0 +1,75 @@
+{
+  "session_info": {
+    "model_used": "deepseek-r1:1.5b",
+    "analysis_type": "FLOSS_hashes",
+    "description": "Análise de hashes com classificação Purity=FALSE (FLOSS)",
+    "csv_file_analyzed": "csv/floss_hashes_no_rpt_purity_with_analysis.csv",
+    "start_time": "2025-08-31T20:44:16.024009",
+    "end_time": "2025-08-31T20:45:19.175998",
+    "total_processed": 3,
+    "successful_analyses": 3,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 0,
+    "processing_errors": 0
+  },
+  "detailed_analyses": [
+    {
+      "hash": "0011daa934f9397a0dd77ef368b86d2adbe8b239",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "This diff contains changes to several Java projects related to a HTTP client library. The changes include adding new dependencies, modifying existing classes, and creating new ones.\n\nBehavioral modifications are present in the following files:\n1. InstrumentedClientConnManager.java - A connection manager that monitors the number of open connections has been modified to also monitor the rate at which connections are created.\n2. InstrumentedHttpClient.java - The default HTTP client class has been extended to use the instrumented connection manager and add new constructors for passing a metrics registry.\n3. InstrumentedRequestDirector.java - The request director class that handles HTTP requests has been modified to create timers for different types of HTTP requests (GET, POST, HEAD, PUT, DELETE, OPTIONS, TRACE, CONNECT, MOVE, and PATCH) using a metrics registry.\n\nStructural modifications are present in the following files:\n1. InstrumentedConnByRoute.java - A route-specific connection pool class has been deleted.\n2. InstrumentedHttpClient.java - The import statements have been updated to include the new MetricsRegistry class.\n3. InstrumentedRequestDirector.java - The import statements have been updated to include the new TimerContext and UserTokenHandler classes, and the static timers have been replaced with timers created using a metrics registry.\n\nThe technical indicators for this diff are:\n- Behavioral changes: High (new functionality has been added to monitor the rate of connection creation and HTTP request timing)\n- Structural changes: Medium (import statements have been updated, and some classes have been modified or deleted)\n\nFINAL: PURE (the changes are not open source software but proprietary modifications to existing libraries)\n\nJSON:\n{\n  \"diff_source\": \"direct\",\n  \"analysis\": {\n    \"behavioral_changes\": \"High\",\n    \"structural_changes\": \"Medium\"\n  },\n  \"classification\": \"FINAL: PURE\"\n}",
+      "llm_confidence": "unknown",
+      "project_name": "metrics",
+      "analysis_timestamp": "2025-08-31T20:44:42.949715",
+      "diff_size": 67322,
+      "diff_lines": 1677,
+      "llm_raw_response": "This diff contains changes to several Java projects related to a HTTP client library. The changes include adding new dependencies, modifying existing classes, and creating new ones.\n\nBehavioral modifications are present in the following files:\n1. InstrumentedClientConnManager.java - A connection manager that monitors the number of open connections has been modified to also monitor the rate at which connections are created.\n2. InstrumentedHttpClient.java - The default HTTP client class has been extended to use the instrumented connection manager and add new constructors for passing a metrics registry.\n3. InstrumentedRequestDirector.java - The request director class that handles HTTP requests has been modified to create timers for different types of HTTP requests (GET, POST, HEAD, PUT, DELETE, OPTIONS, TRACE, CONNECT, MOVE, and PATCH) using a metrics registry.\n\nStructural modifications are present in the following files:\n1. InstrumentedConnByRoute.java - A route-specific connection pool class has been deleted.\n2. InstrumentedHttpClient.java - The import statements have been updated to include the new MetricsRegistry class.\n3. InstrumentedRequestDirector.java - The import statements have been updated to include the new TimerContext and UserTokenHandler classes, and the static timers have been replaced with timers created using a metrics registry.\n\nThe technical indicators for this diff are:\n- Behavioral changes: High (new functionality has been added to monitor the rate of connection creation and HTTP request timing)\n- Structural changes: Medium (import statements have been updated, and some classes have been modified or deleted)\n\nFINAL: PURE (the changes are not open source software but proprietary modifications to existing libraries)\n\nJSON:\n{\n  \"diff_source\": \"direct\",\n  \"analysis\": {\n    \"behavioral_changes\": \"High\",\n    \"structural_changes\": \"Medium\"\n  },\n  \"classification\": \"FINAL: PURE\"\n}",
+      "repository": "https://github.com/dropwizard/metrics",
+      "commit_hash_before": "09890c1da9abd8638120af9ffb34846b1e7f5c5a",
+      "commit_hash_current": "0011daa934f9397a0dd77ef368b86d2adbe8b239"
+    },
+    {
+      "hash": "00159507fdead0eff8e7c2b62e17d8257b4313a6",
+      "purity_classification": "NONE",
+      "llm_classification": "PURE",
+      "llm_justification": "Brief Analysis: The changes shown in the diff are primarily structural modifications to various Groovy files within the Grails project. There are no apparent behavioral changes that would indicate a functional modification to the application.\n\nFinal Classification: FINAL: PURE\n\nJSON Response:\n```json\n{\n  \"classification\": \"PURE\",\n  \"diff_source\": \"direct\"\n}\n```",
+      "llm_confidence": "unknown",
+      "project_name": "grails-core",
+      "analysis_timestamp": "2025-08-31T20:44:55.416585",
+      "diff_size": 14901,
+      "diff_lines": 286,
+      "llm_raw_response": "Brief Analysis: The changes shown in the diff are primarily structural modifications to various Groovy files within the Grails project. There are no apparent behavioral changes that would indicate a functional modification to the application.\n\nFinal Classification: FINAL: PURE\n\nJSON Response:\n```json\n{\n  \"classification\": \"PURE\",\n  \"diff_source\": \"direct\"\n}\n```",
+      "repository": "https://github.com/grails/grails-core",
+      "commit_hash_before": "e49f71ea25416ffa4462bd7030747d528514e2b4",
+      "commit_hash_current": "00159507fdead0eff8e7c2b62e17d8257b4313a6"
+    },
+    {
+      "hash": "0026e4eeec23367c74c44b23a9586562b939f6f8",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-31T20:45:18.158762",
+      "diff_size": 964041,
+      "diff_lines": 22039,
+      "llm_raw_response": "This diff contains a mix of behavioral and structural modifications to the Apache Cassandra source code. The changes include:\n\n1. Behavioral Modifications:\n   - Increasing the default timeout for a Cassandra cursor in the pylib/cqlshlib/test/cassconnect.py file, which might affect the performance of certain tests due to increased waiting time.\n   - Changing the default value of `streaming_socket_timeout_in_ms` (24 hours) to a shorter duration in the src/java/org/apache/cassandra/config/Config.java file, which could potentially impact network communication between nodes. However, it's also possible that this change is intended for testing purposes.\n   - Deprecating `streaming_socket_timeout_in_ms` and introducing a new property `streaming_keep_alive_period_in_secs` in the same file, which suggests a shift towards using the new property instead of the deprecated one.\n\n2. Structural Modifications:\n   - Adding a new method `getStreamingKeepAlivePeriod()` to the src/java/org/apache/cassandra/config/DatabaseDescriptor.java file, which indicates the introduction of a new feature or change in the API.\n   - Adding a new import statement and a new variable declaration in the same file, which suggests code refactoring or additional dependencies.\n\nBased on these changes, it appears that there are both behavioral and structural modifications in this diff. However, without more context about the purpose of these changes, it's difficult to definitively classify them as either a pure modification or an open-source software (FLOSS) contribution.\n\nFINAL: Uncertain (behavioral and structural modifications are present)\nJSON:\n{\n  \"diff_source\": \"direct\",\n  \"classification\": \"Uncertain\"\n}",
+      "repository": "cassandra",
+      "commit_hash_before": "29239c765c22a7c1cb3a64476ebf0dfa9e2f9da0",
+      "commit_hash_current": "0026e4eeec23367c74c44b23a9586562b939f6f8",
+      "technical_evidence": "public SSTableLoader(directory File, client Client, outputHandler OutputHandler, keyspace String, connectionsPerHost int) inlined to public SSTableLoader(directory File, client Client, outputHandler OutputHandler, connectionsPerHost int) in class org.apache.cassandra.io.sstable.SSTableLoader; public withCfs(cfs ColumnFamilyStore) : Builder from class org.apache.cassandra.io.sstable.CQLSSTableWriter.Builder to public withCfs(cfs ColumnFamilyStore) : Builder from class org.apache.cassandra.io.sstable.StressCQLSSTableWriter.Builder; public rangeAware(makeRangeAware boolean) : Builder from class org.apache.cassandra.io.sstable.CQLSSTableWriter.Builder to public rangeAware(makeRangeAware boolean) : Builder from class org.apache.cassandra.io.sstable.StressCQLSSTableWriter.Builder",
+      "diff_source": "direct"
+    }
+  ],
+  "summary": {
+    "total_commits": 3,
+    "classifications": {
+      "PURE": 2,
+      "FLOSS": 1
+    },
+    "convergence_analysis": {
+      "agree": 0,
+      "disagree": 3
+    }
+  }
+}

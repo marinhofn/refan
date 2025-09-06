@@ -1,0 +1,10 @@
+[
+    {
+        "repository": "https://github.com/geoserver/geoserver",
+        "commit_hash_before": "23ece8c39896c311c7cb93efe84c982599e0c007",
+        "commit_hash_current": "c25c5992803eea7447c308dc01c4f7b0480f2eb7",
+        "refactoring_type": "pure",
+        "justification": "The commit introduces new files for testing and adds a template loader class to the HTMLFeatureInfoOutputFormat class. However, it doesn't seem to alter any existing functionality or behavior. Instead, it appears to be a refactoring aimed at improving test coverage and code structure.",
+        "commit_message": "[GEOS-5840] Changing the default style of a layer won't cause truncation of the tile caches for layer groups containing the layer, and, [GEOS-4760] Make GWC tile layers use the GeoServer layer's http caching settings"
+    }
+]

@@ -1,0 +1,211 @@
+[
+    {
+        "classification": "behavior",
+        "reasoning": "The changes made in this diff are primarily focused on modifying behavior rather than structure. The code includes additions, deletions, and modifications of existing functions to improve functionality, such as adding a new method `delete(File f)` for deleting files, and changing the behavior of some test cases. Additionally, there are changes related to error handling and exception management, which further indicate behavioral changes.",
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "diff_source": "unknown",
+        "commit_message": "Bug 41476 - Address issues found by \"findbugs\" static analysis tool\nThese include incorrect locking, forgetting to close streams, unused variables, etc.\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@500382 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 65158,
+        "diff_lines": 1779,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "repository": "https://github.com/apache/maven-plugins",
+        "commit_hash_before": "bf0d901eb0008d200167d79c9963e89123e42318",
+        "commit_hash_current": "013a98179a7e0a466c7f44f4c0e22ea3e9806d04",
+        "refactoring_type": "pure",
+        "justification": "The diff shows the addition of a new private method 'getSiteDescriptor()' and changes to the existing code for handling site descriptor. However, these modifications do not seem to affect the behavior or functionality of the original DoxiaMojo class. The new method is used internally and does not appear to alter the output or execution path.",
+        "technical_evidence": "The addition of a new private method 'getSiteDescriptor()' without any changes to existing methods that handle site generation, and no modifications to conditional logic or return values.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "Report generate directly xhtml file\n\ngit-svn-id: https://svn.apache.org/repos/asf/maven/components/trunk/maven-plugins/maven-site-plugin@169076 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 4008,
+        "diff_lines": 112,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "repository": "zkoss/zk",
+        "commit_hash_before": "dc4c3e6d8bf9d9b3cdc3e153e5f4f03e4755878b",
+        "commit_hash_current": "01a0657ecfc2509cbe61491d63c2381c5863592b",
+        "refactoring_type": "floss",
+        "justification": "The diff contains several functional changes, including method signature modifications, new conditional logic, and exception handling changes. Specifically, there are additions of if statements, try-catch blocks, and modified return types.",
+        "technical_evidence": "For example, in the 'org/zkoss/zul/impl/XULException.java' file, method 'getLocalizedMessage' has a new parameter and a modified return type. In the 'org/zkoss/zul/impl/XULException.java' file, there is a new try-catch block around the call to 'getLocalizedMessage'.",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Introduced ChildInfo to minimize the footprint of AbstractComponent (save about 4 members if no child)\n\ngit-svn-id: https://svn.potix.com/svn/zk1/branches/5.0@14820 dd50bd9b-9913-0410-b9ba-e07a3075be86",
+        "diff_size_chars": 140183,
+        "diff_lines": 4080,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "diff_source": "direct",
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "Treerow supports setLabel/setImage\n\ngit-svn-id: https://svn.potix.com/svn/zk1/branches/5.0@17533 dd50bd9b-9913-0410-b9ba-e07a3075be86",
+        "diff_size_chars": 79777,
+        "diff_lines": 2371,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "behavioral": [
+            {
+                "description": "Added a new private class ChildInfo within UiEngineImpl to manage child components' state",
+                "technical_indicator": "new class, private scope"
+            },
+            {
+                "description": "Modified the isReqDup0 method in UiEngineImpl to check for duplicate requests based on the responseId instead of a custom request ID",
+                "technical_indicator": "method modification, changed logic"
+            }
+        ],
+        "structural": [
+            {
+                "description": "Added a new property 'modCntChd' to ChildInfo class in UiEngineImpl",
+                "technical_indicator": "new property added"
+            },
+            {
+                "description": "Removed the isReqDup0 method from UiEngineImpl and moved it into the doActivate method",
+                "technical_indicator": "method removal, logic relocation"
+            }
+        ],
+        "diff_source": "direct",
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "Introduced ChildInfo to minimize the footprint of AbstractComponent (save about 4 members if no child)\n\ngit-svn-id: https://svn.potix.com/svn/zk1/branches/5.0@14820 dd50bd9b-9913-0410-b9ba-e07a3075be86",
+        "diff_size_chars": 30850,
+        "diff_lines": 853,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "diff_source": "direct",
+        "behavioral_changes": [
+            {
+                "file": "src/java/org/apache/cassandra/db/RowTest.java",
+                "change": "Addition of a new test method 'testDataCorruptionDetection' to check for data corruption detection in compressed files."
+            },
+            {
+                "file": "src/java/org/apache/cassandra/io/util/BufferedRandomAccessFileTest.java",
+                "change": "Addition of new methods 'expectEOF' and 'expectException' for testing purposes, replacing the existing ones with the same names."
+            }
+        ],
+        "structural_changes": [
+            {
+                "file": "src/java/org/apache/cassandra/io/compress/CompressedRandomAccessReaderTest.java",
+                "change": "Addition of a new method 'updateChecksum' for updating the checksum of a compressed file."
+            },
+            {
+                "file": "src/java/org/apache/cassandra/db/ColumnFamilyStoreTest.java",
+                "change": "Change in the creation of ColumnFamily object from using CFMetaData to using ColumnFamily.create method."
+            }
+        ],
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "Make ColumnFamily backing column map pluggable and introduce unsynchronized ArrayList backed map for reads\npatch by slebresne; reviewed by jbellis for CASSANDRA-2843\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/cassandra/trunk@1155426 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 87346,
+        "diff_lines": 2212,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "repository": "apache/cassandra",
+        "commit_hash_before": "774bd0bceeee56abd97a122c563852210cf54bbc",
+        "commit_hash_current": "01a11fd2626d57bf0c8d0bce1e43060017592896",
+        "refactoring_type": "floss",
+        "justification": "The diff contains several functional changes, including method signature modifications, addition of new classes, and alterations to exception handling. Specifically, there are changes in the 'ColumnFamilyStore' class that introduce new methods and modify existing ones, as well as additions to the 'CassandraDaemon' class. Furthermore, there are exceptions added for potential errors in the 'MessagingService' class.",
+        "technical_evidence": "Changes to method signatures in ColumnFamilyStore (e.g., additions of new methods like 'getColumnCount', modifications of existing ones like 'getColumnIdentifier'), creation of new classes such as 'CassandraDaemon$JMXExporter', and exception handling changes in MessagingService (e.g., adding a try-catch block for potential errors).",
+        "confidence_level": "high",
+        "diff_source": "file",
+        "commit_message": "Fixes race during construction of commit log:\n- Moves thread start outside of constructor for all commit log classes.\n- Removes all references to CommitLog.instance from commitlog package.\n\npatch by Branimir Lambov; reviewed by tjake for CASSANDRA-10049",
+        "diff_size_chars": 3638740,
+        "diff_lines": 81863,
+        "processing_method": "file",
+        "success": true
+    },
+    {
+        "repository": "https://github.com/MovingBlocks/Terasology",
+        "commit_hash_before": "1c6a98f2f841bada927f8234e34c00c805e12741",
+        "commit_hash_current": "0148d1031a6779d2a9e8980f80d2e7a0c4d9900a",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces a new conditional statement in the ChunkGeneratorFlora.java file, which modifies the behavior of the if statement by adding an additional condition (c.getBlock(x, y + 1, z) == 0x0). This change affects the functionality of the code. Additionally, a new file, Camera.java, is added and FirstPersonCamera.java is created, indicating structural changes along with functional modifications.",
+        "technical_evidence": "New conditional statement in ChunkGeneratorFlora.java: -106,7 +106,7 @@ else if (c.getBlock(randX, y, randZ) == 0x1 || c.getBlock(randX, y, randZ) == 0x\n\n     void generateGrassAndFlowers(Chunk c, int x, int y, int z) {\n         if (c.getBlock(x, y, z) == 0x1)\n+         if (c.getBlock(x, y, z) == 0x1 && c.getBlock(x, y + 1, z) == 0x0) {\n\n             double grassRand = (_rand.randomDouble() + 1.0) / 2.0;",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "- Fixes that grass can override other blocks in the population process\n - Moves camera calculation to separate classes\n - Improves view bobbing",
+        "diff_size_chars": 15860,
+        "diff_lines": 394,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "diff_source": "direct",
+        "behavioral_changes": [
+            "Addition of OnDragListenerVibrator, changes in drag event handling for certain buttons, introduction of toggleButtonDirectionText method"
+        ],
+        "structural_changes": [
+            "Addition of import statements for Android support library classes, changes in layout handling using FragmentTransaction, introduction of getButton method, refactoring of existing methods and variable declarations"
+        ],
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "commit_message": "Fragments",
+        "diff_size_chars": 40524,
+        "diff_lines": 745,
+        "processing_method": "direct",
+        "success": true
+    },
+    {
+        "file": "com/netflix/client/http/AsyncHttpClientBuilder.java",
+        "additions": [
+            {
+                "line": 43,
+                "description": "Added a new constructor for LoadBalancerClientBuilder that takes IClientConfig as an argument"
+            },
+            {
+                "line": 50,
+                "description": "Added a new method execute() in RibbonHttpAsyncClient that accepts HttpRequest and returns Future<HttpResponse>"
+            }
+        ],
+        "repository": "",
+        "commit_hash_before": "",
+        "commit_hash_current": "",
+        "refactoring_type": "floss",
+        "justification": "Analysis failed - insufficient data",
+        "technical_evidence": "Not provided",
+        "confidence_level": "low",
+        "diff_source": "unknown",
+        "commit_message": "Added copyright notices. Added API that does not take callback as a parameter.",
+        "diff_size_chars": 55712,
+        "diff_lines": 1282,
+        "processing_method": "direct",
+        "success": true
+    }
+]

@@ -28,7 +28,7 @@ from src.analyzers.optimized_prompt import (
 )
 from src.core.config import (
     LLM_HOST,
-    LLM_MODEL,
+    get_current_llm_model,  # Use function instead of static import
     DEBUG_SHOW_PROMPT,
     DEBUG_MAX_PROMPT_LENGTH,
     check_llm_model_status,
@@ -149,16 +149,28 @@ def estimate_token_count(text: str) -> int:
         return 0
     return max(1, len(text) // 4)
 
-def dynamic_num_ctx(diff_text: str) -> int:
+def dynamic_num_ctx(diff_text: str, model_name: str = "") -> int:
+    """Calcula contexto dinâmico, sendo mais conservativo para DeepSeek"""
     tokens = estimate_token_count(diff_text)
-    if tokens < 3000:
-        return 4096
-    if tokens < 6000:
-        return 6144
-    if tokens < 9000:
+    is_deepseek = "deepseek" in model_name.lower()
+    
+    if is_deepseek:
+        # DeepSeek: usar contexto menor para evitar acúmulo
+        if tokens < 2000:
+            return 3072
+        elif tokens < 4000:
+            return 4096
+        else:
+            return 4096  # Máximo menor para DeepSeek
+    else:
+        # Outros modelos: comportamento original
+        if tokens < 3000:
+            return 4096
+        if tokens < 6000:
+            return 6144
+        if tokens < 9000:
+            return 8192
         return 8192
-    # Para diffs gigantes limitar para evitar explosão de memória
-    return 8192
 
 def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple[str, dict]:
     """Reduz diff grande limitando linhas por arquivo e tamanho total.
@@ -213,19 +225,29 @@ class OptimizedOllamaAdapter:
     def __init__(self, host: str, model: str):
         self.host = host
         self.model = model
+        # Monitoramento específico para DeepSeek
+        self._last_duration = None
+        self._analysis_count = 0
+        self._performance_degraded = False
 
     def complete(self, prompt: str, attempts: int = 1, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
         base_opts = get_generation_base_options()
+        
+        # Otimizações específicas para DeepSeek
+        is_deepseek = "deepseek" in self.model.lower()
+        default_keep_alive = "30s" if is_deepseek else "5m"
+        default_num_ctx = 4096 if is_deepseek else (num_ctx or 4096)
+        
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            # manter modelo carregado por mais tempo para evitar cold start em modelos grandes
-            "keep_alive": keep_alive if keep_alive is not None else "10m",
+            # DeepSeek: keep_alive reduzido para evitar acúmulo de contexto
+            "keep_alive": keep_alive if keep_alive is not None else default_keep_alive,
             "options": {
-                "num_ctx": num_ctx or 4096,
+                "num_ctx": default_num_ctx,
                 "temperature": 0.1,
-                "num_predict": 200000,  # Permitir respostas mais longas da LLM
+                "num_predict": 50000,  # Permitir respostas mais longas da LLM
                 "think": False,
                 **base_opts,
             },
@@ -236,13 +258,16 @@ class OptimizedOllamaAdapter:
         prompt_size = len(prompt)
         # Ajustar timeout proporcional ao tamanho
         if prompt_size > 80000:
-            timeout = 600
+            timeout = 300
         elif prompt_size > 50000:
-            timeout = 420
+            timeout = 300
         elif prompt_size > 30000:
-            timeout = 300
+            timeout = 200
         else:
-            timeout = 300
+            timeout = 200
+        import time
+        start_time = time.time()
+        
         for i in range(1, attempts + 1):
             try:
                 print(dim(f"Envio tentativa {i}/{attempts} - prompt {prompt_size} chars timeout {timeout}s"))
@@ -251,14 +276,62 @@ class OptimizedOllamaAdapter:
                     last_error = f"HTTP {resp.status_code} - {resp.text[:200]}"
                 else:
                     data = resp.json()
-                    return data.get("response")
+                    response = data.get("response")
+                    
+                    # Monitoramento de performance para DeepSeek
+                    if is_deepseek and response:
+                        end_time = time.time()
+                        duration = end_time - start_time
+                        self._track_deepseek_performance(duration, prompt_size)
+                    
+                    return response
             except requests.exceptions.Timeout:
                 last_error = f"timeout > {timeout}s"
+                # Para DeepSeek, tentar reset em caso de timeout
+                if is_deepseek and i < attempts:
+                    print(warning("DeepSeek timeout - tentando reset do modelo"))
+                    self._reset_deepseek_context()
             except Exception as e:
                 last_error = str(e)
             print(warning(f"Tentativa {i}/{attempts} falhou: {last_error}"))
         print(error(f"Falha após {attempts} tentativas: {last_error}"))
         return None
+
+    def _track_deepseek_performance(self, duration: float, prompt_size: int):
+        """Monitora performance do DeepSeek e detecta degradação"""
+        self._analysis_count += 1
+        
+        if self._last_duration is not None:
+            # Detectar degradação significativa (3x mais lento)
+            if duration > self._last_duration * 3:
+                print(warning(f"DeepSeek: Performance degradada detectada: {duration:.1f}s vs {self._last_duration:.1f}s"))
+                self._performance_degraded = True
+                self._reset_deepseek_context()
+        
+        # Reset periódico a cada 8 análises para DeepSeek
+        if self._analysis_count % 8 == 0:
+            print(dim(f"DeepSeek: Reset automático após {self._analysis_count} análises"))
+            self._reset_deepseek_context()
+        
+        self._last_duration = duration
+        print(dim(f"DeepSeek: Análise #{self._analysis_count} - {duration:.1f}s (prompt: {prompt_size} chars)"))
+    
+    def _reset_deepseek_context(self):
+        """Força reset do contexto do DeepSeek"""
+        try:
+            reset_payload = {
+                "model": self.model,
+                "keep_alive": "0"  # Força descarga do modelo
+            }
+            # Usar endpoint genérico do Ollama para reset
+            resp = requests.post(self.host, json=reset_payload, timeout=10)
+            if resp.status_code == 200:
+                print(success("DeepSeek: Contexto resetado com sucesso"))
+                self._performance_degraded = False
+            else:
+                print(warning(f"DeepSeek: Falha no reset - status {resp.status_code}"))
+        except Exception as e:
+            print(error(f"DeepSeek: Erro no reset do contexto: {e}"))
 
 
 # -----------------------------
@@ -267,7 +340,7 @@ class OptimizedOllamaAdapter:
 
 class OptimizedLLMHandler:
     def __init__(self, model: Optional[str] = None, host: Optional[str] = None, llm_type: str = "ollama", csv_dir: str = "csv"):
-        self.model = model or LLM_MODEL
+        self.model = model or get_current_llm_model()
         self.host = host or LLM_HOST
         self.llm_prompt = OPTIMIZED_LLM_PROMPT
         self.config = OPTIMIZED_CONFIG
@@ -375,7 +448,7 @@ class OptimizedLLMHandler:
         
         try:
             # Enviar para o LLM com parâmetros dinâmicos
-            ctx = dynamic_num_ctx(diff)
+            ctx = dynamic_num_ctx(diff, self.model)
             llm_response = self.adapter.complete(prompt, num_ctx=ctx)
             if not llm_response:
                 print(error("Falha ao obter resposta do LLM."))

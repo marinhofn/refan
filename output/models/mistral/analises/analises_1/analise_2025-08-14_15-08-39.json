@@ -1,0 +1,17 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "c82cc4ba16a78bdb6f05b17fbadc24d0677efdb9",
+        "commit_hash_current": "871f9af19d28df58ddde023108dcc21ddfc7c509",
+        "refactoring_type": "floss",
+        "justification": "The commit introduces new functionality by fixing bugs 36800 and 37122, which alter the behavior of the ConsoleAppender class. Specifically, it adds location-related info for TRACE level log messages (bug 36800) and changes compatibility with JBoss due to a fix for bug 31056 (bug 37122).",
+        "technical_evidence": "New lines added in the HISTORY.txt file detailing the fixed bugs, changes to the ConsoleAppender.java class such as the addition of a new property 'follow', modification of the setFollow() and getFollow() methods, and alterations to the activateOptions() method.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "Bug 37122: honorReassignment changed to follow\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@332396 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 3020,
+        "diff_lines": 89,
+        "processing_method": "direct",
+        "success": true
+    }
+]

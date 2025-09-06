@@ -1,0 +1,123 @@
+{
+  "session_info": {
+    "start_time": "2025-08-14T19:01:32.336582",
+    "end_time": "2025-08-14T19:03:34.497817",
+    "total_processed": 10,
+    "successful_analyses": 10,
+    "failed_analyses": 0,
+    "skipped_already_analyzed": 5,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+      "purity_classification": "TRUE",
+      "llm_classification": "PURE",
+      "llm_justification": "The diff shows changes in the implementation of two classes: BloomFilter and OpenBitSet. However, these changes are purely structural, with no behavioral modifications detected. The method signatures remain identical, there is no addition or removal of parameters, and no new conditional logic or exception handling has been introduced. Instead, there are minor changes to variable names and the use of different methods for accessing elements in OpenBitSet.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:01:55.687406",
+      "diff_size": 15028,
+      "diff_lines": 417
+    },
+    {
+      "hash": "0051a7f17bd2027575c13dac3ace653ecb2513eb",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "The diff shows a large number of changes, primarily in formatting and style improvements. There are no behavioral modifications, new conditional logic, modified method parameters, or exception handling changes detected. The code maintains the same inputs producing the same outputs, and there is an identical logic flow throughout.",
+      "llm_confidence": "high",
+      "project_name": "poi",
+      "analysis_timestamp": "2025-08-14T19:02:04.840348",
+      "diff_size": 264077,
+      "diff_lines": 7072
+    },
+    {
+      "hash": "0063c1adcf32a04611f9bdfb94c893c7a2222b5f",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "New version number added in FitNesseRoot/properties, and a new method executeSingleCommand() was introduced in FitNesse.java to handle single command execution. These changes affect the behavior of the code.",
+      "llm_confidence": "high",
+      "project_name": "fitnesse",
+      "analysis_timestamp": "2025-08-14T19:02:15.526030",
+      "diff_size": 19747,
+      "diff_lines": 562
+    },
+    {
+      "hash": "0065d40a4ee9d8c499699cf6696f1a2ac7a393f4",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and modified return statements. Specifically, there are changes to the 'org.eclipse.eclim.internal.ui.wizards.NewProjectWizard' class, where methods like 'createProject()', 'getProjectName()', and 'getProjectLocation()' have been refactored with new parameters and return types.",
+      "llm_confidence": "high",
+      "project_name": "eclim",
+      "analysis_timestamp": "2025-08-14T19:02:26.904287",
+      "diff_size": 223661,
+      "diff_lines": 5870
+    },
+    {
+      "hash": "006be00803a23b274c9ec073d1352e93c38bd33b",
+      "purity_classification": "FALSE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-14T19:02:37.378784",
+      "diff_size": 79777,
+      "diff_lines": 2371
+    },
+    {
+      "hash": "007a13d0e9bc1d45cb9cad4559a919c60483c5d1",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit contains several functional changes, including modifications to method signatures (e.g., additions and removals of parameters), behavioral modifications (e.g., new conditional logic and loops), and exception handling changes. These changes indicate that this is a FLOSS refactoring.",
+      "llm_confidence": "high",
+      "project_name": "bigbluebutton",
+      "analysis_timestamp": "2025-08-14T19:02:46.939300",
+      "diff_size": 190373,
+      "diff_lines": 4267
+    },
+    {
+      "hash": "0087a5b5ed488b892a218aacc94210fc7e7297a3",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit introduces a new interface `ChatListItemListener` and modifies the `ChatListAdapter` class to implement it, which allows for more flexibility in handling click events. Additionally, the `onChatClick` method is split into two separate methods: `onChatItemClick` and `onChatAvatarClick`. This change affects the behavior of the application by allowing for different actions based on whether the user clicks on the chat avatar or the chat item itself.",
+      "llm_confidence": "high",
+      "project_name": "xabber-android",
+      "analysis_timestamp": "2025-08-14T19:03:00.180626",
+      "diff_size": 11672,
+      "diff_lines": 239
+    },
+    {
+      "hash": "008bf8607c55926d0aadb4602a8a854d396c7657",
+      "purity_classification": "FALSE",
+      "llm_classification": "PURE",
+      "llm_justification": "All changes in the diff appear to be purely structural, with no behavioral modifications detected. There are code reorganizations, variable/method renamings that preserve semantics, and formatting improvements. No new conditional logic, modified method parameters, different return types or values, exception handling changes, or algorithm modifications were found.",
+      "llm_confidence": "high",
+      "project_name": "cassandra",
+      "analysis_timestamp": "2025-08-14T19:03:08.866802",
+      "diff_size": 676777,
+      "diff_lines": 15555
+    },
+    {
+      "hash": "00988e2da64dbc61319023ecc3c61fb09d4223bb",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and modified return statements. Specifically, there are changes to the 'Meeting' class methods such as 'getParticipants', 'getModerators', and 'getPresenters'. These changes involve alterations in method parameters, return types, and exception handling.",
+      "llm_confidence": "high",
+      "project_name": "bigbluebutton",
+      "analysis_timestamp": "2025-08-14T19:03:18.329320",
+      "diff_size": 799066,
+      "diff_lines": 18998
+    },
+    {
+      "hash": "009e17f47fa3e79e2ee03d1ad952571fd29693d3",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "zk",
+      "analysis_timestamp": "2025-08-14T19:03:33.452541",
+      "diff_size": 18307,
+      "diff_lines": 486
+    }
+  ]
+}

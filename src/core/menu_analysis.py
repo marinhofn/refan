@@ -51,7 +51,9 @@ def run_complete_analysis_from_start():
     print(f"{info('📄 Arquivo de saída:')} {output_file}")
     
     # Criar analisador com configuração especial
-    analyzer = LLMPurityAnalyzer()
+    current_model = get_current_llm_model()
+    print(f"{info('🤖 Usando modelo:')} {current_model}")
+    analyzer = LLMPurityAnalyzer(model=current_model)
     
     # Fazer backup do arquivo atual se existir
     original_file = analyzer.csv_file_path
@@ -189,9 +191,11 @@ def run_complete_analysis_from_start():
 
 def run_filtered_analysis(purity_filter, max_commits=100):
     """Executa análise filtrada."""
-    analyzer = LLMPurityAnalyzer()
+    # Usar o modelo atualmente configurado
+    current_model = get_current_llm_model()
+    analyzer = LLMPurityAnalyzer(model=current_model)
     
-    print(success(f"\n🎯 Analisando commits com Purity={purity_filter}"))
+    print(success(f"\n🎯 Analisando commits com Purity={purity_filter} usando modelo {current_model}"))
     stats = analyzer.analyze_commits(
         max_commits=max_commits,
         skip_analyzed=True,
@@ -202,7 +206,9 @@ def run_filtered_analysis(purity_filter, max_commits=100):
 
 def show_statistics():
     """Mostra estatísticas do arquivo atual."""
-    analyzer = LLMPurityAnalyzer()
+    # Usar o modelo atualmente configurado
+    current_model = get_current_llm_model()
+    analyzer = LLMPurityAnalyzer(model=current_model)
     
     try:
         df = analyzer._load_csv_data()
@@ -251,12 +257,18 @@ def main():
             
         elif choice == "1":
             print(success("\n🚀 Análise rápida (10 commits)"))
-            analyzer = LLMPurityAnalyzer()
+            # Usar o modelo atualmente configurado
+            current_model = get_current_llm_model()
+            print(info(f"🤖 Usando modelo: {current_model}"))
+            analyzer = LLMPurityAnalyzer(model=current_model)
             analyzer.analyze_commits(max_commits=10, skip_analyzed=True)
             
         elif choice == "2":
             print(success("\n📦 Análise de lote (50 commits)"))
-            analyzer = LLMPurityAnalyzer()
+            # Usar o modelo atualmente configurado
+            current_model = get_current_llm_model()
+            print(info(f"🤖 Usando modelo: {current_model}"))
+            analyzer = LLMPurityAnalyzer(model=current_model)
             analyzer.analyze_commits(max_commits=50, skip_analyzed=True)
             
         elif choice == "3":

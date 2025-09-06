@@ -1,0 +1,20 @@
+Tipo,Classificadores,Acordos,Percentual,Descricao
+Breakdown,Total Consenso,1374,50.37,Detalhamento: Total Consenso
+Breakdown,Total Discordância,1354,49.63,Detalhamento: Total Discordância
+Breakdown,Consenso FLOSS,1348,49.41,Detalhamento: Consenso FLOSS
+Breakdown,Consenso PURE,26,0.95,Detalhamento: Consenso PURE
+Consenso Total,Purity ∩ Mistral ∩ Gemma ∩ DeepSeek,1374,50.37,Consenso absoluto entre todos os 4 classificadores
+Individual,Purity,2728,100.0,Todos os commits analisados por Purity
+Individual,Mistral,2728,100.0,Todos os commits analisados por Mistral
+Individual,Gemma,2728,100.0,Todos os commits analisados por Gemma
+Individual,DeepSeek,2728,100.0,Todos os commits analisados por DeepSeek
+Par,Purity ∩ Mistral,2390,87.61,Concordância total entre Purity e Mistral
+Par,Gemma ∩ DeepSeek,2050,75.15,Concordância total entre Gemma e DeepSeek
+Par,Mistral ∩ DeepSeek,2021,74.08,Concordância total entre Mistral e DeepSeek
+Par,Purity ∩ DeepSeek,1901,69.68,Concordância total entre Purity e DeepSeek
+Par,Mistral ∩ Gemma,1757,64.41,Concordância total entre Mistral e Gemma
+Par,Purity ∩ Gemma,1635,59.93,Concordância total entre Purity e Gemma
+Trio,Purity ∩ Mistral ∩ DeepSeek,1792,65.69,"Concordância total entre Purity, Mistral e DeepSeek"
+Trio,Mistral ∩ Gemma ∩ DeepSeek,1550,56.82,"Concordância total entre Mistral, Gemma e DeepSeek"
+Trio,Purity ∩ Mistral ∩ Gemma,1527,55.98,"Concordância total entre Purity, Mistral e Gemma"
+Trio,Purity ∩ Gemma ∩ DeepSeek,1429,52.38,"Concordância total entre Purity, Gemma e DeepSeek"

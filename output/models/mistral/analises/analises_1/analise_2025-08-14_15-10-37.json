@@ -1,0 +1,17 @@
+[
+    {
+        "repository": "https://github.com/apache/log4j",
+        "commit_hash_before": "c72fe5ece25c77d93d3ed236cddd8a98a215b5a8",
+        "commit_hash_current": "7d36034b59b57cc4471b28c2a82121f36dd45cfd",
+        "refactoring_type": "floss",
+        "justification": "New method 'getCurrentStack()' added, which affects the behavior of the code by providing a different way to access the stack for the current thread. This change introduces new conditional logic and modifies return values.",
+        "technical_evidence": "Addition of a new method 'getCurrentStack()' at lines 124-135, which was not present in the previous commit. The method returns a Stack object for the current thread, changing the behavior of how the stack is accessed.",
+        "confidence_level": "high",
+        "diff_source": "direct",
+        "commit_message": "Bug 40159: NullPointerException in org.apache.log4j.NDC.get\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/branches/v1_2-branch@427881 13f79535-47bb-0310-9956-ffa450edef68",
+        "diff_size_chars": 3302,
+        "diff_lines": 115,
+        "processing_method": "direct",
+        "success": true
+    }
+]

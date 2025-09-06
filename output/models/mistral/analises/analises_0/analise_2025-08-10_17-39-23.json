@@ -1,0 +1,18 @@
+[
+    {
+        "repository": "https://github.com/unclebob/fitnesse",
+        "commit_hash_before": "2537efdc30117d4c6ec5030cc5799dcca2f17c46",
+        "commit_hash_current": "f650981e5a8d2772997cacf205694c5b78631836",
+        "refactoring_type": "pure",
+        "justification": "The commit primarily consists of changes to the organization and structure of the codebase, such as renaming variables, methods, extracting functionality into new classes, and simplifying conditional logic. No changes to behavior or functionality were introduced based on the provided diff.",
+        "commit_message": "Testrunner now working for testresponder class"
+    },
+    {
+        "repository": "https://github.com/unclebob/fitnesse",
+        "commit_hash_before": "f650981e5a8d2772997cacf205694c5b78631836",
+        "commit_hash_current": "1674a336df98234452686787876d998d537225f7",
+        "refactoring_type": "pure",
+        "justification": "The commit does not include any changes to behavior or functionality, instead focusing on code reorganization and simplifying the conditional logic. This suggests that the changes are purely structural in nature.",
+        "commit_message": "Refactor complete except for two unit tests"
+    }
+]

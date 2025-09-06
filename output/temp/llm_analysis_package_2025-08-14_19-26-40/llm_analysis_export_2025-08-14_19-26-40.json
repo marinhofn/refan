@@ -1,0 +1,400 @@
+{
+  "comparison_data": [
+    {
+      "commit_hash": "b8b2d434de426995aa4dd9d563dba3f314d2b05d",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The code changes are purely structural, with no evidence of functional or behavioral modifications. The changes include renaming 'category' to 'logger', which does not affect the functionality, and adding a new test case for handling CDATA sections in log messages. This can be considered as a refactoring aimed at improving readability and maintaining code organization, without impacting the overall system functionality.",
+      "agreement": false,
+      "repository": "https://github.com/apache/log4j",
+      "commit_message": "The commit of 1.2branch with the trunk. Things seem to have went\nrelatively well. Conflicts were quickly resolved. The resulting code\nbuilds and passes all existing tests.\n\nPR:\nObtained from:\nSubmitted by:\nReviewed by:\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@309641 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+      "commit_hash": "0663eb2a1301f7622f017496c5983789b1cbae38",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit only consists of renaming a class and a test case without any changes in their behavior or functionality. This refactoring does not affect the code's output or logic.",
+      "agreement": false,
+      "repository": "https://github.com/apache/log4j",
+      "commit_message": "- Internal logging is now on even after a LogManager.resetConfiguration.\n(Temporary code. All this will be radically changed when Domains enter \nthe scene.)\n\n- PropertySetter.setProperties method no longer activates the options \nof OptionHandlers. This results in slighly less confusing code. \nChanged ProppertyConfigurator to take thismodification  into account.\n\n- Renamed test cases from XTestCase to XTest where X varies.\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/logging/log4j/trunk@310055 13f79535-47bb-0310-9956-ffa450edef68"
+    },
+    {
+      "commit_hash": "ea101618b23a875f8ad7741b5cad7cb08939483c",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit mainly consists of code reorganization, renaming variables, methods, and classes without changing their behavior. There are no new functionalities added or existing functionality modified. The changes appear to be focused on improving the readability and organization of the codebase.",
+      "agreement": false,
+      "repository": "https://github.com/Netflix/ribbon",
+      "commit_message": "Added async invocation of client callbacks."
+    },
+    {
+      "commit_hash": "bb38ed1875d2c0d2cdadc554a2561c6222e4c4a6",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit introduces changes only to the import statements and class hierarchy, while maintaining the same functionality. The code does not exhibit any behavior or functionality modifications, nor is there evidence of bug fixes alongside refactoring. These changes are purely organizational in nature.",
+      "agreement": false,
+      "repository": "https://github.com/Netflix/ribbon",
+      "commit_message": "Refactor and consolidation. Use HttpReuqest and HttpResponse for RestClient. Fix PMD, find bugs."
+    },
+    {
+      "commit_hash": "70c10658148c3eab3b4c4122705e1ed3a12e193d",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit mainly consists of adding new methods and variables without changing the functionality or behavior of the existing code. There are no changes to existing methods, no bug fixes, and no alterations in the outputs. Instead, there is an addition of new features (isWindows(), isDarwin()) while restructuring the code, which indicates 'pure' refactoring.",
+      "agreement": false,
+      "repository": "https://github.com/kohsuke/hudson",
+      "commit_message": "Stage 1 : Create hudson.model.Jenkins, make Hudson derive from Jenkins.\n\nSigned-off-by: Nigel Magnay <nigel.magnay@gmail.com>"
+    },
+    {
+      "commit_hash": "b6d07b56134bc833678a31165661d3c496e3cf60",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The changes made in this commit seem to be primarily focused on updating the request structure, using HttpRequest<ByteBuf> instead of HttpRequest. This is a structural change without altering functionality, as it appears the code still behaves identically when making requests. Additionally, there are no bug fixes or new features added that would indicate floss refactoring.",
+      "agreement": false,
+      "repository": "https://github.com/Netflix/ribbon",
+      "commit_message": "Changes to use RxNetty\u2019s new HttpRequest, HttpResponse."
+    },
+    {
+      "commit_hash": "cc75132319e59363204055e9c0eb23b6a3f8e6ac",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit does not appear to change any behavior or functionality. It modifies the creation of HttpClient objects, but the changes are purely structural (using NettyHttpClient instead of HttpClient). The new classes and methods introduced do not seem to affect existing functionality.",
+      "agreement": false,
+      "repository": "https://github.com/Netflix/ribbon",
+      "commit_message": "Change rxnetty version to 0.3.6. Implementation of ResourceGroup. Change to ConfigurationBasedServerList to make the server list part of client configuration."
+    },
+    {
+      "commit_hash": "d928a5ec16f53f0b01f294125fb17185ebe57ba9",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The code refactoring in this commit focuses on improving the readability and structure of the code, without making any changes to its functionality or behavior. The changes include moving logic related to creating a HttpEntity for different data formats into separate methods, renaming variables for better clarity, and simplifying some conditional logic. These changes do not alter the output or behavior of the system.",
+      "agreement": false,
+      "repository": "https://github.com/ushahidi/SMSSync",
+      "commit_message": "refactored ProcessMessage and MessageSyncHtptClient classes.\n\nUsing new helpers in MainHttpClient.\n\nadded set/getClientError even though it's not being used yet, should\nprobably hook into wherever `getServerError` is called."
+    },
+    {
+      "commit_hash": "f9171508367efed57c497063cd363e38e8facdf7",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The code changes in this commit are primarily focused on refactoring and formatting, including renaming variables, methods, and classes without altering their behavior. There are no functional changes or bug fixes apparent from the diff. The new methods added for sorting by columns and ordering by ASC/DESC NULLS FIRST appear to be additional features but they are encapsulated within tests, and the actual implementation remains unchanged.",
+      "agreement": false,
+      "repository": "https://github.com/julianhyde/optiq",
+      "commit_message": "Lots of fixes to the JDBC driver, and in particular to DatabaseMetaData methods, to make Squirrel-SQL run better."
+    },
+    {
+      "commit_hash": "401a218be1101406e9aaae30eb1e479f4d13f103",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The code changes involve refactoring by reorganizing the existing code, renaming variables and methods, and adding new instance variables to support future functionality (`entityClasses`, `valueObjectClasses`, `externalModules`) without any immediate functional changes. The addition of a method for registering entities, value objects, modules, etc., does not affect the behavior as long as those methods are empty or not called at the moment. Therefore, this commit can be classified as 'pure' refactoring.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "- support for booting external JaversModules in JaversBuilder"
+    },
+    {
+      "commit_hash": "7b1d91dfd69e06cbee3eda88fddad4b16f23d8f0",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The code changes appear to be purely organizational in nature. The MongoRepository class has been modified to use a different collection name, but the functionality remains the same. There are no indication of new features being added, bugs being fixed or any alterations that could affect behavior or functionality. As such, this refactoring can be classified as 'pure'.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "added support for querying by ValueObjectID in MongoRepository, added index on snapshots.global_id"
+    },
+    {
+      "commit_hash": "3922a00267ade30b58e472e5526318dfafbf0bd4",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit changes the dialect from H2 to PostgreSQL, but it doesn't seem to affect the behavior or functionality of the code. It appears to be a change in configuration rather than altering existing functionality.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "https://github.com/javers/javers/issues/103\nfrom-JSON workaround removed"
+    },
+    {
+      "commit_hash": "dbc5719f090d22e8c0ae2a98c0a03bac16b49e04",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit involves changes in the test cases, adding new tests and renaming some variables and classes, but there is no evidence of changes to functionality or behavior. The purpose seems to be for better organization, readability, and clarity.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "missing properties are treated as nulls"
+    },
+    {
+      "commit_hash": "7b3f91c30f5f11be82f2dc8a53c4b54955b9e814",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit includes renaming of classes and imports, as well as minor refactorings in various methods. However, none of these changes seem to alter the functionality or behavior of the code. Instead, it appears to be a maintenance update for improved organization and readability.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "work in progress"
+    },
+    {
+      "commit_hash": "3181474113fc5bcff251e6217ca07ccb756f2172",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "In this commit, there are no functional changes or bug fixes. The code refactoring involves changing the way the ALTER TABLE statements are executed by removing the dialect-specific conditional checks and replacing them with a more generic method called `addStringColumn`. Additionally, the SQL update statements for `populateSnapshotManagedType` and `populateGlobalIdTypeName` methods have been restructured. However, these changes do not alter the functionality of the code; they only improve its structure and maintainability. Therefore, this commit is classified as 'pure' refactoring.",
+      "agreement": false,
+      "repository": "https://github.com/javers/javers",
+      "commit_message": "JaversSchemaManager.addStringColumn()"
+    },
+    {
+      "commit_hash": "4092519b4a81fadce2f4c68b1950d65928b155f8",
+      "purity_classification": "FLOSS",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The commit adds a new column 'version' to the 'jv_snapshot' table in various databases. This modification affects the behavior of the database schema, as it introduces a new column that did not exist before.",
+      "agreement": true,
+      "repository": "javers",
+      "commit_message": "https://github.com/javers/javers/issues/361"
+    },
+    {
+      "commit_hash": "2aa7759b8b0d959abddbc6c5e5a83f86755c8d7c",
+      "purity_classification": "FLOSS",
+      "llm_classification": "NOT_ANALYZED",
+      "llm_justification": "Commit not analyzed by LLM",
+      "agreement": false,
+      "repository": NaN,
+      "commit_message": NaN
+    },
+    {
+      "commit_hash": "586454da9a7accf072b20814b4c6f3d7331459fa",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "The commit removes the TestRing.java file, which suggests that it was a pure refactoring with no functional changes. The TestRing class tests for RingQueue and its behavior is not related to the main application's functionality. Therefore, this change doesn't affect the software's output or behavior.",
+      "agreement": false,
+      "repository": "https://github.com/kilim/kilim",
+      "commit_message": "added new primitives to move to LMAX Disruptor"
+    },
+    {
+      "commit_hash": "7782d03aabd21429aa65cbe7547138b38f4682f5",
+      "purity_classification": "FLOSS",
+      "llm_classification": "NOT_ANALYZED",
+      "llm_justification": "Commit not analyzed by LLM",
+      "agreement": false,
+      "repository": NaN,
+      "commit_message": NaN
+    },
+    {
+      "commit_hash": "0cfa2b0c9ea625fd836ae4151926d1dc31665f97",
+      "purity_classification": "FLOSS",
+      "llm_classification": "PURE",
+      "llm_justification": "In this commit, the code structure has been improved by separating asciidoctor options and attributes into separate variables. Additionally, a new method 'getAsciiDocOptionsAndAttributes()' is introduced to gather these options and attributes for rendering Asciidoc files. However, no functional changes or bug fixes are observed in this commit. Instead, the code is restructured solely for readability and maintainability purposes.",
+      "agreement": false,
+      "repository": "https://github.com/jbake-org/jbake",
+      "commit_message": "asciidoc options are now supported via keyprefix asciidoc.option.KKK\nwhere KKK is the asciidoc key."
+    }
+  ],
+  "analysis_sessions": [
+    {
+      "session_info": {
+        "start_time": "2025-08-14T18:52:36.048442",
+        "end_time": "2025-08-14T18:52:45.762977",
+        "total_processed": 1,
+        "successful_analyses": 0,
+        "failed_analyses": 1,
+        "skipped_already_analyzed": 2,
+        "processing_errors": 0
+      },
+      "analyses": []
+    },
+    {
+      "session_info": {
+        "start_time": "2025-08-14T18:53:57.404814",
+        "end_time": "2025-08-14T18:54:09.931009",
+        "total_processed": 1,
+        "successful_analyses": 0,
+        "failed_analyses": 1,
+        "skipped_already_analyzed": 3,
+        "processing_errors": 0
+      },
+      "analyses": []
+    },
+    {
+      "session_info": {
+        "start_time": "2025-08-14T18:51:44.485786",
+        "end_time": "2025-08-14T18:52:03.259880",
+        "total_processed": 1,
+        "successful_analyses": 0,
+        "failed_analyses": 1,
+        "skipped_already_analyzed": 1,
+        "processing_errors": 0
+      },
+      "analyses": []
+    },
+    {
+      "session_info": {
+        "start_time": "2025-08-14T18:51:08.295732",
+        "end_time": "2025-08-14T18:51:10.032867",
+        "total_processed": 1,
+        "successful_analyses": 0,
+        "failed_analyses": 1,
+        "skipped_already_analyzed": 0,
+        "processing_errors": 0
+      },
+      "analyses": []
+    },
+    {
+      "session_info": {
+        "start_time": "2025-08-14T19:01:32.336582",
+        "end_time": "2025-08-14T19:03:34.497817",
+        "total_processed": 10,
+        "successful_analyses": 10,
+        "failed_analyses": 0,
+        "skipped_already_analyzed": 5,
+        "processing_errors": 0
+      },
+      "analyses": [
+        {
+          "hash": "00436c08bfe682b727c77c1d734c3c73a78a9590",
+          "purity_classification": "TRUE",
+          "llm_classification": "PURE",
+          "llm_justification": "The diff shows changes in the implementation of two classes: BloomFilter and OpenBitSet. However, these changes are purely structural, with no behavioral modifications detected. The method signatures remain identical, there is no addition or removal of parameters, and no new conditional logic or exception handling has been introduced. Instead, there are minor changes to variable names and the use of different methods for accessing elements in OpenBitSet.",
+          "llm_confidence": "high",
+          "project_name": "cassandra",
+          "analysis_timestamp": "2025-08-14T19:01:55.687406",
+          "diff_size": 15028,
+          "diff_lines": 417
+        },
+        {
+          "hash": "0051a7f17bd2027575c13dac3ace653ecb2513eb",
+          "purity_classification": "FALSE",
+          "llm_classification": "PURE",
+          "llm_justification": "The diff shows a large number of changes, primarily in formatting and style improvements. There are no behavioral modifications, new conditional logic, modified method parameters, or exception handling changes detected. The code maintains the same inputs producing the same outputs, and there is an identical logic flow throughout.",
+          "llm_confidence": "high",
+          "project_name": "poi",
+          "analysis_timestamp": "2025-08-14T19:02:04.840348",
+          "diff_size": 264077,
+          "diff_lines": 7072
+        },
+        {
+          "hash": "0063c1adcf32a04611f9bdfb94c893c7a2222b5f",
+          "purity_classification": "FALSE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "New version number added in FitNesseRoot/properties, and a new method executeSingleCommand() was introduced in FitNesse.java to handle single command execution. These changes affect the behavior of the code.",
+          "llm_confidence": "high",
+          "project_name": "fitnesse",
+          "analysis_timestamp": "2025-08-14T19:02:15.526030",
+          "diff_size": 19747,
+          "diff_lines": 562
+        },
+        {
+          "hash": "0065d40a4ee9d8c499699cf6696f1a2ac7a393f4",
+          "purity_classification": "FALSE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and modified return statements. Specifically, there are changes to the 'org.eclipse.eclim.internal.ui.wizards.NewProjectWizard' class, where methods like 'createProject()', 'getProjectName()', and 'getProjectLocation()' have been refactored with new parameters and return types.",
+          "llm_confidence": "high",
+          "project_name": "eclim",
+          "analysis_timestamp": "2025-08-14T19:02:26.904287",
+          "diff_size": 223661,
+          "diff_lines": 5870
+        },
+        {
+          "hash": "006be00803a23b274c9ec073d1352e93c38bd33b",
+          "purity_classification": "FALSE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "Analysis failed - insufficient data",
+          "llm_confidence": "low",
+          "project_name": "zk",
+          "analysis_timestamp": "2025-08-14T19:02:37.378784",
+          "diff_size": 79777,
+          "diff_lines": 2371
+        },
+        {
+          "hash": "007a13d0e9bc1d45cb9cad4559a919c60483c5d1",
+          "purity_classification": "NONE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "The commit contains several functional changes, including modifications to method signatures (e.g., additions and removals of parameters), behavioral modifications (e.g., new conditional logic and loops), and exception handling changes. These changes indicate that this is a FLOSS refactoring.",
+          "llm_confidence": "high",
+          "project_name": "bigbluebutton",
+          "analysis_timestamp": "2025-08-14T19:02:46.939300",
+          "diff_size": 190373,
+          "diff_lines": 4267
+        },
+        {
+          "hash": "0087a5b5ed488b892a218aacc94210fc7e7297a3",
+          "purity_classification": "NONE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "The commit introduces a new interface `ChatListItemListener` and modifies the `ChatListAdapter` class to implement it, which allows for more flexibility in handling click events. Additionally, the `onChatClick` method is split into two separate methods: `onChatItemClick` and `onChatAvatarClick`. This change affects the behavior of the application by allowing for different actions based on whether the user clicks on the chat avatar or the chat item itself.",
+          "llm_confidence": "high",
+          "project_name": "xabber-android",
+          "analysis_timestamp": "2025-08-14T19:03:00.180626",
+          "diff_size": 11672,
+          "diff_lines": 239
+        },
+        {
+          "hash": "008bf8607c55926d0aadb4602a8a854d396c7657",
+          "purity_classification": "FALSE",
+          "llm_classification": "PURE",
+          "llm_justification": "All changes in the diff appear to be purely structural, with no behavioral modifications detected. There are code reorganizations, variable/method renamings that preserve semantics, and formatting improvements. No new conditional logic, modified method parameters, different return types or values, exception handling changes, or algorithm modifications were found.",
+          "llm_confidence": "high",
+          "project_name": "cassandra",
+          "analysis_timestamp": "2025-08-14T19:03:08.866802",
+          "diff_size": 676777,
+          "diff_lines": 15555
+        },
+        {
+          "hash": "00988e2da64dbc61319023ecc3c61fb09d4223bb",
+          "purity_classification": "NONE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "The diff contains several functional changes, including method signature modifications, addition of new conditional logic, and modified return statements. Specifically, there are changes to the 'Meeting' class methods such as 'getParticipants', 'getModerators', and 'getPresenters'. These changes involve alterations in method parameters, return types, and exception handling.",
+          "llm_confidence": "high",
+          "project_name": "bigbluebutton",
+          "analysis_timestamp": "2025-08-14T19:03:18.329320",
+          "diff_size": 799066,
+          "diff_lines": 18998
+        },
+        {
+          "hash": "009e17f47fa3e79e2ee03d1ad952571fd29693d3",
+          "purity_classification": "NONE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "Analysis failed - insufficient data",
+          "llm_confidence": "low",
+          "project_name": "zk",
+          "analysis_timestamp": "2025-08-14T19:03:33.452541",
+          "diff_size": 18307,
+          "diff_lines": 486
+        }
+      ]
+    },
+    {
+      "session_info": {
+        "start_time": "2025-08-14T18:59:10.675156",
+        "end_time": "2025-08-14T18:59:21.467275",
+        "total_processed": 1,
+        "successful_analyses": 1,
+        "failed_analyses": 0,
+        "skipped_already_analyzed": 4,
+        "processing_errors": 0
+      },
+      "analyses": [
+        {
+          "hash": "0040fea3797ea3e497691e9d1e2660711c60ac4d",
+          "purity_classification": "FALSE",
+          "llm_classification": "FLOSS",
+          "llm_justification": "The diff contains several functional changes, including modifications to method signatures (e.g., new methods added, existing methods with altered parameters), behavioral modifications (e.g., changes to conditional logic and loops), and exception handling changes. Specific examples include: \n- Addition of new methods in src/cassandra/db/ColumnFamilyStore.java\n- Changes to the 'get_rows' method in src/cassandra/db/ColumnFamilyStore.java, including a new parameter and altered conditional logic\n- Modifications to the 'get_range_sstable_iterator' method in src/cassandra/db/ColumnFamilyStore.java, which affects its behavior",
+          "llm_confidence": "high",
+          "project_name": "cassandra",
+          "analysis_timestamp": "2025-08-14T18:59:20.423844",
+          "diff_size": 5505794,
+          "diff_lines": 121392
+        }
+      ]
+    }
+  ],
+  "export_timestamp": "2025-08-14T19:26:40.336522",
+  "statistics": {
+    "total_comparisons": 20,
+    "agreement_rate": 0.05,
+    "purity_pure_count": 0,
+    "llm_pure_count": 17,
+    "repositories": [
+      "https://github.com/apache/log4j",
+      "https://github.com/Netflix/ribbon",
+      "https://github.com/kohsuke/hudson",
+      "https://github.com/ushahidi/SMSSync",
+      "https://github.com/julianhyde/optiq",
+      "https://github.com/javers/javers",
+      "javers",
+      NaN,
+      "https://github.com/kilim/kilim",
+      "https://github.com/jbake-org/jbake"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "session_info": {
+    "start_time": "2025-08-16T12:16:23.761799",
+    "end_time": "2025-08-16T12:28:02.446628",
+    "total_processed": 5,
+    "successful_analyses": 2,
+    "failed_analyses": 3,
+    "skipped_already_analyzed": 50,
+    "processing_errors": 0
+  },
+  "analyses": [
+    {
+      "hash": "023ca1c6968b7165405028215847dfe6af06064a",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "The diff introduces a new public API method `listEnvironmentNodes` in `ChefApi`, which expands the observable behavior of the API by allowing callers to retrieve environment nodes. This is a clear addition of functionality. Additionally, the removal of custom binder classes (`BindClientnameToJsonPayload`, `BindIsCompletedToJsonPayload`, `BindNameToJsonPayload`) and the replacement of their usage with the `@WrapWith` annotation changes how request payloads are constructed, potentially altering request semantics. New tests are added to exercise this new method, further indicating a functional change. No purely structural changes are sufficient to cover all modifications; the presence of new behavior makes this a FLOSS refactoring.",
+      "llm_confidence": "high",
+      "project_name": "jclouds",
+      "analysis_timestamp": "2025-08-16T12:19:12.074862",
+      "diff_size": 18020,
+      "diff_lines": 391
+    },
+    {
+      "hash": "0282b9adc629dae2f5f1675d51234722d3c23a85",
+      "purity_classification": "NONE",
+      "llm_classification": "FLOSS",
+      "llm_justification": "Analysis failed - insufficient data",
+      "llm_confidence": "low",
+      "project_name": "uaa",
+      "analysis_timestamp": "2025-08-16T12:28:02.399341",
+      "diff_size": 72350,
+      "diff_lines": 1339
+    }
+  ]
+}

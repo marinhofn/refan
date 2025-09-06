@@ -1,0 +1,10 @@
+[
+    {
+        "repository": "https://github.com/ervandew/eclim",
+        "commit_hash_before": "769d9c9ca4b00efdf5a433f91b050589a1df89ce",
+        "commit_hash_current": "48ba416a8a582079d6caf4bc11ec0305fcf0467d",
+        "refactoring_type": "pure",
+        "justification": "The commit introduces new global variables but doesn't seem to change the functionality of existing code. It only simplifies the organization and structuring of the code without affecting its behavior.",
+        "commit_message": "convert maven dependency search to use json response"
+    }
+]

@@ -1,0 +1,42 @@
+[
+    {
+        "repository": "https://github.com/mvel/mvel",
+        "commit_hash_before": "8d9162641d57a2dc311c1f20096fedb67d7fa717",
+        "commit_hash_current": "9a41ef646e7390648f99a14a57e749a39cf38bfa",
+        "refactoring_type": "pure",
+        "justification": "The commit primarily focuses on simplifying the conditional statement in the code, changing `tkOp2.getOperator() < 12` to `tkOp2.getFields() != -1 && tkOp2.getOperator() < 12`. This change does not affect the behavior or functionality of the code and is considered a pure refactoring.",
+        "commit_message": "regression in token generation broken across lines fixed."
+    },
+    {
+        "repository": "https://github.com/mvel/mvel",
+        "commit_hash_before": "7dff76656c69c4284093f5abe37569543ddefc4c",
+        "commit_hash_current": "d53cd741b230add70cea04f99b5ff296c5210d98",
+        "refactoring_type": "pure",
+        "justification": "The commit seems to contain only structural changes such as renaming classes, variables and methods, as well as some refactoring of the codebase without affecting its behavior or functionality.",
+        "commit_message": "improvements to interpeted mode.  removed inappropriate fallbacks to compiled mode."
+    },
+    {
+        "repository": "https://github.com/zkoss/zk",
+        "commit_hash_before": "b9d1c196a2306a27ad488839f44556b7744b2290",
+        "commit_hash_current": "411107483dc3e376decacd09d0852b18775fca11",
+        "refactoring_type": "pure",
+        "justification": "The commit diff contains several changes that involve renaming variables, methods, and files without altering their functionality. For example: the version number in MANIFEST.MF and lang-addon.xml is updated from '3.0.0' to '3.0.1', and the package name for Version.java is changed from 'org.zkoss.zkplus.databind' to 'org.zkoss.zkplus'. Additionally, a new package.html file is added with no changes to existing code that could affect behavior. Therefore, the commit represents a pure refactoring.",
+        "commit_message": "git-svn-id: https://svn.potix.com/svn/zk1/branches/3.0@5246 dd50bd9b-9913-0410-b9ba-e07a3075be86"
+    },
+    {
+        "repository": "https://github.com/zkoss/zk",
+        "commit_hash_before": "30dd53a1211c2a866f4a623d5c179e50153fa5b1",
+        "commit_hash_current": "81ab8a16c3f6f7c56b15e440bc23db19426d1fb0",
+        "refactoring_type": "pure",
+        "justification": "The commit introduces a new class UiTag, which is a user-defined component tagging feature. However, it does not seem to alter the existing functionality or behavior of the codebase. Instead, the changes are primarily structural, such as adding a new class and methods, but without any apparent change in how the system functions. Therefore, I classify this commit as 'pure' refactoring.",
+        "commit_message": "git-svn-id: https://svn.potix.com/svn/zk1/trunk@5353 dd50bd9b-9913-0410-b9ba-e07a3075be86"
+    },
+    {
+        "repository": "https://github.com/apache/poi",
+        "commit_hash_before": "df528aa4630441dd675d640e3f57fb8e63df7eaf",
+        "commit_hash_current": "e04ac3122e1c32eb1a0b67f680fb6a3ed975ec18",
+        "refactoring_type": "pure",
+        "justification": "The commit adds new functionality for handling named ranges with special characters in print areas and union area expressions. However, it does not alter the existing behavior or functionality of the codebase. The changes are purely structural and do not affect the outputs of methods.",
+        "commit_message": "usermodel support for excel hyperlinks\n\ngit-svn-id: https://svn.apache.org/repos/asf/poi/trunk@617834 13f79535-47bb-0310-9956-ffa450edef68"
+    }
+]

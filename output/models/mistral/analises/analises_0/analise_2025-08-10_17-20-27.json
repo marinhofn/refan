@@ -1,0 +1,10 @@
+[
+    {
+        "repository": "https://github.com/serso/android-calculatorpp",
+        "commit_hash_before": "0c698a6d3934c003149d3a90e396c6c21434edb3",
+        "commit_hash_current": "d0fe0ca012b5f6a7036ae8aaeae0dd20c0aa8f1a",
+        "refactoring_type": "pure",
+        "justification": "The commit primarily consists of refactoring changes such as renaming variables, methods, and classes without affecting their behavior. Additionally, there are no apparent bug fixes or additions of new features in the provided code diff. The main focus is on organizing and structuring the existing code while maintaining its functionality.",
+        "commit_message": "New architecture"
+    }
+]
