@@ -1,13 +1,16 @@
-"""Logging centralizado de falhas de parsing JSON.
+"""Logging centralizado de falhas de parsing JSON via JSONL.
 
-Consolida save_json_failure() de:
-- llm_handler.py:192-238 (~46 linhas)
-- optimized_llm_handler.py:355-399 (~44 linhas)
+Migrado de JSON array (read-modify-write) para JSONL (append-only).
 
-Ambas versões eram quase idênticas (mesma lógica de load/append/save).
-Diferenças absorvidas via parâmetro extra_fields.
+Antes: carregar json_failures.json inteiro (12MB), append, reescrever.
+Depois: abrir em modo append, escrever uma linha. O(1) por falha.
 
-Refs: REFACTORING_PLAN.md Phase 1.3
+O formato JSONL é compatível com leitura linha por linha:
+    with open(file) as f:
+        for line in f:
+            record = json.loads(line)
+
+Refs: REFACTORING_PLAN.md Phase 6.2
 """
 
 import json
@@ -26,21 +29,17 @@ def save_json_failure(
     prompt_excerpt: Optional[str] = None,
     extra_fields: Optional[dict] = None,
 ) -> None:
-    """Salva falha de parsing JSON em arquivo separado.
-
-    Mantém compatibilidade com o formato existente (JSON array) para não
-    quebrar scripts que leem json_failures.json.
+    """Salva falha de parsing JSON em arquivo JSONL (append-only).
 
     Args:
-        failures_file: Caminho do arquivo de falhas.
+        failures_file: Caminho do arquivo de falhas (.jsonl ou .json).
         commit_hash: Hash do commit que falhou.
         repository: URL ou nome do repositório.
         commit_message: Mensagem do commit.
         raw_response: Resposta bruta do LLM.
         error_msg: Descrição do erro.
         prompt_excerpt: Trecho do prompt enviado ao LLM.
-        extra_fields: Campos adicionais específicos do handler
-            (ex: parse_attempts, notes).
+        extra_fields: Campos adicionais específicos do handler.
     """
     try:
         failure_entry = {
@@ -57,19 +56,46 @@ def save_json_failure(
         if extra_fields:
             failure_entry.update(extra_fields)
 
-        existing_failures = []
-        if os.path.exists(failures_file):
-            try:
-                with open(failures_file, "r", encoding="utf-8") as f:
-                    existing_failures = json.load(f)
-            except json.JSONDecodeError:
-                existing_failures = []
+        # Garantir que o diretório existe
+        parent = os.path.dirname(failures_file)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
 
-        existing_failures.append(failure_entry)
-
-        with open(failures_file, "w", encoding="utf-8") as f:
-            json.dump(existing_failures, f, indent=2, ensure_ascii=False)
+        # Append-only: uma linha JSON por falha
+        with open(failures_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(failure_entry, ensure_ascii=False) + "\n")
 
     except Exception:
         # Falha no logger não deve interromper a análise principal
         pass
+
+
+def read_failures(failures_file: str) -> list:
+    """Lê falhas de um arquivo JSONL ou JSON legado."""
+    if not os.path.exists(failures_file):
+        return []
+
+    records = []
+    with open(failures_file, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+
+    if not content:
+        return []
+
+    # Detectar formato: JSONL (linhas) vs JSON array legado
+    if content.startswith("["):
+        # Formato legado: JSON array
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            return []
+    else:
+        # Formato JSONL: uma entrada por linha
+        for line in content.splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return records
