@@ -37,71 +37,92 @@ The directory `baseline_tcc_2025/` contains an immutable snapshot of all results
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the unified entry point (interactive menu, lets you pick model + interface)
+# CLI — headless analysis (scriptable, automatable)
+python refan.py analyze --model mistral --limit 50 --skip-analyzed
+python refan.py analyze --model deepseek-r1:8b --filter TRUE --dry-run
+python refan.py status --model mistral
+python refan.py merge-sessions --model mistral
+
+# Interactive menu (no arguments)
 python refan.py
 
-# Run specific interfaces directly
-python -m src.core.main            # Full interactive menu
-python -m src.core.menu_analysis   # LLM analysis menu (specialized)
-
-# Run a specific test file
-python -m pytest tests/test_json_parser.py
-
-# Run all tests
-python -m pytest tests/
+# Run tests
+python -m pytest tests/ -v
+python -m pytest tests/ -v -m "not slow"
 ```
 
 ## Prerequisites
 
+- **Python >= 3.10** (production code uses `str | None` PEP 604 syntax)
 - **Ollama** must be running locally at `http://localhost:11434`. Models must be pulled beforehand (`ollama pull mistral`).
-- The active model can be changed at runtime via the interactive menu or `set_llm_model()` in code. The default is `mistral` (overridable with `REFAN_LLM_MODEL` env var).
-- GPU layer count for Ollama can be tuned with `REFAN_NUM_GPU_LAYERS` env var.
+- The active model can be changed via CLI (`--model`), interactive menu, or `REFAN_LLM_MODEL` env var. Default: `mistral`.
+- GPU layer count: `REFAN_NUM_GPU_LAYERS` env var.
 
 ## Architecture
 
 ### Entry Point
 
-`refan.py` is the unified entry point. It detects available Ollama models, lets the user pick one, then routes to either `src/core/main.py` (full menu) or `src/core/menu_analysis.py` (LLM-focused menu).
+`refan.py` dispatches based on arguments:
+- **With args**: delegates to `src/cli.py` (argparse-based CLI: `analyze`, `status`, `merge-sessions`, `interactive`)
+- **Without args**: interactive model selection + menu
 
-### Core Modules (`src/core/`)
+### Core (`src/core/`)
 
-- **`config.py`** — Central configuration. Defines all paths, LLM prompt templates, model management (`set_llm_model`, `get_model_paths`), and health checks. All output paths are dynamically scoped per model under `output/models/<model_name>/`.
-- **`main.py`** — Full interactive menu: individual/batch commit analysis, Purity comparison, visualizations.
-- **`menu_analysis.py`** — Specialized LLM analysis menu using `LLMPurityAnalyzer`.
+- **`config.py`** — Paths, model management (`set_llm_model`, `get_model_paths`), health checks. All output paths scoped per model under `output/models/<model_name>/`.
+- **`settings.py`** — `RefanSettings` dataclass: centralized configuration (temperature, timeouts, retries, diff thresholds, context sizes). Singleton `settings`.
+- **`main.py`** — Full interactive menu.
+- **`menu_analysis.py`** — Specialized LLM analysis menu.
 
 ### Handlers (`src/handlers/`)
 
-- **`llm_handler.py`** — Core LLM communication. Contains `OllamaAdapter` (Protocol-based), prompt building (`build_commit_prompt`), multi-strategy JSON extraction from LLM responses, and fallback classification logic.
-- **`optimized_llm_handler.py`** — Enhanced handler with file-based diff support for large diffs and improved prompt engineering.
-- **`git_handler.py`** — Clones/fetches repositories into `repositorios/`, extracts diffs between commit pairs.
+- **`llm_handler.py`** — Unified LLM handler (merged from original + optimized). Contains `OllamaAdapter`, prompt building, multi-strategy JSON extraction, retry with simplified prompt, JSON repair, DeepSeek performance monitoring.
+- **`git_handler.py`** — Clones/fetches repositories, extracts diffs. Uses `subprocess.run(cwd=)` (thread-safe).
 - **`data_handler.py`** — Loads/filters CSV datasets, tracks analyzed commits per model.
-- **`purity_handler.py`** — Loads Purity Checker baseline classifications for comparison.
-- **`visualization_handler.py`** / **`llm_visualization_handler.py`** — Generate Plotly HTML dashboards and PNG charts.
+- **`purity_handler.py`** — Loads Purity Checker baseline classifications.
+- **`visualization_handler.py`** / **`llm_visualization_handler.py`** — Plotly dashboards.
 
 ### Analyzers (`src/analyzers/`)
 
-- **`llm_purity_analyzer.py`** — Main analysis orchestrator (`LLMPurityAnalyzer`). Iterates through CSV rows, gets diffs via `GitHandler`, sends to LLM via `OptimizedLLMHandler`, updates CSV with `llm_analysis` column, saves session logs as JSON. Supports `CTRL+C` safe interruption with progress persistence.
-- **`optimized_prompt.py`** — Optimized prompt template with detailed classification criteria. Handles large diffs via temp files when exceeding `MAX_DIRECT_DIFF_SIZE` (100k chars).
+- **`llm_purity_analyzer.py`** — Main orchestrator (`LLMPurityAnalyzer`). Uses `CommitPair`/`AnalysisResult` data models. Persists results via JSONL `SessionWriter` (O(1) per commit). CSV written once at session end.
+- **`optimized_prompt.py`** — Prompt template with classification criteria and large diff file support.
+
+### Models (`src/models/`)
+
+- **`commit.py`** — `CommitPair` and `AnalysisResult` dataclasses (canonical field names).
+- **`adapters.py`** — Conversion between CSV legacy format and canonical models.
 
 ### Utilities (`src/utils/`)
 
-- **`json_parser.py`** — Shared JSON extraction from LLM text responses (multiple regex strategies, json5 fallback).
-- **`colors.py`** — ANSI terminal formatting helpers (imported as `*` throughout codebase).
+- **`json_parser.py`** — JSON extraction from LLM text (6 strategies + think block removal + json5 fallback). Single source of truth.
+- **`classification.py`** — `extract_final_classification()` (FINAL: PURE/FLOSS pattern matching) + `PURE`/`FLOSS` constants.
+- **`failure_logger.py`** — JSONL append-only failure logging.
+- **`persistence.py`** — `SessionWriter` (JSONL incremental persistence) + `merge_jsonl_to_csv()`.
+- **`llm_sizing.py`** — Token estimation, context window sizing, diff reduction.
+- **`logging_config.py`** — Structured logging via `get_logger()`.
+- **`colors.py`** — ANSI terminal formatting (explicit imports, no wildcard).
 
 ### Data Flow
 
-1. CSV input (`csv/commits_with_refactoring.csv` or `csv/*_hashes_*_with_analysis.csv`) provides commit pairs
-2. `GitHandler` clones/fetches repos into `repositorios/` and extracts diffs
-3. `OptimizedLLMHandler` sends diff + prompt to Ollama and parses JSON classification from response
-4. `LLMPurityAnalyzer` writes results back to the CSV `llm_analysis` column and saves session JSON logs to `output/models/<model>/analises/`
+1. CSV input provides commit pairs
+2. `GitHandler` clones/fetches repos and extracts diffs (via `subprocess.run(cwd=)`)
+3. `LLMHandler` sends diff + prompt to Ollama, parses JSON classification
+4. `LLMPurityAnalyzer` persists results: JSONL per commit (crash-safe), CSV at session end
+5. Sessions stored in `output/models/<model>/analises/sessions/*.jsonl`
 
 ### Output Organization
 
-Results are isolated per model under `output/models/<model_name>/` with subdirectories: `analises/`, `dashboards/`, `comparisons/`, `analises_completas/`.
+Results isolated per model under `output/models/<model_name>/`:
+- `analises/` — Session JSON logs
+- `analises/sessions/` — Incremental JSONL files
+- `dashboards/` — HTML/PNG visualizations
+- `comparisons/` — LLM vs Purity comparison files
+- `analises_completas/` — Complete batch analysis CSVs
 
 ## Key Design Patterns
 
-- **LLM adapter protocol**: `LLMAdapter` Protocol in `llm_handler.py` allows swapping LLM backends. Currently only `OllamaAdapter` is implemented.
-- **Multi-strategy JSON parsing**: LLM responses are unreliable; both handlers implement cascading extraction: direct parse, regex patterns, line parsing, field extraction, `FINAL: PURE|FLOSS` pattern, and fallback construction.
-- **Per-commit persistence**: The analyzer saves CSV + session JSON after every single commit to survive `CTRL+C` interruptions.
-- **Model-scoped paths**: All output paths are dynamically constructed via `get_model_paths()` to keep results from different models isolated.
+- **Centralized configuration**: `RefanSettings` dataclass in `settings.py` — all magic values in one place.
+- **Canonical data models**: `CommitPair` and `AnalysisResult` standardize field names across the entire pipeline.
+- **LLM adapter protocol**: `LLMAdapter` Protocol allows swapping backends. Currently `OllamaAdapter`.
+- **Multi-strategy JSON parsing**: Cascading extraction in `json_parser.py` (single source of truth).
+- **JSONL incremental persistence**: `SessionWriter` appends one record per commit (survives CTRL+C).
+- **Model-scoped paths**: All output paths via `get_model_paths()`.

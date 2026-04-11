@@ -1,12 +1,13 @@
 [project]
 name = "refan"
-version = "2.0.0-dev"
+version = "2.0.0"
 description = "Classificação de refatorações de código com LLMs — ferramenta de pesquisa acadêmica"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "José Marinho Falcão Neto", email = "jose.marinho.neto@ccc.ufcg.edu.br"},
 ]
+keywords = ["refactoring", "llm", "software-engineering", "classification", "ollama"]
 dependencies = [
     "pandas>=2.0",
     "requests>=2.31",
@@ -21,6 +22,9 @@ dev = [
     "pytest-mock",
 ]
 json5 = ["json5>=0.9"]
+
+[project.scripts]
+refan = "cli:run_cli"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
