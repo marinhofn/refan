@@ -18,6 +18,7 @@ from src.handlers.git_handler import GitHandler
 from src.handlers.data_handler import DataHandler
 from src.models.commit import CommitPair, AnalysisResult
 from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
+from src.utils.persistence import SessionWriter
 from src.utils.colors import *
 
 class ProgressBar:
@@ -457,10 +458,12 @@ class LLMPurityAnalyzer:
         # Inicializar barra de progresso
         progress_bar = ProgressBar(len(analysis_df), title="LLM Analysis")
         
-        # Processar commits
+        # Inicializar persistência incremental (JSONL append-only)
+        sessions_dir = os.path.join(self.backup_dir, "sessions")
+        session_writer = SessionWriter(sessions_dir)
         analyses_results = []
         processed_count = 0
-        
+
         try:
             for idx, row in analysis_df.iterrows():
                 processed_count += 1
@@ -469,39 +472,27 @@ class LLMPurityAnalyzer:
                 hash_commit = row['hash']
                 purity_classification = row['purity_analysis']
 
-                # Atualizar barra de progresso
                 progress_bar.update(processed_count)
-
-                # Imprimir detalhes do commit atual (em nova linha após a barra)
                 print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
 
                 try:
-                    # Analisar commit
                     result = self._analyze_single_commit(hash_commit, purity_classification)
 
                     if result:
-                        # Atualizar DataFrame
                         classification = result['llm_classification']
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
-
                         analyses_results.append(result)
                         self.stats["successful_analyses"] += 1
 
+                        # Persistência incremental: JSONL append (O(1), atômico)
+                        session_writer.append(result)
                         print(success(f"✅ {hash_commit[:8]}... → {classification}"))
                     else:
-                        # Marcar como falha
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
                         self.stats["failed_analyses"] += 1
-
                         print(error(f"❌ Failed: {hash_commit[:8]}..."))
 
-                    # Salvar progresso IMEDIATAMENTE após cada commit para permitir
-                    # interrupção segura (CTRL+C) sem perda de dados.
-                    self._save_csv_data(df)
-                    self._save_session_analysis(analyses_results)
                     print(dim(f"💾 Progress saved ({processed_count}/{len(analysis_df)})"))
-
-                    # Pequena pausa entre análises
                     time.sleep(1)
 
                 except Exception as e:
@@ -509,15 +500,17 @@ class LLMPurityAnalyzer:
                     df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
                     print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
                     continue
+
         except KeyboardInterrupt:
-            # Usuário interrompeu com CTRL+C — salvar o que foi processado até agora
             print(warning('\n⚠️ Interrupção detectada (CTRL+C). Salvando progresso atual...'))
-            try:
-                self._save_csv_data(df)
-                self._save_session_analysis(analyses_results)
-                print(success('💾 Progresso salvo com sucesso após interrupção.'))
-            except Exception as e:
-                print(error(f"❌ Falha ao salvar progresso após interrupção: {e}"))
+
+        # Salvar CSV e sessão JSON uma vez no final (ou após CTRL+C)
+        try:
+            self._save_csv_data(df)
+            self._save_session_analysis(analyses_results)
+            print(success(f'💾 Progresso final salvo. JSONL: {session_writer.path} ({session_writer.count} registros)'))
+        except Exception as e:
+            print(error(f"❌ Falha ao salvar progresso: {e}"))
             return self.stats
 
         # Salvar resultados finais
