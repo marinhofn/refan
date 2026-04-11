@@ -414,7 +414,7 @@ class VisualizationHandler:
                     fig.write_image(png_filename, width=1200, height=800, scale=2)
                     saved_files.append(png_filename)
                     print(success(f"Gráfico de comparação PNG salvo: {bold(png_filename)}"))
-                except:
+                except Exception:
                     print(warning("Erro ao salvar PNG (instale kaleido: pip install kaleido)"))
             
             # Mostrar gráfico interativo
@@ -430,7 +430,7 @@ class VisualizationHandler:
         """Extrai o nome do repositório da URL."""
         try:
             return repo_url.split('/')[-1].replace('.git', '')
-        except:
+        except Exception:
             return 'Unknown'
     
     def _add_timeline_chart(self, fig, data, row, col):

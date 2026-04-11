@@ -764,7 +764,7 @@ Response format (respond with ONLY this JSON structure):
                     if repair != repairs[0]:  # Se foi reparado
                         print(warning("JSON foi reparado automaticamente"))
                     return result
-                except:
+                except (json.JSONDecodeError, ValueError, TypeError):
                     continue
                     
         except Exception:
