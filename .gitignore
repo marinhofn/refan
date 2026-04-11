@@ -39,7 +39,7 @@ ENV/
 # Repositórios externos clonados (reconstruíveis)
 
 # Dados derivados (ajuste se algum for fonte primária)
-data/
+/data/
 
 # Cache de testes / ferramentas
 .pytest_cache/
@@ -64,3 +64,16 @@ secrets*/
 
 # Modelos adicionais (caso algum dia salvar pesos locais)
 # models/
+
+# Documentação de planejamento (local, não versionada)
+ARCHITECTURE_PLAN.md
+REFACTORING_PLAN.md
+
+# Claude Code
+.claude/
+
+# TCC / documentos acadêmicos
+*.pdf
+
+# Baseline imutável do TCC (snapshot local de referência)
+baseline_tcc_2025/
