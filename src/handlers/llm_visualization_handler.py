@@ -392,7 +392,7 @@ class LLMVisualizationHandler:
                     total_commits = len(df_main)
                 else:
                     total_commits = 10000  # Default estimate
-            except:
+            except Exception:
                 total_commits = 10000
         
         progress_pct = (analyzed_count / total_commits * 100) if total_commits > 0 else 0
