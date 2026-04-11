@@ -120,6 +120,7 @@ class CSVDataLoader:
 # -----------------------------
 
 from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
+from src.core.settings import settings as _settings
 
 
 def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple:
@@ -179,41 +180,30 @@ class OptimizedOllamaAdapter:
         self._analysis_count = 0
         self._performance_degraded = False
 
-    def complete(self, prompt: str, attempts: int = 1, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+        if attempts is None:
+            attempts = _settings.max_retries
         base_opts = get_generation_base_options()
-        
-        # Otimizações específicas para DeepSeek
-        is_deepseek = "deepseek" in self.model.lower()
-        default_keep_alive = "30s" if is_deepseek else "5m"
-        default_num_ctx = 4096 if is_deepseek else (num_ctx or 4096)
-        
+
+        default_num_ctx = _settings.context_small if _settings.is_deepseek(self.model) else (num_ctx or _settings.context_small)
+
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            # DeepSeek: keep_alive reduzido para evitar acúmulo de contexto
-            "keep_alive": keep_alive if keep_alive is not None else default_keep_alive,
+            "keep_alive": keep_alive if keep_alive is not None else _settings.get_keep_alive(self.model),
             "options": {
                 "num_ctx": default_num_ctx,
-                "temperature": 0.1,
-                "num_predict": 50000,  # Permitir respostas mais longas da LLM
+                "temperature": _settings.temperature,
+                "num_predict": _settings.num_predict,
                 "think": False,
                 **base_opts,
             },
-            # top-level flag to request no 'think' blocks when supported by server
             "think": False,
         }
         last_error = None
         prompt_size = len(prompt)
-        # Ajustar timeout proporcional ao tamanho
-        if prompt_size > 80000:
-            timeout = 300
-        elif prompt_size > 50000:
-            timeout = 300
-        elif prompt_size > 30000:
-            timeout = 200
-        else:
-            timeout = 200
+        timeout = _settings.get_timeout(prompt_size)
         import time
         start_time = time.time()
         
