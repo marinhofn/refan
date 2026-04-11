@@ -120,13 +120,14 @@ COMPARISONS_DIR = str(MODEL_PATHS["COMPARISONS_DIR"])
 TEMP_DIR = PROJECT_ROOT / "output" / "temp"
 PURITY_COMPARISON_DIR = str(MODEL_PATHS["COMPARISONS_DIR"])
 
-# Configurações de depuração
-DEBUG_SHOW_PROMPT = True       # Se True, mostra o prompt enviado ao modelo
-DEBUG_MAX_PROMPT_LENGTH = 2000  # Tamanho máximo do prompt a ser exibido
+# Configurações de depuração — delegam para RefanSettings
+from src.core.settings import settings as _settings
+DEBUG_SHOW_PROMPT = _settings.show_prompt
+DEBUG_MAX_PROMPT_LENGTH = _settings.max_prompt_display_length
 
 # Configurações de sessão do modelo
-RESET_MODEL_CONTEXT = True     # Se True, limpa o contexto do modelo antes de cada análise
-USE_RANDOM_SEED = True         # Se True, usa um seed aleatório para cada solicitação
+RESET_MODEL_CONTEXT = _settings.reset_model_context
+USE_RANDOM_SEED = _settings.use_random_seed
 
 # -------------------------------------------------
 # Configuração opcional de camadas na GPU (Ollama)
