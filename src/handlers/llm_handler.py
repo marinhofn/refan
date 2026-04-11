@@ -33,25 +33,7 @@ from src.utils.colors import *
 from src.utils.json_parser import extract_json_from_text, _find_json_end_index
 from src.utils.classification import extract_final_classification
 from src.utils.failure_logger import save_json_failure as _save_json_failure
-
-def estimate_token_count(text: str) -> int:
-    if not text:
-        return 0
-    return max(1, len(text)//4)
-
-def dynamic_num_ctx(diff_text: str) -> int:
-    tokens = estimate_token_count(diff_text)
-    if tokens < 3000:
-        return 2048
-    if tokens < 6000:
-        return 4096
-    return 6144
-
-def reduce_diff_simple(diff_text: str, max_chars: int = 50000) -> tuple[str, dict]:
-    if len(diff_text) <= max_chars:
-        return diff_text, {"reduced": False}
-    truncated = diff_text[:max_chars]
-    return truncated + "\n... (truncado)", {"reduced": True, "original_chars": len(diff_text), "new_chars": len(truncated)}
+from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
 
 # -----------------------------
 # Adaptadores de LLM

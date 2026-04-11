@@ -119,44 +119,19 @@ class CSVDataLoader:
 # Utilidades de otimização de prompt
 # -----------------------------
 
-def estimate_token_count(text: str) -> int:
-    """Estimativa grosseira de tokens (~4 chars/token média inglês)."""
-    if not text:
-        return 0
-    return max(1, len(text) // 4)
+from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
 
-def dynamic_num_ctx(diff_text: str, model_name: str = "") -> int:
-    """Calcula contexto dinâmico, sendo mais conservativo para DeepSeek"""
-    tokens = estimate_token_count(diff_text)
-    is_deepseek = "deepseek" in model_name.lower()
-    
-    if is_deepseek:
-        # DeepSeek: usar contexto menor para evitar acúmulo
-        if tokens < 2000:
-            return 3072
-        elif tokens < 4000:
-            return 4096
-        else:
-            return 4096  # Máximo menor para DeepSeek
-    else:
-        # Outros modelos: comportamento original
-        if tokens < 3000:
-            return 4096
-        if tokens < 6000:
-            return 6144
-        if tokens < 9000:
-            return 8192
-        return 8192
 
-def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple[str, dict]:
+def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple:
     """Reduz diff grande limitando linhas por arquivo e tamanho total.
-    Retorna diff possivelmente reduzido e metadados de redução.
+
+    Mais sofisticada que reduce_diff_simple: preserva cabeçalhos de hunk
+    e limita por arquivo antes de truncar globalmente.
     """
     if len(diff_text) <= max_chars:
         return diff_text, {"reduced": False}
     sections = diff_text.split('\n')
     reduced_lines = []
-    file_line_count = 0
     current_file = None
     per_file_counter = 0
     truncated_files = 0
@@ -169,13 +144,11 @@ def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int
             per_file_counter += 1
         else:
             if line.startswith('@@'):
-                # manter cabeçalho de hunk para contexto mesmo se estourou limite
                 reduced_lines.append(line)
             elif line.startswith('diff --git'):
                 reduced_lines.append(line)
                 per_file_counter = 1
             else:
-                # pular linha
                 if per_file_counter == per_file_line_limit:
                     reduced_lines.append('... (linhas adicionais omitidas)')
                     truncated_files += 1
