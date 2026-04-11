@@ -16,6 +16,8 @@ import sys
 from src.handlers.llm_handler import LLMHandler
 from src.handlers.git_handler import GitHandler
 from src.handlers.data_handler import DataHandler
+from src.models.commit import CommitPair, AnalysisResult
+from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
 from src.utils.colors import *
 
 class ProgressBar:
@@ -185,50 +187,42 @@ class LLMPurityAnalyzer:
             print(error(f"Erro ao salvar CSV: {str(e)}"))
             return False
     
-    def _get_commit_data_from_refactoring_csv(self, hash_commit: str) -> Optional[Dict]:
+    def _get_commit_data_from_refactoring_csv(self, hash_commit: str) -> Optional[CommitPair]:
         """Busca dados do commit no arquivo commits_with_refactoring.csv."""
         try:
-            # Carregar dados se ainda não foram carregados
             if not self.data_handler.load_data():
                 return None
-            
-            # Buscar o commit pelo hash
-            commit_data = self.data_handler.data[
+
+            matches = self.data_handler.data[
                 self.data_handler.data['commit2'] == hash_commit
             ]
-            
-            if commit_data.empty:
+
+            if matches.empty:
                 print(warning(f"Commit {hash_commit[:8]}... não encontrado no arquivo de refatorações."))
                 return None
-            
-            # Pegar a primeira ocorrência se houver duplicatas
-            row = commit_data.iloc[0]
-            
-            return {
-                'commit1': row['commit1'],
-                'commit2': row['commit2'],
-                'project': row['project'],
-                'project_name': row['project_name']
-            }
-            
+
+            return commit_from_csv_row(matches.iloc[0])
+
         except Exception as e:
             print(error(f"Erro ao buscar dados do commit {hash_commit[:8]}...: {str(e)}"))
             return None
     
-    def _get_diff_for_commit(self, repository: str, commit1: str, commit2: str) -> Optional[tuple[str, str]]:
+    def _get_diff_for_commit(self, commit: CommitPair) -> Optional[tuple]:
         """Obtém o diff entre dois commits e retorna também o caminho local do repositório.
 
         Returns:
             tuple(diff_content, repo_path) ou None em caso de erro.
         """
         try:
-            success, repo_path = self.git_handler.ensure_repo_cloned(repository)
-            if not success:
-                print(error(f"Falha ao preparar repositório: {repository}"))
+            ok, repo_path = self.git_handler.ensure_repo_cloned(commit.repository)
+            if not ok:
+                print(error(f"Falha ao preparar repositório: {commit.repository}"))
                 return None
-            diff_content = self.git_handler.get_commit_diff(repo_path, commit1, commit2)
+            diff_content = self.git_handler.get_commit_diff(
+                repo_path, commit.commit_hash_before, commit.commit_hash_current
+            )
             if not diff_content:
-                print(warning(f"Diff vazio entre commits {commit1[:8]}...{commit2[:8]}"))
+                print(warning(f"Diff vazio entre commits {commit.commit_hash_before[:8]}...{commit.commit_hash_current[:8]}"))
                 return None
             return diff_content, repo_path
         except Exception as e:
@@ -239,127 +233,90 @@ class LLMPurityAnalyzer:
         """Analisa um único commit com a LLM."""
         try:
             print(info(f"Analisando commit {hash_commit[:8]}... (Purity: {purity_classification})"))
-            
-            # Buscar dados do commit
-            commit_data = self._get_commit_data_from_refactoring_csv(hash_commit)
-            if not commit_data:
+
+            commit = self._get_commit_data_from_refactoring_csv(hash_commit)
+            if not commit:
                 return None
-            
-            # Dry-run: não realiza chamadas git/LLM, retorna resultado simulado
+
+            # Dry-run: não realiza chamadas git/LLM
             if self.dry_run:
                 print(dim(f"Dry-run ativado: simulando análise para {hash_commit[:8]}..."))
-                result = {
-                    'hash': hash_commit,
-                    'purity_classification': purity_classification,
-                    'llm_classification': 'DRY_RUN',
-                    'llm_justification': 'Dry run - análise simulada (nenhuma chamada LLM foi realizada).',
-                    'llm_confidence': '0',
-                    'project_name': commit_data.get('project_name', 'unknown'),
-                    'analysis_timestamp': datetime.datetime.now().isoformat(),
-                    'diff_size': 0,
-                    'diff_lines': 0,
-                    'llm_raw_response': 'DRY_RUN - No LLM call made',
-                    'repository': commit_data.get('project_name', 'unknown'),
-                    'commit_hash_before': commit_data.get('commit1', 'unknown'),
-                    'commit_hash_current': commit_data.get('commit2', 'unknown'),
-                    'technical_evidence': 'DRY_RUN - No analysis performed',
-                    'diff_source': 'dry_run'
-                }
-                print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: {result['llm_classification']}"))
-                return result
-            
-            # Obter diff (com repo_path para evitar novo fetch)
-            diff_result = self._get_diff_for_commit(
-                commit_data['project'],
-                commit_data['commit1'],
-                commit_data['commit2']
-            )
+                dry_result = AnalysisResult(
+                    repository=commit.repository,
+                    commit_hash_before=commit.commit_hash_before,
+                    commit_hash_current=commit.commit_hash_current,
+                    refactoring_type="DRY_RUN",
+                    justification="Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+                    confidence_level="0",
+                    project_name=commit.project_name,
+                    llm_raw_response="DRY_RUN - No LLM call made",
+                    technical_evidence="DRY_RUN - No analysis performed",
+                    diff_source="dry_run",
+                    success=True,
+                )
+                result_dict = analysis_to_session_dict(dry_result)
+                result_dict['purity_classification'] = purity_classification
+                print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: DRY_RUN"))
+                return result_dict
+
+            # Obter diff
+            diff_result = self._get_diff_for_commit(commit)
             if not diff_result:
                 return None
             diff_content, repo_path = diff_result
 
-            # Obter mensagem do commit (uma única vez, usando repo já atualizado)
+            # Obter mensagem do commit
             try:
-                commit_message = self.git_handler.get_commit_message(repo_path, commit_data['commit2']) or "Commit message not available"
+                commit.commit_message = self.git_handler.get_commit_message(
+                    repo_path, commit.commit_hash_current
+                ) or "Commit message not available"
             except Exception:
-                commit_message = "Commit message not available"
-            
+                commit.commit_message = "Commit message not available"
+
             # Análise com LLM
             try:
                 llm_result = self.llm_handler.analyze_commit_refactoring(
                     current_hash=hash_commit,
-                    previous_hash=commit_data['commit1'],
-                    repository=commit_data['project'],
+                    previous_hash=commit.commit_hash_before,
+                    repository=commit.repository,
                     diff_content=diff_content,
-                    commit_message=commit_message,
-                    repo_path=repo_path
+                    commit_message=commit.commit_message,
+                    repo_path=repo_path,
                 )
-                
+
                 if llm_result and llm_result.get('success') and llm_result.get('refactoring_type'):
-                    result = {
-                        'hash': hash_commit,
-                        'purity_classification': purity_classification,
-                        'llm_classification': llm_result['refactoring_type'].upper(),
-                        'llm_justification': llm_result.get('justification', ''),
-                        'llm_confidence': llm_result.get('confidence_level', 'unknown'),
-                        'project_name': commit_data['project_name'],
-                        'analysis_timestamp': datetime.datetime.now().isoformat(),
-                        'diff_size': len(diff_content),
-                        'diff_lines': len(diff_content.splitlines())
-                    }
-                    
-                    # Adicionar novos campos implementados se disponíveis
-                    if 'llm_raw_response' in llm_result:
-                        result['llm_raw_response'] = llm_result['llm_raw_response']
-                    if 'repository' in llm_result:
-                        result['repository'] = llm_result['repository']
-                    if 'commit_hash_before' in llm_result:
-                        result['commit_hash_before'] = llm_result['commit_hash_before']
-                    if 'commit_hash_current' in llm_result:
-                        result['commit_hash_current'] = llm_result['commit_hash_current']
-                    if 'technical_evidence' in llm_result:
-                        result['technical_evidence'] = llm_result['technical_evidence']
-                    if 'diff_source' in llm_result:
-                        result['diff_source'] = llm_result['diff_source']
-                    
-                    print(success(f"✅ Commit {hash_commit[:8]}... analisado: {result['llm_classification']}"))
-                    return result
+                    analysis = analysis_from_llm_response(llm_result, commit)
+                    analysis.diff_size_chars = len(diff_content)
+                    analysis.diff_lines = len(diff_content.splitlines())
+                    result_dict = analysis_to_session_dict(analysis)
+                    result_dict['purity_classification'] = purity_classification
+                    print(success(f"✅ Commit {hash_commit[:8]}... analisado: {analysis.refactoring_type.upper()}"))
+                    return result_dict
                 else:
-                    # Mesmo com falha, tentar preservar dados disponíveis
-                    result = {
-                        'hash': hash_commit,
-                        'purity_classification': purity_classification,
-                        'llm_classification': 'FLOSS',  # padrão conservativo
-                        'llm_justification': 'Analysis failed - insufficient data',
-                        'llm_confidence': 'low',
-                        'project_name': commit_data['project_name'],
-                        'analysis_timestamp': datetime.datetime.now().isoformat(),
-                        'diff_size': len(diff_content),
-                        'diff_lines': len(diff_content.splitlines())
-                    }
-                    
-                    # Tentar preservar dados parciais mesmo em falhas
-                    if llm_result:
-                        if 'llm_raw_response' in llm_result:
-                            result['llm_raw_response'] = llm_result['llm_raw_response']
-                        if 'justification' in llm_result and llm_result['justification']:
-                            result['llm_justification'] = llm_result['justification']
-                        if 'repository' in llm_result:
-                            result['repository'] = llm_result['repository']
-                        if 'commit_hash_before' in llm_result:
-                            result['commit_hash_before'] = llm_result['commit_hash_before']
-                        if 'commit_hash_current' in llm_result:
-                            result['commit_hash_current'] = llm_result['commit_hash_current']
-                        if 'technical_evidence' in llm_result:
-                            result['technical_evidence'] = llm_result['technical_evidence']
-                    
+                    # Fallback conservativo com dados parciais
+                    fallback = AnalysisResult(
+                        repository=commit.repository,
+                        commit_hash_before=commit.commit_hash_before,
+                        commit_hash_current=commit.commit_hash_current,
+                        refactoring_type="floss",
+                        justification=llm_result.get('justification', 'Analysis failed - insufficient data') if llm_result else 'Analysis failed - insufficient data',
+                        confidence_level="low",
+                        project_name=commit.project_name,
+                        diff_size_chars=len(diff_content),
+                        diff_lines=len(diff_content.splitlines()),
+                        llm_raw_response=llm_result.get('llm_raw_response', '') if llm_result else '',
+                        technical_evidence=llm_result.get('technical_evidence', '') if llm_result else '',
+                        success=False,
+                    )
+                    result_dict = analysis_to_session_dict(fallback)
+                    result_dict['purity_classification'] = purity_classification
                     print(warning(f"⚠️ Commit {hash_commit[:8]}... - LLM falhou, usando dados parciais/padrão"))
-                    return result
-                    
+                    return result_dict
+
             except Exception as llm_error:
                 print(error(f"❌ Erro na chamada LLM para {hash_commit[:8]}...: {str(llm_error)}"))
                 return None
-                
+
         except Exception as e:
             print(error(f"Erro na análise do commit {hash_commit[:8]}...: {str(e)}"))
             return None
