@@ -12,7 +12,7 @@ import os
 import datetime
 import warnings
 from typing import Optional, Protocol, Dict, Any
-from src.utils.json_parser import extract_json_from_text
+from src.utils.json_parser import extract_json_from_text, _find_json_end_index
 
 import requests
 try:
@@ -770,7 +770,7 @@ Response format (respond with ONLY this JSON structure):
                 return None
 
             # Procurar pelo final do JSON mais próximo que balanceie chaves
-            end_idx = self._find_json_end_index(llm_response, start_idx)
+            end_idx = _find_json_end_index(llm_response, start_idx)
             if end_idx == -1:
                 # fallback: rfind
                 end_idx = llm_response.rfind('}')
@@ -856,32 +856,6 @@ Response format (respond with ONLY this JSON structure):
         except Exception:
             return json_str
 
-    def _find_json_end_index(self, text: str, start_idx: int) -> int:
-        """
-        Encontra o índice do fechamento '}' correspondente ao primeiro '{' em start_idx
-        usando balanceamento simples. Retorna -1 se não encontrar.
-        """
-        depth = 0
-        in_string = False
-        escape = False
-        for i in range(start_idx, len(text)):
-            ch = text[i]
-            if ch == '"' and not escape:
-                in_string = not in_string
-            if in_string:
-                if ch == '\\' and not escape:
-                    escape = True
-                else:
-                    escape = False
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return i
-        return -1
-    
     def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, previous_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
         Valida e corrige campos obrigatórios do JSON usando dados dos CSVs quando possível.

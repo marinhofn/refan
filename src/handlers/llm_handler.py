@@ -30,7 +30,7 @@ from src.core.config import (
     get_generation_base_options
 )
 from src.utils.colors import *
-from src.utils.json_parser import extract_json_from_text
+from src.utils.json_parser import extract_json_from_text, _find_json_end_index
 
 def estimate_token_count(text: str) -> int:
     if not text:
@@ -493,7 +493,7 @@ class LLMHandler:
                 except Exception:
                     # tentar balancear chaves e reparsear
                     start_idx = response.find(match)
-                    end_idx = self._find_json_end_index(response, start_idx)
+                    end_idx = _find_json_end_index(response, start_idx)
                     if end_idx != -1:
                         candidate = response[start_idx:end_idx+1]
                         try:
@@ -511,28 +511,6 @@ class LLMHandler:
                     continue
         return None
 
-    def _find_json_end_index(self, text: str, start_idx: int) -> int:
-        depth = 0
-        in_string = False
-        escape = False
-        for i in range(start_idx, len(text)):
-            ch = text[i]
-            if ch == '"' and not escape:
-                in_string = not in_string
-            if in_string:
-                if ch == '\\' and not escape:
-                    escape = True
-                else:
-                    escape = False
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return i
-        return -1
-    
     def _extract_with_line_parsing(self, response: str, commit_data: dict) -> Optional[dict]:
         """Extração linha por linha procurando campos específicos."""
         result = {}
