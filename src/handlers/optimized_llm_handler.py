@@ -14,6 +14,7 @@ import warnings
 from typing import Optional, Protocol, Dict, Any
 from src.utils.json_parser import extract_json_from_text, _find_json_end_index
 from src.utils.classification import extract_final_classification
+from src.utils.failure_logger import save_json_failure as _save_json_failure
 
 import requests
 try:
@@ -328,50 +329,16 @@ class OptimizedLLMHandler:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
     def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
-        """
-        Salva falhas de parsing JSON em arquivo separado.
-        
-        Args:
-            commit_hash (str): Hash do commit que falhou
-            repository (str): Repositório do commit
-            commit_message (str): Mensagem do commit
-            raw_response (str): Resposta completa da LLM
-            error_msg (str): Mensagem de erro detalhada
-        """
-        try:
-            failure_entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
-                "commit_hash": commit_hash,
-                "repository": repository,
-                "commit_message": commit_message,
-                "error": error_msg,
-                "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response,  # Capturar resposta completa sem truncamento
-                "analysis_attempt": "JSON parsing failed",
-                "prompt_excerpt": prompt_excerpt
-            }
-            
-            # Carregar falhas existentes
-            existing_failures = []
-            if os.path.exists(self.failures_file):
-                try:
-                    with open(self.failures_file, 'r', encoding='utf-8') as f:
-                        existing_failures = json.load(f)
-                except json.JSONDecodeError:
-                    print(warning(f"Arquivo de falhas {self.failures_file} corrompido, criando novo"))
-                    existing_failures = []
-            
-            # Adicionar nova falha
-            existing_failures.append(failure_entry)
-            
-            # Salvar arquivo atualizado
-            with open(self.failures_file, 'w', encoding='utf-8') as f:
-                json.dump(existing_failures, f, indent=2, ensure_ascii=False)
-            
-            print(warning(f"💾 Falha JSON salva em {self.failures_file} (total: {len(existing_failures)} falhas)"))
-            
-        except Exception as e:
-            print(error(f"⚠️ Erro ao salvar falha JSON: {str(e)}"))
+        """Delega para src.utils.failure_logger.save_json_failure."""
+        _save_json_failure(
+            failures_file=self.failures_file,
+            commit_hash=commit_hash,
+            repository=repository,
+            commit_message=commit_message,
+            raw_response=raw_response,
+            error_msg=error_msg,
+            prompt_excerpt=prompt_excerpt,
+        )
 
     def analyze_commit(self, repository: str, commit1: str, commit2: str, commit_message: str, diff: str, show_prompt: bool = False):
         """
