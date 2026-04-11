@@ -8,7 +8,7 @@ import json
 import pandas as pd
 import datetime
 from src.core.config import PURITY_CSV_PATH, PURITY_COMPARISON_DIR, get_model_paths, get_current_llm_model
-from src.utils.colors import *
+from src.utils.colors import bold, commit_info, cyan, dim, error, header, info, progress, success, warning
 
 class PurityHandler:
     def __init__(self):

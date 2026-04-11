@@ -58,7 +58,7 @@ from src.core.config import (
     check_llm_model_status,
     get_generation_base_options,
 )
-from src.utils.colors import *
+from src.utils.colors import dim, error, header, info, success, warning
 
 # -----------------------------
 # Carregador de dados dos CSVs
