@@ -19,7 +19,7 @@ from src.handlers.data_handler import DataHandler
 from src.models.commit import CommitPair, AnalysisResult
 from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
 from src.utils.persistence import SessionWriter
-from src.utils.colors import *
+from src.utils.colors import dim, error, header, info, success, warning
 
 class ProgressBar:
     """Barra de progresso simples para análise LLM."""

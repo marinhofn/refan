@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
 from src.analyzers.llm_purity_analyzer import LLMPurityAnalyzer
 from src.core.config import get_current_llm_model, list_available_ollama_models, set_llm_model, ensure_model_directories
-from src.utils.colors import *
+from src.utils.colors import cyan, dim, error, header, info, success, warning
 
 def show_menu():
     """Mostra menu de opções."""

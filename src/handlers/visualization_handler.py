@@ -11,7 +11,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime
 from src.core.config import get_model_paths, get_current_llm_model
-from src.utils.colors import *
+from src.utils.colors import bold, error, header, info, success, warning
 
 class VisualizationHandler:
     def __init__(self):

@@ -9,7 +9,7 @@ Refs: REFACTORING_PLAN.md Phase 4
 import os
 import subprocess
 from src.core.config import REPO_DIR
-from src.utils.colors import *
+from src.utils.colors import error, info, progress, success, warning
 
 
 class GitHandler:

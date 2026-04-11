@@ -23,7 +23,7 @@ from src.handlers.llm_handler import LLMHandler
 from src.handlers.purity_handler import PurityHandler
 from src.handlers.visualization_handler import VisualizationHandler
 from src.core.config import create_directories, list_available_ollama_models, set_llm_model, get_current_llm_model, ensure_model_directories
-from src.utils.colors import *
+from src.utils.colors import bold, commit_info, cyan, dim, error, header, highlight, info, progress, success, warning
 
 def clear_screen():
     """Limpa a tela do terminal."""
