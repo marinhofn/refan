@@ -39,7 +39,7 @@ ENV/
 # Repositórios externos clonados (reconstruíveis)
 
 # Dados derivados (ajuste se algum for fonte primária)
-data/
+/data/
 
 # Cache de testes / ferramentas
 .pytest_cache/
