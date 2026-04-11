@@ -31,6 +31,7 @@ from src.core.config import (
 )
 from src.utils.colors import *
 from src.utils.json_parser import extract_json_from_text, _find_json_end_index
+from src.utils.classification import extract_final_classification
 
 def estimate_token_count(text: str) -> int:
     if not text:
@@ -404,7 +405,7 @@ class LLMHandler:
             print(dim(f"extract_json_from_text falhou: {e}"))
 
         # Tentar extrair classificação do padrão FINAL: primeiro
-        final_classification = self._extract_final_classification(llm_response)
+        final_classification = extract_final_classification(llm_response)
         if final_classification:
             print(success(f"Classificação extraída via FINAL: {final_classification}"))
 
@@ -440,32 +441,6 @@ class LLMHandler:
                 'extraction_method': 'final_pattern'
             }
 
-        return None
-    
-    def _extract_final_classification(self, response: str) -> Optional[str]:
-        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
-        
-        Returns:
-            'PURE' ou 'FLOSS' se encontrado, None caso contrário
-        """
-        import re
-        
-        # Procurar por padrões FINAL: (case insensitive)
-        patterns = [
-            r'FINAL:\s*(PURE|FLOSS)',
-            r'FINAL:\s*(pure|floss)',
-            r'Final:\s*(PURE|FLOSS)', 
-            r'Final:\s*(pure|floss)',
-            r'CONCLUSÃO:\s*(PURE|FLOSS)',
-            r'CONCLUSÃO:\s*(pure|floss)'
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, response, re.IGNORECASE | re.MULTILINE)
-            if match:
-                classification = match.group(1).upper()
-                return classification
-                
         return None
     
     def _extract_with_patterns(self, response: str, commit_data: dict) -> Optional[dict]:

@@ -13,6 +13,7 @@ import datetime
 import warnings
 from typing import Optional, Protocol, Dict, Any
 from src.utils.json_parser import extract_json_from_text, _find_json_end_index
+from src.utils.classification import extract_final_classification
 
 import requests
 try:
@@ -533,7 +534,7 @@ class OptimizedLLMHandler:
         raw_response = llm_response.strip()
         
         # Primeira tentativa: procurar padrão FINAL: (PRIORIDADE ABSOLUTA)
-        final_classification = self._extract_final_classification(llm_response)
+        final_classification = extract_final_classification(llm_response)
         if final_classification:
             print(success(f"Classificação extraída via FINAL: {final_classification}"))
             # Criar resultado imediato com FINAL: - não precisa de JSON
@@ -981,42 +982,6 @@ Response format (respond with ONLY this JSON structure):
             print(prompt)
         print(f"{header('=' * 50)}\n")
     
-    def _extract_final_classification(self, response: str) -> Optional[str]:
-        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
-        
-        Returns:
-            'PURE' ou 'FLOSS' se encontrado, None caso contrário
-        """
-        import re
-        
-        # Procurar por padrões FINAL: (case insensitive) - expandido para mais variações
-        patterns = [
-            r'FINAL:\s*(PURE|FLOSS)',
-            r'FINAL:\s*(pure|floss)',
-            r'Final:\s*(PURE|FLOSS)', 
-            r'Final:\s*(pure|floss)',
-            r'CONCLUSÃO:\s*(PURE|FLOSS)',
-            r'CONCLUSÃO:\s*(pure|floss)',
-            r'CLASSIFICATION:\s*(PURE|FLOSS)',
-            r'CLASSIFICATION:\s*(pure|floss)',
-            r'RESULTADO:\s*(PURE|FLOSS)',
-            r'RESULTADO:\s*(pure|floss)',
-            # Padrões mais flexíveis
-            r'\bFINAL[:\s]+([Pp][Uu][Rr][Ee]|[Ff][Ll][Oo][Ss][Ss])\b',
-            r'\b(PURE|FLOSS)\s*$',  # Final da linha
-            r'^\s*(PURE|FLOSS)\s*$',  # Linha isolada
-        ]
-        
-        for pattern in patterns:
-            matches = re.findall(pattern, response, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                classification = match.upper()
-                # Verificar se é uma classificação válida
-                if classification in ['PURE', 'FLOSS']:
-                    return classification
-                    
-        return None
-
     def get_stats(self) -> dict:
         """
         Retorna estatísticas sobre a configuração atual.
