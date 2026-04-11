@@ -31,12 +31,22 @@ ENV/
 *.bak
 
 # Arquivos de análise gerados / resultados
-# analises/
-# analises_completas/
-# output/
-# temp_diffs/
+output/
+temp_diffs/
+
+# Falhas de parsing JSON (gerado, pode crescer sem limite)
+json_failures.json
+json_failures.jsonl
 
 # Repositórios externos clonados (reconstruíveis)
+repositorios/
+
+# Arquivos de análise unificada (derivados, reconstruíveis)
+complete_unified_analysis.*
+
+# Backups de CSV com timestamp
+csv/*.backup_*
+csv/llm_analysis_csv/
 
 # Dados derivados (ajuste se algum for fonte primária)
 /data/
