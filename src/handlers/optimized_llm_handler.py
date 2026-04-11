@@ -12,7 +12,9 @@ import os
 import datetime
 import warnings
 from typing import Optional, Protocol, Dict, Any
-from src.utils.json_parser import extract_json_from_text
+from src.utils.json_parser import extract_json_from_text, _find_json_end_index
+from src.utils.classification import extract_final_classification
+from src.utils.failure_logger import save_json_failure as _save_json_failure
 
 import requests
 try:
@@ -35,32 +37,6 @@ from src.core.config import (
     get_generation_base_options,
 )
 from src.utils.colors import *
-import math
-
-# Função auxiliar para extração de JSON
-def extract_json_from_text(text):
-    """Extrai JSON do texto usando várias estratégias"""
-    import re
-    import json
-    
-    # Tentar encontrar JSON entre chaves
-    json_patterns = [
-        r'```json\s*(\{[\s\S]*?\})\s*```',
-        r'```\s*(\{[\s\S]*?\})\s*```',
-        r'(\{[\s\S]*?\})',
-        r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})'
-    ]
-    
-    for pattern in json_patterns:
-        matches = re.findall(pattern, text, re.MULTILINE | re.DOTALL)
-        for match in matches:
-            try:
-                result = json.loads(match)
-                if isinstance(result, dict):
-                    return result
-            except:
-                continue
-    return None
 
 # -----------------------------
 # Carregador de dados dos CSVs
@@ -143,44 +119,19 @@ class CSVDataLoader:
 # Utilidades de otimização de prompt
 # -----------------------------
 
-def estimate_token_count(text: str) -> int:
-    """Estimativa grosseira de tokens (~4 chars/token média inglês)."""
-    if not text:
-        return 0
-    return max(1, len(text) // 4)
+from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
 
-def dynamic_num_ctx(diff_text: str, model_name: str = "") -> int:
-    """Calcula contexto dinâmico, sendo mais conservativo para DeepSeek"""
-    tokens = estimate_token_count(diff_text)
-    is_deepseek = "deepseek" in model_name.lower()
-    
-    if is_deepseek:
-        # DeepSeek: usar contexto menor para evitar acúmulo
-        if tokens < 2000:
-            return 3072
-        elif tokens < 4000:
-            return 4096
-        else:
-            return 4096  # Máximo menor para DeepSeek
-    else:
-        # Outros modelos: comportamento original
-        if tokens < 3000:
-            return 4096
-        if tokens < 6000:
-            return 6144
-        if tokens < 9000:
-            return 8192
-        return 8192
 
-def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple[str, dict]:
+def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple:
     """Reduz diff grande limitando linhas por arquivo e tamanho total.
-    Retorna diff possivelmente reduzido e metadados de redução.
+
+    Mais sofisticada que reduce_diff_simple: preserva cabeçalhos de hunk
+    e limita por arquivo antes de truncar globalmente.
     """
     if len(diff_text) <= max_chars:
         return diff_text, {"reduced": False}
     sections = diff_text.split('\n')
     reduced_lines = []
-    file_line_count = 0
     current_file = None
     per_file_counter = 0
     truncated_files = 0
@@ -193,13 +144,11 @@ def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int
             per_file_counter += 1
         else:
             if line.startswith('@@'):
-                # manter cabeçalho de hunk para contexto mesmo se estourou limite
                 reduced_lines.append(line)
             elif line.startswith('diff --git'):
                 reduced_lines.append(line)
                 per_file_counter = 1
             else:
-                # pular linha
                 if per_file_counter == per_file_line_limit:
                     reduced_lines.append('... (linhas adicionais omitidas)')
                     truncated_files += 1
@@ -353,50 +302,16 @@ class OptimizedLLMHandler:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
     def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
-        """
-        Salva falhas de parsing JSON em arquivo separado.
-        
-        Args:
-            commit_hash (str): Hash do commit que falhou
-            repository (str): Repositório do commit
-            commit_message (str): Mensagem do commit
-            raw_response (str): Resposta completa da LLM
-            error_msg (str): Mensagem de erro detalhada
-        """
-        try:
-            failure_entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
-                "commit_hash": commit_hash,
-                "repository": repository,
-                "commit_message": commit_message,
-                "error": error_msg,
-                "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response,  # Capturar resposta completa sem truncamento
-                "analysis_attempt": "JSON parsing failed",
-                "prompt_excerpt": prompt_excerpt
-            }
-            
-            # Carregar falhas existentes
-            existing_failures = []
-            if os.path.exists(self.failures_file):
-                try:
-                    with open(self.failures_file, 'r', encoding='utf-8') as f:
-                        existing_failures = json.load(f)
-                except json.JSONDecodeError:
-                    print(warning(f"Arquivo de falhas {self.failures_file} corrompido, criando novo"))
-                    existing_failures = []
-            
-            # Adicionar nova falha
-            existing_failures.append(failure_entry)
-            
-            # Salvar arquivo atualizado
-            with open(self.failures_file, 'w', encoding='utf-8') as f:
-                json.dump(existing_failures, f, indent=2, ensure_ascii=False)
-            
-            print(warning(f"💾 Falha JSON salva em {self.failures_file} (total: {len(existing_failures)} falhas)"))
-            
-        except Exception as e:
-            print(error(f"⚠️ Erro ao salvar falha JSON: {str(e)}"))
+        """Delega para src.utils.failure_logger.save_json_failure."""
+        _save_json_failure(
+            failures_file=self.failures_file,
+            commit_hash=commit_hash,
+            repository=repository,
+            commit_message=commit_message,
+            raw_response=raw_response,
+            error_msg=error_msg,
+            prompt_excerpt=prompt_excerpt,
+        )
 
     def analyze_commit(self, repository: str, commit1: str, commit2: str, commit_message: str, diff: str, show_prompt: bool = False):
         """
@@ -559,7 +474,7 @@ class OptimizedLLMHandler:
         raw_response = llm_response.strip()
         
         # Primeira tentativa: procurar padrão FINAL: (PRIORIDADE ABSOLUTA)
-        final_classification = self._extract_final_classification(llm_response)
+        final_classification = extract_final_classification(llm_response)
         if final_classification:
             print(success(f"Classificação extraída via FINAL: {final_classification}"))
             # Criar resultado imediato com FINAL: - não precisa de JSON
@@ -796,7 +711,7 @@ Response format (respond with ONLY this JSON structure):
                 return None
 
             # Procurar pelo final do JSON mais próximo que balanceie chaves
-            end_idx = self._find_json_end_index(llm_response, start_idx)
+            end_idx = _find_json_end_index(llm_response, start_idx)
             if end_idx == -1:
                 # fallback: rfind
                 end_idx = llm_response.rfind('}')
@@ -882,32 +797,6 @@ Response format (respond with ONLY this JSON structure):
         except Exception:
             return json_str
 
-    def _find_json_end_index(self, text: str, start_idx: int) -> int:
-        """
-        Encontra o índice do fechamento '}' correspondente ao primeiro '{' em start_idx
-        usando balanceamento simples. Retorna -1 se não encontrar.
-        """
-        depth = 0
-        in_string = False
-        escape = False
-        for i in range(start_idx, len(text)):
-            ch = text[i]
-            if ch == '"' and not escape:
-                in_string = not in_string
-            if in_string:
-                if ch == '\\' and not escape:
-                    escape = True
-                else:
-                    escape = False
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return i
-        return -1
-    
     def _validate_and_fix_json_fields(self, json_result: dict, commit_message: str, commit_hash: str | None = None, previous_hash: str | None = None, repository: str | None = None) -> Optional[dict]:
         """
         Valida e corrige campos obrigatórios do JSON usando dados dos CSVs quando possível.
@@ -1033,42 +922,6 @@ Response format (respond with ONLY this JSON structure):
             print(prompt)
         print(f"{header('=' * 50)}\n")
     
-    def _extract_final_classification(self, response: str) -> Optional[str]:
-        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
-        
-        Returns:
-            'PURE' ou 'FLOSS' se encontrado, None caso contrário
-        """
-        import re
-        
-        # Procurar por padrões FINAL: (case insensitive) - expandido para mais variações
-        patterns = [
-            r'FINAL:\s*(PURE|FLOSS)',
-            r'FINAL:\s*(pure|floss)',
-            r'Final:\s*(PURE|FLOSS)', 
-            r'Final:\s*(pure|floss)',
-            r'CONCLUSÃO:\s*(PURE|FLOSS)',
-            r'CONCLUSÃO:\s*(pure|floss)',
-            r'CLASSIFICATION:\s*(PURE|FLOSS)',
-            r'CLASSIFICATION:\s*(pure|floss)',
-            r'RESULTADO:\s*(PURE|FLOSS)',
-            r'RESULTADO:\s*(pure|floss)',
-            # Padrões mais flexíveis
-            r'\bFINAL[:\s]+([Pp][Uu][Rr][Ee]|[Ff][Ll][Oo][Ss][Ss])\b',
-            r'\b(PURE|FLOSS)\s*$',  # Final da linha
-            r'^\s*(PURE|FLOSS)\s*$',  # Linha isolada
-        ]
-        
-        for pattern in patterns:
-            matches = re.findall(pattern, response, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                classification = match.upper()
-                # Verificar se é uma classificação válida
-                if classification in ['PURE', 'FLOSS']:
-                    return classification
-                    
-        return None
-
     def get_stats(self) -> dict:
         """
         Retorna estatísticas sobre a configuração atual.

@@ -30,40 +30,10 @@ from src.core.config import (
     get_generation_base_options
 )
 from src.utils.colors import *
-import math
-
-# Função auxiliar para extração de JSON (fallback se utilitário não existir)
-def extract_json_from_text(text):
-    """Fallback para extração de JSON se utilitário específico não existir"""
-    import re
-    # Tentar encontrar JSON simples
-    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text)
-    if json_match:
-        try:
-            return json.loads(json_match.group())
-        except:
-            pass
-    return None
-from src.utils.json_parser import extract_json_from_text
-
-def estimate_token_count(text: str) -> int:
-    if not text:
-        return 0
-    return max(1, len(text)//4)
-
-def dynamic_num_ctx(diff_text: str) -> int:
-    tokens = estimate_token_count(diff_text)
-    if tokens < 3000:
-        return 2048
-    if tokens < 6000:
-        return 4096
-    return 6144
-
-def reduce_diff_simple(diff_text: str, max_chars: int = 50000) -> tuple[str, dict]:
-    if len(diff_text) <= max_chars:
-        return diff_text, {"reduced": False}
-    truncated = diff_text[:max_chars]
-    return truncated + "\n... (truncado)", {"reduced": True, "original_chars": len(diff_text), "new_chars": len(truncated)}
+from src.utils.json_parser import extract_json_from_text, _find_json_end_index
+from src.utils.classification import extract_final_classification
+from src.utils.failure_logger import save_json_failure as _save_json_failure
+from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
 
 # -----------------------------
 # Adaptadores de LLM
@@ -190,52 +160,17 @@ class LLMHandler:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
     def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
-        """
-        Salva falhas de parsing JSON em arquivo separado.
-        
-        Args:
-            commit_hash (str): Hash do commit que falhou
-            repository (str): Repositório do commit
-            commit_message (str): Mensagem do commit
-            raw_response (str): Resposta completa da LLM
-            error_msg (str): Mensagem de erro detalhada
-        """
-        try:
-            failure_entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
-                "commit_hash": commit_hash,
-                "repository": repository,
-                "commit_message": commit_message,
-                "error": error_msg,
-                "llm_response_complete": raw_response,
-                "llm_response_excerpt": raw_response,  # Capturar resposta completa sem truncamento
-                "analysis_attempt": "JSON parsing failed",
-                "parse_attempts": 1,
-                "llm_prompt_excerpt": prompt_excerpt,
-                "notes": "Saved by save_json_failure"
-            }
-            
-            # Carregar falhas existentes
-            existing_failures = []
-            if os.path.exists(self.failures_file):
-                try:
-                    with open(self.failures_file, 'r', encoding='utf-8') as f:
-                        existing_failures = json.load(f)
-                except json.JSONDecodeError:
-                    print(warning(f"Arquivo de falhas {self.failures_file} corrompido, criando novo"))
-                    existing_failures = []
-            
-            # Adicionar nova falha
-            existing_failures.append(failure_entry)
-            
-            # Salvar arquivo atualizado
-            with open(self.failures_file, 'w', encoding='utf-8') as f:
-                json.dump(existing_failures, f, indent=2, ensure_ascii=False)
-            
-            print(warning(f"💾 Falha JSON salva em {self.failures_file} (total: {len(existing_failures)} falhas)"))
-            
-        except Exception as e:
-            print(error(f"⚠️ Erro ao salvar falha JSON: {str(e)}"))
+        """Delega para src.utils.failure_logger.save_json_failure."""
+        _save_json_failure(
+            failures_file=self.failures_file,
+            commit_hash=commit_hash,
+            repository=repository,
+            commit_message=commit_message,
+            raw_response=raw_response,
+            error_msg=error_msg,
+            prompt_excerpt=prompt_excerpt,
+            extra_fields={"parse_attempts": 1, "notes": "Saved by save_json_failure"},
+        )
 
     def _attempt_multiple_extractions(self, llm_response: str, commit_data: dict, max_attempts: int = 3) -> Optional[dict]:
         """Tenta extrair JSON várias vezes aplicando limpezas incrementais na resposta."""
@@ -418,7 +353,7 @@ class LLMHandler:
             print(dim(f"extract_json_from_text falhou: {e}"))
 
         # Tentar extrair classificação do padrão FINAL: primeiro
-        final_classification = self._extract_final_classification(llm_response)
+        final_classification = extract_final_classification(llm_response)
         if final_classification:
             print(success(f"Classificação extraída via FINAL: {final_classification}"))
 
@@ -456,32 +391,6 @@ class LLMHandler:
 
         return None
     
-    def _extract_final_classification(self, response: str) -> Optional[str]:
-        """Procura por padrão FINAL: PURE ou FINAL: FLOSS na resposta.
-        
-        Returns:
-            'PURE' ou 'FLOSS' se encontrado, None caso contrário
-        """
-        import re
-        
-        # Procurar por padrões FINAL: (case insensitive)
-        patterns = [
-            r'FINAL:\s*(PURE|FLOSS)',
-            r'FINAL:\s*(pure|floss)',
-            r'Final:\s*(PURE|FLOSS)', 
-            r'Final:\s*(pure|floss)',
-            r'CONCLUSÃO:\s*(PURE|FLOSS)',
-            r'CONCLUSÃO:\s*(pure|floss)'
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, response, re.IGNORECASE | re.MULTILINE)
-            if match:
-                classification = match.group(1).upper()
-                return classification
-                
-        return None
-    
     def _extract_with_patterns(self, response: str, commit_data: dict) -> Optional[dict]:
         """Extração usando padrões regex."""
         json_patterns = [
@@ -507,7 +416,7 @@ class LLMHandler:
                 except Exception:
                     # tentar balancear chaves e reparsear
                     start_idx = response.find(match)
-                    end_idx = self._find_json_end_index(response, start_idx)
+                    end_idx = _find_json_end_index(response, start_idx)
                     if end_idx != -1:
                         candidate = response[start_idx:end_idx+1]
                         try:
@@ -525,28 +434,6 @@ class LLMHandler:
                     continue
         return None
 
-    def _find_json_end_index(self, text: str, start_idx: int) -> int:
-        depth = 0
-        in_string = False
-        escape = False
-        for i in range(start_idx, len(text)):
-            ch = text[i]
-            if ch == '"' and not escape:
-                in_string = not in_string
-            if in_string:
-                if ch == '\\' and not escape:
-                    escape = True
-                else:
-                    escape = False
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return i
-        return -1
-    
     def _extract_with_line_parsing(self, response: str, commit_data: dict) -> Optional[dict]:
         """Extração linha por linha procurando campos específicos."""
         result = {}
