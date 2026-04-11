@@ -666,7 +666,7 @@ Response format (respond with ONLY this JSON structure):
 """
 
             # Fazer nova chamada ao LLM
-            response = self._call_ollama(simplified_prompt, model=self.model, attempts=2)
+            response = self.adapter.complete(simplified_prompt, attempts=2)
             
             if response:
                 # Tentar extrair JSON da nova resposta
