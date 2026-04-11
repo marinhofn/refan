@@ -30,20 +30,6 @@ from src.core.config import (
     get_generation_base_options
 )
 from src.utils.colors import *
-import math
-
-# Função auxiliar para extração de JSON (fallback se utilitário não existir)
-def extract_json_from_text(text):
-    """Fallback para extração de JSON se utilitário específico não existir"""
-    import re
-    # Tentar encontrar JSON simples
-    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text)
-    if json_match:
-        try:
-            return json.loads(json_match.group())
-        except:
-            pass
-    return None
 from src.utils.json_parser import extract_json_from_text
 
 def estimate_token_count(text: str) -> int:

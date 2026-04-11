@@ -35,32 +35,6 @@ from src.core.config import (
     get_generation_base_options,
 )
 from src.utils.colors import *
-import math
-
-# Função auxiliar para extração de JSON
-def extract_json_from_text(text):
-    """Extrai JSON do texto usando várias estratégias"""
-    import re
-    import json
-    
-    # Tentar encontrar JSON entre chaves
-    json_patterns = [
-        r'```json\s*(\{[\s\S]*?\})\s*```',
-        r'```\s*(\{[\s\S]*?\})\s*```',
-        r'(\{[\s\S]*?\})',
-        r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})'
-    ]
-    
-    for pattern in json_patterns:
-        matches = re.findall(pattern, text, re.MULTILINE | re.DOTALL)
-        for match in matches:
-            try:
-                result = json.loads(match)
-                if isinstance(result, dict):
-                    return result
-            except:
-                continue
-    return None
 
 # -----------------------------
 # Carregador de dados dos CSVs
