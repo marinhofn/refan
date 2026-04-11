@@ -34,6 +34,7 @@ from src.utils.json_parser import extract_json_from_text, _find_json_end_index
 from src.utils.classification import extract_final_classification
 from src.utils.failure_logger import save_json_failure as _save_json_failure
 from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_diff_simple
+from src.core.settings import settings as _settings
 
 # -----------------------------
 # Adaptadores de LLM
@@ -51,26 +52,28 @@ class OllamaAdapter:
         self.host = host
         self.model = model
 
-    def complete(self, prompt: str, attempts: int = 3, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+        if attempts is None:
+            attempts = _settings.max_retries
         base_opts = get_generation_base_options()
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "keep_alive": keep_alive if keep_alive is not None else "10m",
+            "keep_alive": keep_alive if keep_alive is not None else _settings.get_keep_alive(self.model),
             "options": {
-                "num_ctx": num_ctx or 4096,
-                "temperature": 0.1,
-                "num_predict": 20000,  # Permitir respostas mais longas da LLM
+                "num_ctx": num_ctx or _settings.context_small,
+                "temperature": _settings.temperature,
+                "num_predict": _settings.num_predict,
                 **base_opts,
             },
-            # top-level flag to request no 'think' blocks when supported by server
             "think": False,
         }
         last_error = None
+        timeout = _settings.get_timeout(len(prompt))
         for i in range(1, attempts + 1):
             try:
-                resp = requests.post(self.host, json=payload, timeout=120)
+                resp = requests.post(self.host, json=payload, timeout=timeout)
                 if resp.status_code != 200:
                     last_error = f"HTTP {resp.status_code} - {resp.text[:200]}"
                 else:
@@ -242,7 +245,7 @@ class LLMHandler:
                 print(warning(f"Modelo '{self.model}' pode não estar pronto (health check falhou: {hc.get('error')}). Prosseguindo mesmo assim..."))
         # Possível redução para commits muito grandes
         reduced_meta = {}
-        if len(diff) > 50000:
+        if len(diff) > _settings.max_diff_chars:
             diff, reduced_meta = reduce_diff_simple(diff)
             prompt = build_commit_prompt({**commit_data, "diff": diff}, self.llm_prompt)
             if reduced_meta.get("reduced"):
