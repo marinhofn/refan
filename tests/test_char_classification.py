@@ -17,7 +17,6 @@ if sys.version_info < (3, 10):
     )
 
 from src.handlers.llm_handler import LLMHandler
-from src.handlers.optimized_llm_handler import OptimizedLLMHandler
 
 
 @pytest.fixture
@@ -28,8 +27,8 @@ def llm_handler():
 
 @pytest.fixture
 def opt_handler():
-    """OptimizedLLMHandler com modelo falso."""
-    return OptimizedLLMHandler(model="test")
+    """LLMHandler com modelo falso."""
+    return LLMHandler(model="test")
 
 
 # ---------------------------------------------------------------------------

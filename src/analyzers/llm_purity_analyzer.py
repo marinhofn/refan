@@ -13,7 +13,7 @@ from pathlib import Path
 import time
 import sys
 
-from src.handlers.optimized_llm_handler import OptimizedLLMHandler
+from src.handlers.llm_handler import LLMHandler
 from src.handlers.git_handler import GitHandler
 from src.handlers.data_handler import DataHandler
 from src.utils.colors import *
@@ -84,7 +84,7 @@ class LLMPurityAnalyzer:
             model: Nome do modelo LLM a usar (se None usa o atual configurado).
             csv_file_path: Caminho para o CSV a ser usado/atualizado. Se None usa o CSV global.
         """
-        self.llm_handler = OptimizedLLMHandler(model=model)
+        self.llm_handler = LLMHandler(model=model)
         self.git_handler = GitHandler()
         self.data_handler = DataHandler()
         self.dry_run = dry_run
