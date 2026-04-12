@@ -20,6 +20,7 @@ from src.models.commit import CommitPair, AnalysisResult
 from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
 from src.utils.persistence import SessionWriter
 from src.utils.colors import dim, error, header, info, success, warning
+from src.core.settings import settings as _settings
 
 class ProgressBar:
     """Barra de progresso simples para análise LLM."""
@@ -101,6 +102,20 @@ class LLMPurityAnalyzer:
         self.csv_file_path = csv_file_path or "csv/floss_hashes_no_rpt_purity_with_analysis.csv"
         self.backup_dir = str(paths['ANALISES_DIR'])  # Diretório específico do modelo
         self.session_log_file = None
+        self.current_model = current_model
+
+        # Supabase (opcional: conecta se configurado)
+        self.supabase = None
+        self.command_handler = None
+        if _settings.supabase_enabled:
+            try:
+                from src.persistence.supabase_client import SupabaseClient
+                from src.runner.command_handler import CommandHandler
+                self.supabase = SupabaseClient(_settings.supabase_url, _settings.supabase_service_key)
+                self.command_handler = CommandHandler(self.supabase, _settings.runner_id)
+                print(success("Supabase conectado para persistência cloud"))
+            except Exception as e:
+                print(warning(f"Supabase indisponível, usando modo local: {e}"))
 
         # Estatísticas da sessão
         self.stats = {
@@ -464,13 +479,54 @@ class LLMPurityAnalyzer:
         analyses_results = []
         processed_count = 0
 
+        # Inicializar sessão Supabase (se conectado)
+        cloud_session_id = None
+        cloud_model_id = None
+        cloud_prompt_id = None
+        if self.supabase:
+            try:
+                cloud_model_id = self.supabase.get_or_create_model(self.current_model)
+                from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
+                cloud_prompt_id = self.supabase.get_or_create_prompt_version(
+                    _settings.prompt_version_tag, OPTIMIZED_LLM_PROMPT
+                )
+                if cloud_model_id and cloud_prompt_id:
+                    cloud_session_id = self.supabase.start_session(
+                        model_id=cloud_model_id,
+                        prompt_version_id=cloud_prompt_id,
+                        config_snapshot=_settings.to_dict(),
+                        runner_hostname=_settings.runner_id,
+                        total_planned=len(analysis_df),
+                        purity_filter=purity_filter,
+                    )
+                    if cloud_session_id:
+                        print(info(f"Sessão Supabase criada: {cloud_session_id[:8]}..."))
+            except Exception as e:
+                print(warning(f"Falha ao criar sessão Supabase: {e}"))
+
         try:
             for idx, row in analysis_df.iterrows():
+                # Controle remoto: verificar comandos pendentes
+                if self.command_handler:
+                    from src.runner.command_handler import AnalysisCancelled
+                    try:
+                        self.command_handler.poll_and_execute()
+                        self.command_handler.wait_if_paused()
+                    except AnalysisCancelled:
+                        print(warning("Análise cancelada via comando remoto"))
+                        break
+
                 processed_count += 1
                 self.stats["total_processed"] += 1
 
                 hash_commit = row['hash']
                 purity_classification = row['purity_analysis']
+
+                # Controle remoto: verificar skip list
+                if self.command_handler and self.command_handler.should_skip(hash_commit):
+                    print(dim(f"⏭️ Skip (remoto): {hash_commit[:8]}..."))
+                    self.stats["skipped_already_analyzed"] += 1
+                    continue
 
                 progress_bar.update(processed_count)
                 print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
@@ -484,8 +540,46 @@ class LLMPurityAnalyzer:
                         analyses_results.append(result)
                         self.stats["successful_analyses"] += 1
 
-                        # Persistência incremental: JSONL append (O(1), atômico)
+                        # Persistência local: JSONL append (O(1), atômico)
                         session_writer.append(result)
+
+                        # Persistência cloud: Supabase (se conectado)
+                        if self.supabase and cloud_session_id:
+                            try:
+                                commit_id = self.supabase.upsert_commit(
+                                    commit_hash_current=hash_commit,
+                                    commit_hash_before=result.get("commit_hash_before", ""),
+                                    repository_url=result.get("repository", ""),
+                                    project_name=result.get("project_name", ""),
+                                    purity_analysis=purity_classification,
+                                )
+                                if commit_id:
+                                    self.supabase.record_result(
+                                        session_id=cloud_session_id,
+                                        commit_id=commit_id,
+                                        model_id=cloud_model_id,
+                                        prompt_version_id=cloud_prompt_id,
+                                        classification=classification,
+                                        justification=result.get("llm_justification", ""),
+                                        confidence_level=result.get("llm_confidence", ""),
+                                        technical_evidence=result.get("technical_evidence", ""),
+                                        llm_raw_response=result.get("llm_raw_response", ""),
+                                        diff_size_chars=result.get("diff_size", 0),
+                                        diff_lines=result.get("diff_lines", 0),
+                                    )
+                                # Heartbeat
+                                self.supabase.update_heartbeat(
+                                    runner_id=_settings.runner_id,
+                                    session_id=cloud_session_id,
+                                    status="running",
+                                    current_commit_hash=hash_commit,
+                                    current_commit_index=processed_count,
+                                    total_commits_in_batch=len(analysis_df),
+                                    model_name=self.current_model,
+                                )
+                            except Exception as e:
+                                print(dim(f"Supabase sync falhou (JSONL local OK): {e}"))
+
                         print(success(f"✅ {hash_commit[:8]}... → {classification}"))
                     else:
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
@@ -513,10 +607,24 @@ class LLMPurityAnalyzer:
             print(error(f"❌ Falha ao salvar progresso: {e}"))
             return self.stats
 
-        # Salvar resultados finais
-        self._save_csv_data(df)
-        self._save_session_analysis(analyses_results)
-        
+        # Finalizar sessão Supabase
+        if self.supabase and cloud_session_id:
+            try:
+                self.supabase.update_session_status(
+                    session_id=cloud_session_id,
+                    status="completed",
+                    total_completed=self.stats["successful_analyses"],
+                    total_failed=self.stats["failed_analyses"],
+                    total_skipped=self.stats["skipped_already_analyzed"],
+                )
+                self.supabase.update_heartbeat(
+                    runner_id=_settings.runner_id,
+                    status="idle",
+                )
+                print(success("Sessão Supabase finalizada"))
+            except Exception as e:
+                print(warning(f"Falha ao finalizar sessão Supabase: {e}"))
+
         # Imprimir estatísticas finais
         self._print_final_stats()
         
