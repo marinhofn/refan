@@ -70,6 +70,7 @@ Thumbs.db
 # Arquivos que podem conter segredos (verifique antes de remover este ignore)
 *.env
 .env.*
+!.env.example
 secrets*/
 
 # Modelos adicionais (caso algum dia salvar pesos locais)

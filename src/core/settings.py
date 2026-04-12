@@ -20,6 +20,7 @@ Refs: REFACTORING_PLAN.md Phase 2
 from __future__ import annotations
 
 import os
+import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -69,6 +70,20 @@ class RefanSettings:
     # --- Failure tracking ---
     failures_file: str = "json_failures.json"
 
+    # --- Supabase (cloud persistence) ---
+    supabase_url: str = field(
+        default_factory=lambda: os.environ.get("SUPABASE_URL", "")
+    )
+    supabase_service_key: str = field(
+        default_factory=lambda: os.environ.get("SUPABASE_SERVICE_KEY", "")
+    )
+    runner_id: str = field(
+        default_factory=lambda: os.environ.get("REFAN_RUNNER_ID", socket.gethostname())
+    )
+    prompt_version_tag: str = field(
+        default_factory=lambda: os.environ.get("REFAN_PROMPT_VERSION", "v2.0-mestrado")
+    )
+
     def is_deepseek(self, model_name: str | None = None) -> bool:
         """Verifica se o modelo atual ou informado é DeepSeek."""
         name = model_name or self.llm_model
@@ -86,10 +101,20 @@ class RefanSettings:
             return self.timeout_large_s
         return self.timeout_base_s
 
+    @property
+    def supabase_enabled(self) -> bool:
+        """Verifica se Supabase está configurado (URL e key presentes)."""
+        return bool(self.supabase_url and self.supabase_service_key)
+
     def to_dict(self) -> dict:
-        """Serializa configuração para logging e reprodutibilidade."""
+        """Serializa configuração para logging e reprodutibilidade.
+
+        Exclui a service key do snapshot por segurança.
+        """
         from dataclasses import asdict
-        return asdict(self)
+        d = asdict(self)
+        d.pop("supabase_service_key", None)
+        return d
 
 
 # Singleton global — importado por todos os módulos

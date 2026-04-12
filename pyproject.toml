@@ -22,6 +22,10 @@ dev = [
     "pytest-mock",
 ]
 json5 = ["json5>=0.9"]
+supabase = [
+    "supabase>=2.0",
+    "python-dotenv>=1.0",
+]
 
 [project.scripts]
 refan = "cli:run_cli"
