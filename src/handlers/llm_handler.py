@@ -207,7 +207,11 @@ class OllamaAdapter:
             attempts = _settings.max_retries
         base_opts = get_generation_base_options()
 
-        default_num_ctx = _settings.context_small if _settings.is_deepseek(self.model) else (num_ctx or _settings.context_small)
+        # Resolvido uma única vez fora do loop de retry: as referências nos
+        # blocos de monitoramento/timeout abaixo dependem desta variável.
+        is_deepseek = _settings.is_deepseek(self.model)
+
+        default_num_ctx = _settings.context_small if is_deepseek else (num_ctx or _settings.context_small)
 
         payload = {
             "model": self.model,
