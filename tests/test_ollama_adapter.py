@@ -1,0 +1,102 @@
+"""Testes de regressão para OllamaAdapter.complete().
+
+Cobrem o defeito corrigido na Fase H0 do HARDENING_PLAN.md: a variável
+``is_deepseek`` era referenciada sem definição dentro de ``complete()``;
+o ``NameError`` resultante — capturado pelo ``except Exception`` genérico
+do loop de retry — descartava respostas válidas do Ollama em toda chamada
+bem-sucedida, forçando retries até retornar None.
+
+Todos os testes usam ``requests.post`` mockado: nenhuma chamada de rede
+real é feita (executáveis offline, sem Ollama).
+"""
+
+from unittest import mock
+
+import pytest
+import requests
+
+from src.handlers.llm_handler import OllamaAdapter
+
+HOST = "http://localhost:11434/api/generate"
+
+
+def _mock_response(status_code=200, response_text="FINAL: PURE"):
+    """Resposta HTTP simulada no formato da API /api/generate do Ollama."""
+    resp = mock.Mock()
+    resp.status_code = status_code
+    resp.json.return_value = {"response": response_text}
+    resp.text = response_text
+    return resp
+
+
+class TestCompleteSuccessPath:
+    """Regressão direta do defeito H0: resposta válida deve ser retornada."""
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_returns_response_on_first_attempt(self, mock_post):
+        mock_post.return_value = _mock_response(response_text="FINAL: PURE")
+        adapter = OllamaAdapter(HOST, "mistral")
+
+        result = adapter.complete("prompt de teste")
+
+        assert result == "FINAL: PURE"
+        # Antes do fix, o NameError forçava esgotar todos os retries.
+        assert mock_post.call_count == 1
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_deepseek_success_tracks_performance(self, mock_post):
+        mock_post.return_value = _mock_response(response_text="FINAL: FLOSS")
+        adapter = OllamaAdapter(HOST, "deepseek-r1:8b")
+
+        with mock.patch.object(adapter, "_track_deepseek_performance") as track:
+            result = adapter.complete("prompt de teste")
+
+        assert result == "FINAL: FLOSS"
+        track.assert_called_once()
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_non_deepseek_does_not_track_performance(self, mock_post):
+        mock_post.return_value = _mock_response()
+        adapter = OllamaAdapter(HOST, "mistral")
+
+        with mock.patch.object(adapter, "_track_deepseek_performance") as track:
+            adapter.complete("prompt de teste")
+
+        track.assert_not_called()
+
+
+class TestCompleteFailurePaths:
+    """Comportamento do loop de retry em falhas de HTTP e timeout."""
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_deepseek_timeout_triggers_context_reset(self, mock_post):
+        mock_post.side_effect = requests.exceptions.Timeout()
+        adapter = OllamaAdapter(HOST, "deepseek-r1:8b")
+
+        with mock.patch.object(adapter, "_reset_deepseek_context") as reset:
+            result = adapter.complete("prompt de teste", attempts=2)
+
+        assert result is None
+        # Reset ocorre apenas quando ainda há tentativas restantes (i < attempts).
+        reset.assert_called_once()
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_non_deepseek_timeout_does_not_reset(self, mock_post):
+        mock_post.side_effect = requests.exceptions.Timeout()
+        adapter = OllamaAdapter(HOST, "mistral")
+
+        with mock.patch.object(adapter, "_reset_deepseek_context") as reset:
+            result = adapter.complete("prompt de teste", attempts=2)
+
+        assert result is None
+        reset.assert_not_called()
+
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_http_error_exhausts_retries_and_returns_none(self, mock_post):
+        mock_post.return_value = _mock_response(status_code=500, response_text="erro")
+        adapter = OllamaAdapter(HOST, "mistral")
+
+        result = adapter.complete("prompt de teste", attempts=3)
+
+        assert result is None
+        assert mock_post.call_count == 3
