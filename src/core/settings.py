@@ -91,6 +91,14 @@ class RefanSettings:
     prompt_version_tag: str = field(
         default_factory=lambda: os.environ.get("REFAN_PROMPT_VERSION", "v2.0-mestrado")
     )
+    # Resiliência de rede (HARDENING_PLAN.md, Fase H6): timeout explícito do
+    # client PostgREST e retry com backoff exponencial para operações que
+    # persistem dados de pesquisa (resultados, sessões, commits). Operações
+    # periódicas (heartbeat, polling) usam tentativa única — a próxima
+    # iteração do loop já as repete naturalmente.
+    supabase_timeout_s: int = 10
+    supabase_max_retries: int = 3
+    supabase_backoff_base_s: float = 1.0
 
     def is_deepseek(self, model_name: str | None = None) -> bool:
         """Verifica se o modelo atual ou informado é DeepSeek."""
