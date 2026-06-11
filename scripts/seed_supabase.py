@@ -26,34 +26,47 @@ from src.core.settings import settings
 from src.persistence.supabase_client import SupabaseClient
 
 
-def seed_commits(client: SupabaseClient) -> int:
-    """Carrega commits do CSV para a tabela commits."""
-    csv_path = "csv/commits_with_refactoring.csv"
+def seed_commits(
+    client: SupabaseClient,
+    csv_path: str = "csv/commits_with_refactoring.csv",
+) -> tuple[int, list[str]]:
+    """Carrega commits do CSV para a tabela commits.
+
+    Idempotente por construção (upsert com on_conflict). Falha em um
+    registro não aborta o lote: o hash é acumulado e reportado ao final.
+
+    Returns:
+        (commits carregados, hashes que falharam)
+    """
     if not os.path.exists(csv_path):
         print(f"CSV não encontrado: {csv_path}")
-        return 0
+        return 0, []
 
     df = pd.read_csv(csv_path)
     print(f"Carregando {len(df)} commits de {csv_path}...")
 
     count = 0
+    failed: list[str] = []
     for _, row in df.iterrows():
+        commit_hash = str(row.get("commit2", ""))
         result = client.upsert_commit(
-            commit_hash_current=str(row.get("commit2", "")),
+            commit_hash_current=commit_hash,
             commit_hash_before=str(row.get("commit1", "")),
             repository_url=str(row.get("project", "")),
             project_name=str(row.get("project_name", "")),
         )
         if result:
             count += 1
+        else:
+            failed.append(commit_hash)
         if count % 500 == 0 and count > 0:
             print(f"  {count} commits carregados...")
 
-    print(f"Total: {count} commits carregados")
-    return count
+    print(f"Total: {count} commits carregados, {len(failed)} falhas")
+    return count, failed
 
 
-def seed_models(client: SupabaseClient) -> int:
+def seed_models(client: SupabaseClient) -> tuple[int, list[str]]:
     """Registra os modelos usados no TCC."""
     models = [
         {"name": "mistral:latest", "family": "mistral", "parameter_count": "7B"},
@@ -67,17 +80,20 @@ def seed_models(client: SupabaseClient) -> int:
     ]
 
     count = 0
+    failed: list[str] = []
     for m in models:
         result = client.get_or_create_model(**m)
         if result:
             count += 1
             print(f"  Modelo registrado: {m['name']}")
+        else:
+            failed.append(m["name"])
 
-    print(f"Total: {count} modelos registrados")
-    return count
+    print(f"Total: {count} modelos registrados, {len(failed)} falhas")
+    return count, failed
 
 
-def seed_prompt_versions(client: SupabaseClient) -> int:
+def seed_prompt_versions(client: SupabaseClient) -> tuple[int, list[str]]:
     """Registra as versões de prompt usadas."""
     from src.core.config import LLM_PROMPT
     from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
@@ -96,14 +112,17 @@ def seed_prompt_versions(client: SupabaseClient) -> int:
     ]
 
     count = 0
+    failed: list[str] = []
     for p in prompts:
         result = client.get_or_create_prompt_version(**p)
         if result:
             count += 1
             print(f"  Prompt registrado: {p['version_tag']}")
+        else:
+            failed.append(p["version_tag"])
 
-    print(f"Total: {count} versões de prompt registradas")
-    return count
+    print(f"Total: {count} versões de prompt registradas, {len(failed)} falhas")
+    return count, failed
 
 
 def main():
@@ -115,13 +134,29 @@ def main():
     print("=== Seed Supabase ===\n")
     client = SupabaseClient(settings.supabase_url, settings.supabase_service_key)
 
-    seed_models(client)
+    _, failed_models = seed_models(client)
     print()
-    seed_prompt_versions(client)
+    _, failed_prompts = seed_prompt_versions(client)
     print()
-    seed_commits(client)
+    _, failed_commits = seed_commits(client)
 
-    print("\n=== Seed concluído ===")
+    failures = {
+        "modelos": failed_models,
+        "prompts": failed_prompts,
+        "commits": failed_commits,
+    }
+    total_failures = sum(len(v) for v in failures.values())
+    if total_failures:
+        print(f"\n=== Seed concluído com {total_failures} falha(s) ===")
+        for category, items in failures.items():
+            if items:
+                shown = ", ".join(items[:10])
+                suffix = f" ... e mais {len(items) - 10}" if len(items) > 10 else ""
+                print(f"  {category}: {shown}{suffix}")
+        print("Reexecute o seed (idempotente) após restabelecer a conexão.")
+        sys.exit(1)
+
+    print("\n=== Seed concluído sem falhas ===")
 
 
 if __name__ == "__main__":
