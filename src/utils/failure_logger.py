@@ -15,8 +15,9 @@ Refs: REFACTORING_PLAN.md Phase 6.2
 
 import json
 import os
-import datetime
 from typing import Optional
+
+from src.utils.timeutils import utc_now_iso
 
 
 def save_json_failure(
@@ -43,7 +44,7 @@ def save_json_failure(
     """
     try:
         failure_entry = {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": utc_now_iso(),
             "commit_hash": commit_hash,
             "repository": repository,
             "commit_message": commit_message,

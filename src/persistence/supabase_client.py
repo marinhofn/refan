@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from datetime import datetime
+from src.utils.timeutils import utc_now_iso
 from typing import Optional
 
 from src.utils.logging_config import get_logger
@@ -215,7 +215,7 @@ class SupabaseClient:
                 "total_skipped": total_skipped,
             }
             if status in ("completed", "failed", "cancelled"):
-                data["completed_at"] = datetime.now().isoformat()
+                data["completed_at"] = utc_now_iso()
             if error_message:
                 data["error_message"] = error_message
 
@@ -327,8 +327,8 @@ class SupabaseClient:
                     "current_commit_index": current_commit_index,
                     "total_commits_in_batch": total_commits_in_batch,
                     "model_name": model_name,
-                    "last_heartbeat": datetime.now().isoformat(),
-                    "updated_at": datetime.now().isoformat(),
+                    "last_heartbeat": utc_now_iso(),
+                    "updated_at": utc_now_iso(),
                 },
                 on_conflict="runner_id",
             ).execute()
@@ -358,7 +358,7 @@ class SupabaseClient:
                 self.client.table("command_queue").update(
                     {
                         "status": "acknowledged",
-                        "acknowledged_at": datetime.now().isoformat(),
+                        "acknowledged_at": utc_now_iso(),
                     }
                 ).eq("id", cmd["id"]).execute()
             return commands
@@ -374,7 +374,7 @@ class SupabaseClient:
             self.client.table("command_queue").update(
                 {
                     "status": "completed",
-                    "completed_at": datetime.now().isoformat(),
+                    "completed_at": utc_now_iso(),
                     "result_message": result_message,
                 }
             ).eq("id", command_id).execute()

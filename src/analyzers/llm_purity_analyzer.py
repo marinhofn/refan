@@ -7,7 +7,6 @@ Preenche a coluna llm_analysis com análises de commits de refatoramento.
 import pandas as pd
 import json
 import os
-import datetime
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 import time
@@ -19,6 +18,7 @@ from src.handlers.data_handler import DataHandler
 from src.models.commit import CommitPair, AnalysisResult
 from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
 from src.utils.persistence import SessionWriter
+from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
 from src.utils.colors import dim, error, header, info, success, warning
 from src.core.settings import settings as _settings
 
@@ -119,7 +119,7 @@ class LLMPurityAnalyzer:
 
         # Estatísticas da sessão
         self.stats = {
-            "start_time": datetime.datetime.now(),
+            "start_time": utc_now(),
             "total_processed": 0,
             "successful_analyses": 0,
             "failed_analyses": 0,
@@ -133,7 +133,7 @@ class LLMPurityAnalyzer:
         
     def _create_session_log_file(self) -> str:
         """Cria arquivo de log da sessão específico por modelo e tipo."""
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = utc_now_stamp()
         
         # Detectar tipo de análise baseado no caminho do CSV
         csv_name = Path(self.csv_file_path).name
@@ -184,7 +184,7 @@ class LLMPurityAnalyzer:
             # Criar um backup apenas uma vez por sessão para evitar poluição
             # do diretório csv. O backup será armazenado no diretório do modelo
             # (self.backup_dir) para manter os arquivos de trabalho organizados.
-            backup_timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_timestamp = utc_now_stamp()
             if (not self._backup_created) and os.path.exists(self.csv_file_path):
                 # Nome seguro para o backup
                 original_name = Path(self.csv_file_path).name
@@ -366,7 +366,7 @@ class LLMPurityAnalyzer:
                     "description": description,
                     "csv_file_analyzed": self.csv_file_path,
                     "start_time": self.stats["start_time"].isoformat(),
-                    "end_time": datetime.datetime.now().isoformat(),
+                    "end_time": utc_now_iso(),
                     "total_processed": self.stats["total_processed"],
                     "successful_analyses": self.stats["successful_analyses"],
                     "failed_analyses": self.stats["failed_analyses"],
@@ -632,7 +632,7 @@ class LLMPurityAnalyzer:
     
     def _print_final_stats(self) -> None:
         """Imprime estatísticas finais da análise."""
-        end_time = datetime.datetime.now()
+        end_time = utc_now()
         duration = end_time - self.stats["start_time"]
         
         print(f"\n{header('='*60)}")
