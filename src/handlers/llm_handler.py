@@ -282,8 +282,8 @@ class OllamaAdapter:
                 self._performance_degraded = True
                 self._reset_deepseek_context()
         
-        # Reset periódico a cada 8 análises para DeepSeek
-        if self._analysis_count % 8 == 0:
+        # Reset preventivo periódico (ver settings.deepseek_reset_interval)
+        if self._analysis_count % _settings.deepseek_reset_interval == 0:
             print(dim(f"DeepSeek: Reset automático após {self._analysis_count} análises"))
             self._reset_deepseek_context()
         
