@@ -100,3 +100,45 @@ class TestCompleteFailurePaths:
 
         assert result is None
         assert mock_post.call_count == 3
+
+
+class TestReproducibility:
+    """Seed fixo nas options de geração (HARDENING_PLAN.md, Fase H5)."""
+
+    @mock.patch("src.handlers.llm_handler._settings")
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_fixed_seed_included_in_payload(self, mock_post, mock_settings):
+        mock_settings.use_random_seed = False
+        mock_settings.llm_seed = 42
+        mock_settings.max_retries = 1
+        mock_settings.is_deepseek.return_value = False
+        mock_settings.context_small = 4096
+        mock_settings.temperature = 0.1
+        mock_settings.num_predict = 50000
+        mock_settings.get_keep_alive.return_value = "5m"
+        mock_settings.get_timeout.return_value = 200
+        mock_post.return_value = _mock_response()
+
+        OllamaAdapter(HOST, "mistral").complete("prompt de teste")
+
+        payload = mock_post.call_args.kwargs["json"]
+        assert payload["options"]["seed"] == 42
+
+    @mock.patch("src.handlers.llm_handler._settings")
+    @mock.patch("src.handlers.llm_handler.requests.post")
+    def test_random_seed_regime_omits_seed(self, mock_post, mock_settings):
+        """use_random_seed=True replica o regime do baseline TCC (sem seed)."""
+        mock_settings.use_random_seed = True
+        mock_settings.max_retries = 1
+        mock_settings.is_deepseek.return_value = False
+        mock_settings.context_small = 4096
+        mock_settings.temperature = 0.1
+        mock_settings.num_predict = 50000
+        mock_settings.get_keep_alive.return_value = "5m"
+        mock_settings.get_timeout.return_value = 200
+        mock_post.return_value = _mock_response()
+
+        OllamaAdapter(HOST, "mistral").complete("prompt de teste")
+
+        payload = mock_post.call_args.kwargs["json"]
+        assert "seed" not in payload["options"]
