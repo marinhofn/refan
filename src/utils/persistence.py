@@ -123,6 +123,10 @@ def merge_jsonl_to_csv(
         return 0
 
     df = pd.read_csv(csv_path)
+    # Coluna totalmente vazia é inferida como float64 (NaN); atribuir strings
+    # nela é deprecated no pandas >= 2.1 e passará a levantar erro.
+    if value_column in df.columns:
+        df[value_column] = df[value_column].astype("object")
     updated = 0
 
     for record in records:
