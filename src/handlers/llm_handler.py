@@ -144,12 +144,17 @@ from src.utils.llm_sizing import estimate_token_count, dynamic_num_ctx, reduce_d
 from src.core.settings import settings as _settings
 
 
-def reduce_diff(diff_text: str, max_chars: int = 60000, per_file_line_limit: int = 400) -> tuple:
+def reduce_diff(diff_text: str, max_chars: int | None = None, per_file_line_limit: int | None = None) -> tuple:
     """Reduz diff grande limitando linhas por arquivo e tamanho total.
 
     Mais sofisticada que reduce_diff_simple: preserva cabeçalhos de hunk
-    e limita por arquivo antes de truncar globalmente.
+    e limita por arquivo antes de truncar globalmente. Limiares default
+    vêm de RefanSettings (max_diff_chars, per_file_line_limit).
     """
+    if max_chars is None:
+        max_chars = _settings.max_diff_chars
+    if per_file_line_limit is None:
+        per_file_line_limit = _settings.per_file_line_limit
     if len(diff_text) <= max_chars:
         return diff_text, {"reduced": False}
     sections = diff_text.split('\n')
@@ -365,7 +370,7 @@ class LLMHandler:
         # Possível redução de diff antes de construir prompt
         original_diff = diff
         reduced_meta = {}
-        if len(diff) > 60000:  # heurística
+        if len(diff) > _settings.max_diff_chars:
             diff, reduced_meta = reduce_diff(diff)
             if reduced_meta.get("reduced"):
                 print(warning(f"Diff reduzido de {reduced_meta['original_chars']} para {reduced_meta['new_chars']} chars (arquivos truncados: {reduced_meta['truncated_files']})"))
