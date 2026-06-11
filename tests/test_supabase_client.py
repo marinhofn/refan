@@ -28,6 +28,13 @@ supabase_module = pytest.importorskip(
 from src.persistence.supabase_client import SupabaseClient
 
 
+@pytest.fixture(autouse=True)
+def no_backoff(monkeypatch):
+    """Zera o backoff do retry para os testes não dormirem de verdade."""
+    from src.core.settings import settings
+    monkeypatch.setattr(settings, "supabase_backoff_base_s", 0.0)
+
+
 def make_client(execute_data=None):
     """SupabaseClient com API mockada.
 
@@ -182,6 +189,75 @@ class TestPollCommands:
         client, api = make_client()
         api.table.return_value.select.side_effect = ConnectionError("rede caiu")
         assert client.poll_commands("runner-1") == []
+
+
+class TestRetryAndTimeout:
+    """Resiliência de rede (HARDENING_PLAN.md, Fase H6)."""
+
+    def test_client_created_with_explicit_timeout(self):
+        with mock.patch(
+            "src.persistence.supabase_client.create_client"
+        ) as create, mock.patch(
+            "src.persistence.supabase_client.ClientOptions"
+        ) as options:
+            SupabaseClient("https://x.supabase.co", "service-key")
+        options.assert_called_once()
+        assert "postgrest_client_timeout" in options.call_args.kwargs
+        assert create.call_args.kwargs["options"] is options.return_value
+
+    def test_transient_failure_is_retried_until_success(self):
+        client, api = make_client()
+        ok = SimpleNamespace(data=[{"id": "uuid-1"}])
+        api.table.return_value.upsert.return_value.execute.side_effect = [
+            ConnectionError("queda 1"),
+            ConnectionError("queda 2"),
+            ok,
+        ]
+
+        uid = client.upsert_commit("hash-a", "hash-b", "url", "proj")
+
+        assert uid == "uuid-1"
+        assert api.table.return_value.upsert.return_value.execute.call_count == 3
+
+    def test_persistent_failure_gives_up_after_max_retries(self):
+        client, api = make_client()
+        api.table.return_value.upsert.return_value.execute.side_effect = (
+            ConnectionError("rede caiu")
+        )
+
+        uid = client.upsert_commit("hash-a", "hash-b", "url", "proj")
+
+        assert uid is None
+        from src.core.settings import settings
+        assert (
+            api.table.return_value.upsert.return_value.execute.call_count
+            == settings.supabase_max_retries
+        )
+
+    def test_backoff_grows_exponentially(self):
+        client, api = make_client()
+        api.table.return_value.upsert.return_value.execute.side_effect = (
+            ConnectionError("rede caiu")
+        )
+        from src.core.settings import settings
+        with mock.patch.object(settings, "supabase_backoff_base_s", 1.0), \
+             mock.patch("src.persistence.supabase_client.time.sleep") as sleep:
+            client.upsert_commit("hash-a", "hash-b", "url", "proj")
+
+        # 3 tentativas -> 2 esperas: base*2^0 e base*2^1
+        assert [c.args[0] for c in sleep.call_args_list] == [1.0, 2.0]
+
+    def test_heartbeat_uses_single_attempt(self):
+        client, api = make_client()
+        api.table.return_value.upsert.return_value.execute.side_effect = (
+            ConnectionError("rede caiu")
+        )
+
+        ok = client.update_heartbeat(runner_id="r1")
+
+        assert ok is False
+        # Operação periódica: sem retry — a próxima iteração repete.
+        assert api.table.return_value.upsert.return_value.execute.call_count == 1
 
 
 class TestSyncLocalJsonl:
