@@ -14,7 +14,8 @@ Refs: REFACTORING_PLAN.md Phase 5.1
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+
+from src.utils.timeutils import utc_now_iso
 
 
 @dataclass
@@ -57,7 +58,7 @@ class AnalysisResult:
     diff_lines: int = 0
     diff_source: str = "direct"
     processing_time_ms: int = 0
-    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    timestamp: str = field(default_factory=utc_now_iso)
     success: bool = True
     commit_message: str = ""
     project_name: str = ""

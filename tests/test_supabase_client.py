@@ -98,6 +98,27 @@ class TestGetOrCreateModel:
         assert api.table.return_value.upsert.call_count == 1
 
 
+class TestGetPromptVersion:
+    def test_returns_id_and_hash_when_found(self):
+        client, api = make_client()
+        api.table.return_value.select.return_value.eq.return_value.execute.return_value = (
+            SimpleNamespace(data=[{"id": "p-uuid", "sha256_hash": "abc"}])
+        )
+        assert client.get_prompt_version("v2.0-mestrado") == {
+            "id": "p-uuid", "sha256_hash": "abc",
+        }
+
+    def test_returns_none_when_absent_or_failing(self):
+        client, api = make_client()
+        api.table.return_value.select.return_value.eq.return_value.execute.return_value = (
+            SimpleNamespace(data=[])
+        )
+        assert client.get_prompt_version("inexistente") is None
+
+        api.table.return_value.select.side_effect = ConnectionError("rede caiu")
+        assert client.get_prompt_version("v2.0-mestrado") is None
+
+
 class TestGetOrCreatePromptVersion:
     def test_computes_sha256_of_prompt(self):
         client, api = make_client()

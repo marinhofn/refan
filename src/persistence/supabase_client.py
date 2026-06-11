@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from datetime import datetime
+from src.utils.timeutils import utc_now_iso
 from typing import Optional
 
 from src.utils.logging_config import get_logger
@@ -128,6 +128,26 @@ class SupabaseClient:
     # Prompt versions
     # ------------------------------------------------------------------
 
+    def get_prompt_version(self, version_tag: str) -> Optional[dict]:
+        """SELECT id e sha256_hash de uma versão de prompt já registrada.
+
+        Usado para validar que o prompt em disco do runner é idêntico ao
+        registrado no banco (HARDENING_PLAN.md, Fase H5). Retorna None se
+        a versão não existe ou em falha de rede.
+        """
+        try:
+            result = (
+                self.client.table("prompt_versions")
+                .select("id, sha256_hash")
+                .eq("version_tag", version_tag)
+                .execute()
+            )
+            if result.data:
+                return result.data[0]
+        except Exception as e:
+            logger.warning(f"Supabase get_prompt_version falhou: {e}")
+        return None
+
     def get_or_create_prompt_version(
         self,
         version_tag: str,
@@ -215,7 +235,7 @@ class SupabaseClient:
                 "total_skipped": total_skipped,
             }
             if status in ("completed", "failed", "cancelled"):
-                data["completed_at"] = datetime.now().isoformat()
+                data["completed_at"] = utc_now_iso()
             if error_message:
                 data["error_message"] = error_message
 
@@ -327,8 +347,8 @@ class SupabaseClient:
                     "current_commit_index": current_commit_index,
                     "total_commits_in_batch": total_commits_in_batch,
                     "model_name": model_name,
-                    "last_heartbeat": datetime.now().isoformat(),
-                    "updated_at": datetime.now().isoformat(),
+                    "last_heartbeat": utc_now_iso(),
+                    "updated_at": utc_now_iso(),
                 },
                 on_conflict="runner_id",
             ).execute()
@@ -358,7 +378,7 @@ class SupabaseClient:
                 self.client.table("command_queue").update(
                     {
                         "status": "acknowledged",
-                        "acknowledged_at": datetime.now().isoformat(),
+                        "acknowledged_at": utc_now_iso(),
                     }
                 ).eq("id", cmd["id"]).execute()
             return commands
@@ -374,7 +394,7 @@ class SupabaseClient:
             self.client.table("command_queue").update(
                 {
                     "status": "completed",
-                    "completed_at": datetime.now().isoformat(),
+                    "completed_at": utc_now_iso(),
                     "result_message": result_message,
                 }
             ).eq("id", command_id).execute()
