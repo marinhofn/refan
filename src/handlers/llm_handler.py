@@ -45,7 +45,6 @@ def build_commit_prompt(commit_data: dict, system_prompt: str) -> str:
     prompt, _temp_file = build_optimized_commit_prompt_with_file_support(
         commit_data=commit_data,
         system_prompt=system_prompt,
-        diff_content=commit_data.get("diff", ""),
     )
     return prompt
 
