@@ -85,6 +85,8 @@ REFACTORING_PLAN.md
 
 # TCC / documentos acadêmicos
 *.pdf
+# Exceção: o PDF do TCC dentro do baseline faz parte do snapshot versionado
+!baseline_tcc_2025/**/*.pdf
 
-# Baseline imutável do TCC (snapshot local de referência)
-baseline_tcc_2025/
+# Baseline imutável do TCC: versionado via Git LFS desde a Fase H7
+# (HARDENING_PLAN.md) com integridade atestada por MANIFEST.sha256.
