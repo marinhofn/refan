@@ -128,6 +128,26 @@ class SupabaseClient:
     # Prompt versions
     # ------------------------------------------------------------------
 
+    def get_prompt_version(self, version_tag: str) -> Optional[dict]:
+        """SELECT id e sha256_hash de uma versão de prompt já registrada.
+
+        Usado para validar que o prompt em disco do runner é idêntico ao
+        registrado no banco (HARDENING_PLAN.md, Fase H5). Retorna None se
+        a versão não existe ou em falha de rede.
+        """
+        try:
+            result = (
+                self.client.table("prompt_versions")
+                .select("id, sha256_hash")
+                .eq("version_tag", version_tag)
+                .execute()
+            )
+            if result.data:
+                return result.data[0]
+        except Exception as e:
+            logger.warning(f"Supabase get_prompt_version falhou: {e}")
+        return None
+
     def get_or_create_prompt_version(
         self,
         version_tag: str,
