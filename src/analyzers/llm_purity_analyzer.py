@@ -5,6 +5,7 @@ Preenche a coluna llm_analysis com análises de commits de refatoramento.
 """
 
 import pandas as pd
+import hashlib
 import json
 import os
 from typing import Optional, List, Dict, Any
@@ -17,8 +18,10 @@ from src.handlers.git_handler import GitHandler
 from src.handlers.data_handler import DataHandler
 from src.models.commit import CommitPair, AnalysisResult
 from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
+from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
 from src.utils.persistence import SessionWriter
 from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
+from src.utils.version_info import get_tool_version
 from src.utils.colors import dim, error, header, info, success, warning
 from src.core.settings import settings as _settings
 
@@ -103,6 +106,12 @@ class LLMPurityAnalyzer:
         self.backup_dir = str(paths['ANALISES_DIR'])  # Diretório específico do modelo
         self.session_log_file = None
         self.current_model = current_model
+
+        # Rastreabilidade (HARDENING_PLAN.md, Fase H5): hash do prompt em
+        # uso e versão da ferramenta acompanham todo registro persistido,
+        # fechando a cadeia de auditoria dado bruto -> resultado.
+        self.prompt_sha256 = hashlib.sha256(OPTIMIZED_LLM_PROMPT.encode()).hexdigest()
+        self.tool_version = get_tool_version()
 
         # Supabase (opcional: conecta se configurado)
         self.supabase = None
@@ -365,6 +374,9 @@ class LLMPurityAnalyzer:
                     "analysis_type": analysis_type,
                     "description": description,
                     "csv_file_analyzed": self.csv_file_path,
+                    "prompt_sha256": self.prompt_sha256,
+                    "tool_version": self.tool_version,
+                    "config_snapshot": _settings.to_dict(),
                     "start_time": self.stats["start_time"].isoformat(),
                     "end_time": utc_now_iso(),
                     "total_processed": self.stats["total_processed"],
@@ -486,7 +498,24 @@ class LLMPurityAnalyzer:
         if self.supabase:
             try:
                 cloud_model_id = self.supabase.get_or_create_model(self.current_model)
-                from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
+
+                # Validação de integridade do prompt (Fase H5): se a tag de
+                # versão já existe no banco com hash diferente do prompt em
+                # disco, o prompt foi alterado sem registrar nova versão.
+                # Política warn-and-record: nunca sobrescrever, sempre gravar
+                # a divergência no snapshot da sessão.
+                prompt_hash_mismatch = False
+                existing_prompt = self.supabase.get_prompt_version(_settings.prompt_version_tag)
+                if existing_prompt and existing_prompt.get("sha256_hash") != self.prompt_sha256:
+                    prompt_hash_mismatch = True
+                    print(warning(
+                        f"Prompt em disco difere do registrado para "
+                        f"'{_settings.prompt_version_tag}' no Supabase "
+                        f"(local {self.prompt_sha256[:12]}... != cloud "
+                        f"{existing_prompt['sha256_hash'][:12]}...). "
+                        f"Registre uma nova versão de prompt antes de consolidar resultados."
+                    ))
+
                 cloud_prompt_id = self.supabase.get_or_create_prompt_version(
                     _settings.prompt_version_tag, OPTIMIZED_LLM_PROMPT
                 )
@@ -494,7 +523,12 @@ class LLMPurityAnalyzer:
                     cloud_session_id = self.supabase.start_session(
                         model_id=cloud_model_id,
                         prompt_version_id=cloud_prompt_id,
-                        config_snapshot=_settings.to_dict(),
+                        config_snapshot={
+                            **_settings.to_dict(),
+                            "prompt_sha256": self.prompt_sha256,
+                            "tool_version": self.tool_version,
+                            "prompt_hash_mismatch": prompt_hash_mismatch,
+                        },
                         runner_hostname=_settings.runner_id,
                         total_planned=len(analysis_df),
                         purity_filter=purity_filter,
@@ -537,6 +571,10 @@ class LLMPurityAnalyzer:
                     if result:
                         classification = result['llm_classification']
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
+                        # Rastreabilidade: todo registro persistido carrega o
+                        # hash do prompt e a versão da ferramenta que o gerou.
+                        result["prompt_sha256"] = self.prompt_sha256
+                        result["tool_version"] = self.tool_version
                         analyses_results.append(result)
                         self.stats["successful_analyses"] += 1
 
