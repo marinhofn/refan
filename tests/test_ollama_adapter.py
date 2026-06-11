@@ -102,6 +102,22 @@ class TestCompleteFailurePaths:
         assert mock_post.call_count == 3
 
 
+class TestDeepseekResetInterval:
+    """Reset preventivo configurável (HARDENING_PLAN.md, Fase H8)."""
+
+    def test_reset_fires_at_configured_interval(self, monkeypatch):
+        from src.core.settings import settings
+        monkeypatch.setattr(settings, "deepseek_reset_interval", 3)
+        adapter = OllamaAdapter(HOST, "deepseek-r1:8b")
+
+        with mock.patch.object(adapter, "_reset_deepseek_context") as reset:
+            for _ in range(6):
+                adapter._track_deepseek_performance(duration=1.0, prompt_size=100)
+
+        # 6 análises com intervalo 3 -> resets nas análises 3 e 6.
+        assert reset.call_count == 2
+
+
 class TestReproducibility:
     """Seed fixo nas options de geração (HARDENING_PLAN.md, Fase H5)."""
 

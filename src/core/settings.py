@@ -50,6 +50,11 @@ class RefanSettings:
     max_retries: int = 2
     timeout_base_s: int = 200
     timeout_large_s: int = 300
+    # Reset preventivo do contexto DeepSeek a cada N análises: degradação
+    # progressiva de performance foi observada empiricamente no DeepSeek-R1
+    # após ~8 análises consecutivas (TCC, ago/2025); o reset via keep_alive=0
+    # descarrega o modelo e restaura o tempo de resposta.
+    deepseek_reset_interval: int = 8
 
     # --- Diff handling ---
     max_diff_chars: int = 60000

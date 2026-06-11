@@ -10,6 +10,8 @@ com o parâmetro model_name opcional.
 Refs: REFACTORING_PLAN.md Phase 1.4
 """
 
+from src.core.settings import settings as _settings
+
 
 def estimate_token_count(text: str) -> int:
     """Estima contagem de tokens via heurística simples (chars / 4).
@@ -37,7 +39,10 @@ def dynamic_num_ctx(diff_text: str, model_name: str = "") -> int:
         model_name: Nome do modelo (usado para branching DeepSeek).
     """
     tokens = estimate_token_count(diff_text)
-    is_deepseek = "deepseek" in model_name.lower() if model_name else False
+    # Fonte única de verdade para detecção DeepSeek (settings.is_deepseek).
+    # model_name vazio mantém a semântica original (sem fallback ao modelo
+    # global): este utilitário dimensiona para o modelo explicitamente pedido.
+    is_deepseek = _settings.is_deepseek(model_name) if model_name else False
 
     if is_deepseek:
         if tokens < 2000:
