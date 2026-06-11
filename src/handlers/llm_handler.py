@@ -226,6 +226,11 @@ class OllamaAdapter:
             },
             "think": False,
         }
+        # Reprodutibilidade: seed fixo torna a geração determinística por
+        # modelo/versão. Omitido quando use_random_seed=True (regime do
+        # baseline TCC). Ver settings.py e docs/REPRODUCIBILITY.md.
+        if not _settings.use_random_seed:
+            payload["options"]["seed"] = _settings.llm_seed
         last_error = None
         prompt_size = len(prompt)
         timeout = _settings.get_timeout(prompt_size)
