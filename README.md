@@ -72,6 +72,27 @@ refan --help                                # entry point instalado
 Para reprodução exata do ambiente de referência (dependências transitivas
 congeladas): `pip install -r requirements-lock.txt`.
 
+## Baseline do TCC (Git LFS)
+
+O diretório `baseline_tcc_2025/` é o snapshot **imutável** dos resultados do
+TCC (set/2025) — base de comparação dos experimentos do mestrado. Os 281
+arquivos (130 MB) são versionados via **Git LFS**; para obtê-los após o clone:
+
+```bash
+brew install git-lfs   # uma única vez por máquina
+git lfs install
+git lfs pull
+```
+
+A integridade do snapshot é atestada por `baseline_tcc_2025/MANIFEST.sha256`:
+
+```bash
+python scripts/data/generate_baseline_manifest.py --verify
+```
+
+**Nunca modifique arquivos deste diretório** (política do projeto — ver
+`CLAUDE.md` e `baseline_tcc_2025/README.md`).
+
 ## Como Usar
 
 ### 1. Entrada Unificada (Recomendado)
