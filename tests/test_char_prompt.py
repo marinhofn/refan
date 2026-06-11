@@ -42,7 +42,12 @@ class TestBuildCommitPrompt:
         assert sample_commit_data["diff"] in prompt
 
     def test_contains_json_format_instruction(self, sample_commit_data):
-        prompt = build_commit_prompt(sample_commit_data, LLM_PROMPT)
+        # Desde a Fase 3 (handlers fundidos), a instrução de formato JSON
+        # vem do system_prompt — o scaffolding do builder não a injeta mais.
+        # O prompt de produção (OPTIMIZED_LLM_PROMPT) contém as chaves.
+        from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
+
+        prompt = build_commit_prompt(sample_commit_data, OPTIMIZED_LLM_PROMPT)
         assert "refactoring_type" in prompt
         assert "justification" in prompt
 
@@ -81,7 +86,6 @@ class TestOptimizedPromptWithFileSupport:
         prompt, temp_file = build_optimized_commit_prompt_with_file_support(
             commit_data=sample_commit_data,
             system_prompt=OPTIMIZED_LLM_PROMPT,
-            diff_content=sample_commit_data["diff"],
         )
 
         assert temp_file is None  # Diff pequeno, sem arquivo temporário
@@ -97,7 +101,6 @@ class TestOptimizedPromptWithFileSupport:
         prompt, _ = build_optimized_commit_prompt_with_file_support(
             commit_data=sample_commit_data,
             system_prompt=OPTIMIZED_LLM_PROMPT,
-            diff_content=sample_commit_data["diff"],
         )
 
         assert "refactoring_type" in prompt
@@ -112,11 +115,11 @@ class TestOptimizedPromptWithFileSupport:
         )
 
         large_diff = "+" * (MAX_DIRECT_DIFF_SIZE + 1000)
+        commit_data = {**sample_commit_data, "diff": large_diff}
 
         prompt, temp_file = build_optimized_commit_prompt_with_file_support(
-            commit_data=sample_commit_data,
+            commit_data=commit_data,
             system_prompt=OPTIMIZED_LLM_PROMPT,
-            diff_content=large_diff,
         )
 
         # Diff grande deve ser encaminhado para arquivo temporário
