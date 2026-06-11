@@ -65,7 +65,15 @@ class RefanSettings:
     show_prompt: bool = True
     max_prompt_display_length: int = 2000
     reset_model_context: bool = True
-    use_random_seed: bool = True
+
+    # --- Reprodutibilidade ---
+    # Seed fixo passado em options.seed da API do Ollama. Com temperature
+    # baixa + seed fixo, a geração torna-se determinística por modelo/versão.
+    # use_random_seed=True replica o regime do baseline TCC (sem seed);
+    # o default False define o regime da série experimental do mestrado
+    # (v2.1+). Decisão registrada em HARDENING_PLAN.md e docs/REPRODUCIBILITY.md.
+    llm_seed: int = 42
+    use_random_seed: bool = False
 
     # --- Failure tracking ---
     failures_file: str = "json_failures.json"
