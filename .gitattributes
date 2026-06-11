@@ -1,0 +1,12 @@
+# Git LFS para o baseline imutável do TCC (HARDENING_PLAN.md, Fase H7).
+#
+# Todo o conteúdo do snapshot vai para LFS (130 MB: JSON, CSV, HTML, PNG,
+# PDF e backups datados), exceto os arquivos de texto pequenos — README,
+# notas e o MANIFEST.sha256 — que permanecem no Git normal para serem
+# diffáveis e legíveis sem `git lfs pull`.
+baseline_tcc_2025/** filter=lfs diff=lfs merge=lfs -text
+baseline_tcc_2025/**/*.md !filter !diff !merge text
+baseline_tcc_2025/*.md !filter !diff !merge text
+baseline_tcc_2025/**/*.txt !filter !diff !merge text
+baseline_tcc_2025/*.txt !filter !diff !merge text
+baseline_tcc_2025/MANIFEST.sha256 !filter !diff !merge text
