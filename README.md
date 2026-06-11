@@ -51,6 +51,27 @@ refan/
 └── refan.py                      # Script de entrada unificado
 ```
 
+## Ambiente de Desenvolvimento
+
+O projeto requer **Python >= 3.10** (o código usa sintaxe PEP 604, `str | None`).
+No macOS, o Python do sistema (3.9.x) não é suficiente — use o 3.12 do Homebrew:
+
+```bash
+# Criar e ativar o ambiente virtual
+/opt/homebrew/bin/python3.12 -m venv .venv
+source .venv/bin/activate
+
+# Instalação completa (runtime + dev + json5 + supabase)
+pip install -e ".[dev,json5,supabase]"
+
+# Verificar
+python -m pytest tests/ -v -m "not slow"   # suíte offline (sem Ollama)
+refan --help                                # entry point instalado
+```
+
+Para reprodução exata do ambiente de referência (dependências transitivas
+congeladas): `pip install -r requirements-lock.txt`.
+
 ## Como Usar
 
 ### 1. Entrada Unificada (Recomendado)
