@@ -109,6 +109,11 @@ class RefanSettings:
     llm_seed: int = 42
     use_random_seed: bool = False
 
+    # --- Cache de repositórios clonados (Fase E4, ROB-4) ---
+    # Orçamento de disco para repositorios/ — clones são cache reconstruível;
+    # acima do orçamento, `refan clean-repos` remove os menos usados (LRU).
+    repo_cache_max_gb: float = 20.0
+
     # --- Persistência ---
     # fsync após cada linha JSONL (Fase E4, ROB-3): garante que o registro
     # sobreviva a queda de energia, não só a crash de processo. O custo

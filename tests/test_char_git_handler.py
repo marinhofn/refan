@@ -90,7 +90,7 @@ class TestGetCommitDiff:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout=diff_content, stderr=b""
             )
-            result = git_handler.get_commit_diff(repo_path, "abc123", "def456")
+            result = git_handler.get_commit_diff(repo_path, "abc1234", "def4567")
 
             assert result is not None
             assert "diff --git" in result
@@ -116,7 +116,7 @@ class TestGetCommitMessage:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout="Refactor: extract method\n", stderr=""
             )
-            result = git_handler.get_commit_message(repo_path, "abc123")
+            result = git_handler.get_commit_message(repo_path, "abc1234")
             assert result == "Refactor: extract method"
 
     def test_returns_none_on_error(self, git_handler, tmp_path):
@@ -138,7 +138,7 @@ class TestCommitExists:
         with patch("subprocess.run") as mock_run, \
              patch("os.chdir"):
             mock_run.return_value = MagicMock(returncode=0)
-            assert git_handler.commit_exists(repo_path, "abc123") is True
+            assert git_handler.commit_exists(repo_path, "abc1234") is True
 
     def test_returns_false_when_not_exists(self, git_handler, tmp_path):
         repo_path = str(tmp_path / "repo")

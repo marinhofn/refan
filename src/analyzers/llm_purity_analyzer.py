@@ -244,7 +244,10 @@ class LLMPurityAnalyzer:
             tuple(diff_content, repo_path) ou None em caso de erro.
         """
         try:
-            ok, repo_path = self.git_handler.ensure_repo_cloned(commit.repository)
+            ok, repo_path = self.git_handler.ensure_repo_cloned(
+                commit.repository,
+                required_hashes=[commit.commit_hash_before, commit.commit_hash_current],
+            )
             if not ok:
                 print(error(f"Falha ao preparar repositório: {commit.repository}"))
                 return None

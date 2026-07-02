@@ -148,6 +148,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Reproduzir apenas os N primeiros registros com veredito",
     )
 
+    # --- clean-repos ---
+    p_clean = subparsers.add_parser(
+        "clean-repos",
+        help="Aplicar orçamento de disco ao cache de repositórios clonados (LRU)",
+    )
+    p_clean.add_argument(
+        "--max-gb",
+        type=float,
+        default=None,
+        help="Orçamento em GB (default: settings.repo_cache_max_gb)",
+    )
+    p_clean.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Apenas reportar o que seria removido",
+    )
+
     # --- interactive ---
     p_interactive = subparsers.add_parser(
         "interactive",
@@ -275,6 +293,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return run_doctor(model=args.model, full=args.full)
 
 
+def cmd_clean_repos(args: argparse.Namespace) -> int:
+    """Aplica o orçamento de disco ao cache de repositórios (Fase E4)."""
+    from src.handlers.git_handler import GitHandler
+
+    report = GitHandler().cleanup_repos(max_gb=args.max_gb, dry_run=args.dry_run)
+    print(f"Cache de repositórios: {report['total_gb_before']} GB -> "
+          f"{report['total_gb_after']} GB ({len(report['removed'])} removido(s))")
+    return 0
+
+
 def cmd_reproduce(args: argparse.Namespace) -> int:
     """Reproduz uma sessão registrada e compara classificações (Fase E3)."""
     from src.analyzers.reproduce import run_reproduction
@@ -299,6 +327,7 @@ def run_cli(argv: list[str] | None = None) -> int:
         "interactive": cmd_interactive,
         "doctor": cmd_doctor,
         "reproduce": cmd_reproduce,
+        "clean-repos": cmd_clean_repos,
     }
 
     handler = commands.get(args.command)
