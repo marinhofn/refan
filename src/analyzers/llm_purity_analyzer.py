@@ -607,6 +607,29 @@ class LLMPurityAnalyzer:
                     self.stats["skipped_already_analyzed"] += 1
                     continue
 
+                # Controle remoto (ROB-5): reanálises agendadas via dashboard
+                # entram na frente da fila desta sessão (antes: comando aceito
+                # e jamais consumido).
+                if self.command_handler:
+                    for queued_hash in self.command_handler.drain_reanalyze_queue():
+                        in_master = df['hash'] == queued_hash
+                        if not in_master.any():
+                            print(warning(f"Reanálise remota ignorada: {queued_hash[:8]}... não está no master"))
+                            continue
+                        queued_purity = df.loc[in_master, 'purity_analysis'].iloc[0]
+                        print(info(f"Reanálise remota: {queued_hash[:8]}..."))
+                        requeued = self._analyze_single_commit(queued_hash, queued_purity)
+                        if requeued:
+                            requeued["prompt_sha256"] = self.prompt_sha256
+                            requeued["tool_version"] = self.tool_version
+                            requeued["model_digest"] = self.model_digest
+                            requeued["ollama_version"] = self.ollama_version
+                            requeued["reanalyzed_via_remote_command"] = True
+                            analyses_results.append(requeued)
+                            session_writer.append(requeued)
+                            if not self.dry_run:
+                                df.loc[in_master, 'llm_analysis'] = requeued['llm_classification']
+
                 progress_bar.update(processed_count)
                 print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
 

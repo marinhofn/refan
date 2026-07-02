@@ -109,6 +109,11 @@ class RefanSettings:
     llm_seed: int = 42
     use_random_seed: bool = False
 
+    # --- Runner remoto (Fase E4, ROB-5) ---
+    # Pausa máxima via comando remoto: um 'pause' sem 'resume' não pode
+    # congelar o runner para sempre; após o timeout há auto-resume logado.
+    max_pause_s: int = 3600
+
     # --- Cache de repositórios clonados (Fase E4, ROB-4) ---
     # Orçamento de disco para repositorios/ — clones são cache reconstruível;
     # acima do orçamento, `refan clean-repos` remove os menos usados (LRU).
