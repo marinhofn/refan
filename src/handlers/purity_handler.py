@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import datetime
 from src.core.config import PURITY_CSV_PATH, PURITY_COMPARISON_DIR, get_model_paths, get_current_llm_model
+from src.utils.classification import AGREE, compare_purity_llm
 from src.utils.colors import bold, commit_info, cyan, dim, error, header, info, progress, success, warning
 
 class PurityHandler:
@@ -308,8 +309,11 @@ class PurityHandler:
                     row['repository'] = llm_result['repository']
                     row['commit_message'] = llm_result['commit_message']
                     
-                    # Verificar se há concordância (ambos classificaram como floss)
-                    row['agreement'] = llm_result['refactoring_type'] == 'floss'
+                    # Concordância pela fonte única (VAL-9): neste contexto o
+                    # lado Purity é sempre 'floss', então agree ⇔ LLM floss.
+                    row['agreement'] = (
+                        compare_purity_llm(row['purity_classification'], llm_result['refactoring_type']) == AGREE
+                    )
                 
                 comparison_data.append(row)
             
@@ -604,10 +608,9 @@ class PurityHandler:
                 purity_classification = purity_dict.get(commit_hash, 'not_in_purity')
                 llm_classification = llm_dict.get(commit_hash, 'not_analyzed')
                 
-                # Determinar concordância
-                agreement = False
-                if purity_classification != 'not_in_purity' and llm_classification != 'not_analyzed':
-                    agreement = purity_classification == llm_classification
+                # Concordância pela fonte única (VAL-9): sentinelas
+                # 'not_in_purity'/'not_analyzed' viram NOT_COMPARABLE (False).
+                agreement = compare_purity_llm(purity_classification, llm_classification) == AGREE
                 
                 comparison_data.append({
                     'commit_hash': commit_hash,

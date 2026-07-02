@@ -22,6 +22,7 @@ from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
 from src.utils.persistence import SessionWriter
 from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
 from src.utils.version_info import get_tool_version
+from src.utils.classification import summarize_convergence
 from src.utils.colors import dim, error, header, info, success, warning
 from src.core.settings import settings as _settings
 
@@ -396,22 +397,22 @@ class LLMPurityAnalyzer:
             # Adicionar estatísticas de classificações
             if analyses:
                 classifications = {}
-                convergence = {"agree": 0, "disagree": 0}
                 
                 for analysis in analyses:
                     llm_class = analysis.get('llm_classification', 'UNKNOWN')
-                    purity_class = analysis.get('purity_classification', 'UNKNOWN')
-                    
                     # Contar classificações LLM
                     classifications[llm_class] = classifications.get(llm_class, 0) + 1
-                    
-                    # Análise de convergência (TRUE vs FLOSS)
-                    if (purity_class == 'TRUE' and llm_class == 'TRUE') or \
-                       (purity_class == 'FALSE' and llm_class == 'FALSE'):
-                        convergence["agree"] += 1
-                    else:
-                        convergence["disagree"] += 1
-                
+
+                # Convergência Purity × LLM pela fonte única (TRUE↔PURE,
+                # FALSE↔FLOSS; sem veredito → not_comparable). Correção do
+                # defeito VAL-1 (EVOLUTION_PLAN.md): a comparação anterior
+                # usava os literais 'TRUE'/'FALSE' contra PURE/FLOSS e
+                # reportava 0 concordâncias em toda sessão.
+                convergence = summarize_convergence(
+                    (a.get('purity_classification'), a.get('llm_classification'))
+                    for a in analyses
+                )
+
                 session_data["summary"]["classifications"] = classifications
                 session_data["summary"]["convergence_analysis"] = convergence
             
