@@ -12,6 +12,22 @@ on:
   pull_request:
 
 jobs:
+  # Higiene do repositório (EVOLUTION_PLAN.md, Fase E0): bloqueia artefatos de
+  # conflito de sincronização (" 2") versionados e alterações no baseline
+  # imutável. Barato (sem instalação de dependências, sem LFS).
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check repository hygiene
+        run: python scripts/data/check_repo_hygiene.py
+
   test:
     runs-on: ubuntu-latest
     strategy:
