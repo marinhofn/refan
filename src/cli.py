@@ -56,6 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pular commits já analisados (default: True)",
     )
     p_analyze.add_argument(
+        "--retry-failed",
+        action="store_true",
+        default=False,
+        help="Reanalisar commits marcados FAILED/ERROR (Fase E2, VAL-6)",
+    )
+    p_analyze.add_argument(
         "--no-skip",
         action="store_true",
         help="Reanalisar todos os commits, incluindo já analisados",
@@ -139,6 +145,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         max_commits=args.limit,
         skip_analyzed=skip,
         purity_filter=args.filter,
+        retry_failed=args.retry_failed,
     )
 
     print(f"\nResultados: {stats.get('successful_analyses', 0)} sucesso, "
@@ -165,10 +172,13 @@ def cmd_status(args: argparse.Namespace) -> int:
         pending = summary["pending_analyses"]
         pct = (done / total * 100) if total > 0 else 0
 
+        failed = summary.get("failed_analyses", 0)
+
         print(f"\nModelo: {model}")
         print(f"Total de commits: {total}")
         print(f"Analisados: {done} ({pct:.1f}%)")
         print(f"Pendentes: {pending}")
+        print(f"Falhas (FAILED/ERROR, reanalisáveis via --retry-failed): {failed}")
 
         if summary.get("llm_distribution"):
             print(f"\nDistribuição LLM:")

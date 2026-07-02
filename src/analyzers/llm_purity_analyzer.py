@@ -319,24 +319,32 @@ class LLMPurityAnalyzer:
                     print(success(f"✅ Commit {hash_commit[:8]}... analisado: {analysis.refactoring_type.upper()}"))
                     return result_dict
                 else:
-                    # Fallback conservativo com dados parciais
-                    fallback = AnalysisResult(
+                    # Falha honesta (Fase E2, VAL-2/VAL-6): sem veredito do
+                    # modelo o registro é FAILED — nas séries <= v2.1 este
+                    # caminho fabricava um rótulo 'floss' com confidence 'low',
+                    # indistinguível de uma medição real no CSV/JSONL.
+                    failure = AnalysisResult(
                         repository=commit.repository,
                         commit_hash_before=commit.commit_hash_before,
                         commit_hash_current=commit.commit_hash_current,
-                        refactoring_type="floss",
-                        justification=llm_result.get('justification', 'Analysis failed - insufficient data') if llm_result else 'Analysis failed - insufficient data',
-                        confidence_level="low",
+                        refactoring_type="FAILED",
+                        justification=None,
+                        confidence_level=None,
+                        technical_evidence=None,
                         project_name=commit.project_name,
                         diff_size_chars=len(diff_content),
                         diff_lines=len(diff_content.splitlines()),
-                        llm_raw_response=llm_result.get('llm_raw_response', '') if llm_result else '',
-                        technical_evidence=llm_result.get('technical_evidence', '') if llm_result else '',
+                        llm_raw_response=(llm_result or {}).get('llm_raw_response', '') or '',
+                        extraction_method="none",
                         success=False,
                     )
-                    result_dict = analysis_to_session_dict(fallback)
+                    result_dict = analysis_to_session_dict(failure)
                     result_dict['purity_classification'] = purity_classification
-                    print(warning(f"⚠️ Commit {hash_commit[:8]}... - LLM falhou, usando dados parciais/padrão"))
+                    result_dict['error_type'] = 'llm_no_verdict'
+                    result_dict['error_message'] = (llm_result or {}).get(
+                        'error', 'Resposta do LLM sem veredito extraível'
+                    )
+                    print(warning(f"⚠️ Commit {hash_commit[:8]}... sem veredito do LLM — registrado como FAILED"))
                     return result_dict
 
             except Exception as llm_error:
@@ -430,7 +438,8 @@ class LLMPurityAnalyzer:
     def analyze_commits(self, 
                        max_commits: Optional[int] = None, 
                        skip_analyzed: bool = True,
-                       purity_filter: Optional[str] = None) -> Dict[str, Any]:
+                       purity_filter: Optional[str] = None,
+                       retry_failed: bool = False) -> Dict[str, Any]:
         """
         Analisa commits e preenche a coluna llm_analysis.
         
@@ -438,6 +447,9 @@ class LLMPurityAnalyzer:
             max_commits: Número máximo de commits para analisar (None = todos)
             skip_analyzed: Se True, pula commits que já têm análise LLM
             purity_filter: Filtro por classificação Purity ('TRUE', 'FALSE', 'NONE', None = todos)
+            retry_failed: Se True, reanalisa commits marcados FAILED/ERROR
+                (Fase E2, VAL-6 — antes ficavam em limbo permanente: nem
+                pendentes, nem completos, nunca reanalisados)
             
         Returns:
             Dict com estatísticas da análise
@@ -463,11 +475,14 @@ class LLMPurityAnalyzer:
         # Pular commits já analisados se solicitado
         if skip_analyzed:
             initial_count = len(analysis_df)
-            analysis_df = analysis_df[
+            pending_mask = (
                 (analysis_df['llm_analysis'].isna()) | 
                 (analysis_df['llm_analysis'] == '') |
                 (analysis_df['llm_analysis'] == 'None')
-            ]
+            )
+            if retry_failed:
+                pending_mask |= analysis_df['llm_analysis'].isin(['FAILED', 'ERROR'])
+            analysis_df = analysis_df[pending_mask]
             skipped = initial_count - len(analysis_df)
             self.stats["skipped_already_analyzed"] = skipped
             print(info(f"Pulando {skipped} commits já analisados. Restam {len(analysis_df)} para análise."))
@@ -496,7 +511,9 @@ class LLMPurityAnalyzer:
         cloud_session_id = None
         cloud_model_id = None
         cloud_prompt_id = None
-        if self.supabase:
+        # Dry-run nunca toca o cloud: além de não ser medição, 'DRY_RUN'
+        # violaria o CHECK de classification do schema.
+        if self.supabase and not self.dry_run:
             try:
                 cloud_model_id = self.supabase.get_or_create_model(self.current_model)
 
@@ -571,15 +588,25 @@ class LLMPurityAnalyzer:
 
                     if result:
                         classification = result['llm_classification']
-                        df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
+                        has_verdict = classification in ("PURE", "FLOSS")
+                        # Dry-run é simulação: o CSV master nunca é mutado
+                        # (Fase E2 — um dry-run chegou a gravar 'DRY_RUN' no
+                        # master rastreado em jul/2026).
+                        if not self.dry_run:
+                            df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
                         # Rastreabilidade: todo registro persistido carrega o
                         # hash do prompt e a versão da ferramenta que o gerou.
                         result["prompt_sha256"] = self.prompt_sha256
                         result["tool_version"] = self.tool_version
                         analyses_results.append(result)
-                        self.stats["successful_analyses"] += 1
+                        if has_verdict:
+                            self.stats["successful_analyses"] += 1
+                        elif classification == "FAILED":
+                            # Falha com registro completo (VAL-6): conta como
+                            # falha, é persistida em JSONL e reportada ao cloud.
+                            self.stats["failed_analyses"] += 1
 
-                        # Persistência local: JSONL append (O(1), atômico)
+                        # Persistência local: JSONL append (O(1), crash-safe)
                         session_writer.append(result)
 
                         # Persistência cloud: Supabase (se conectado)
@@ -592,19 +619,33 @@ class LLMPurityAnalyzer:
                                     project_name=result.get("project_name", ""),
                                     purity_analysis=purity_classification,
                                 )
-                                if commit_id:
+                                if commit_id and has_verdict:
                                     self.supabase.record_result(
                                         session_id=cloud_session_id,
                                         commit_id=commit_id,
                                         model_id=cloud_model_id,
                                         prompt_version_id=cloud_prompt_id,
                                         classification=classification,
-                                        justification=result.get("llm_justification", ""),
-                                        confidence_level=result.get("llm_confidence", ""),
-                                        technical_evidence=result.get("technical_evidence", ""),
+                                        justification=result.get("llm_justification") or "",
+                                        confidence_level=result.get("llm_confidence") or "",
+                                        technical_evidence=result.get("technical_evidence") or "",
                                         llm_raw_response=result.get("llm_raw_response", ""),
+                                        extraction_method=result.get("extraction_method", ""),
+                                        diff_source=result.get("diff_source", "direct"),
                                         diff_size_chars=result.get("diff_size", 0),
                                         diff_lines=result.get("diff_lines", 0),
+                                    )
+                                elif classification == "FAILED":
+                                    # Falhas são dados (VAL-6): antes nenhuma
+                                    # falha chegava ao cloud (record_failure
+                                    # não tinha callers).
+                                    self.supabase.record_failure(
+                                        session_id=cloud_session_id,
+                                        commit_id=commit_id,
+                                        model_id=cloud_model_id,
+                                        error_type=result.get('error_type', 'llm_no_verdict'),
+                                        error_message=result.get('error_message', ''),
+                                        llm_raw_response=result.get('llm_raw_response', '') or '',
                                     )
                                 # Heartbeat
                                 self.supabase.update_heartbeat(
@@ -619,18 +660,37 @@ class LLMPurityAnalyzer:
                             except Exception as e:
                                 print(dim(f"Supabase sync falhou (JSONL local OK): {e}"))
 
-                        print(success(f"✅ {hash_commit[:8]}... → {classification}"))
+                        icon = "✅" if has_verdict else "⚠️"
+                        print(success(f"{icon} {hash_commit[:8]}... → {classification}"))
                     else:
-                        df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
+                        # Abortada antes de qualquer resposta (diff/dados
+                        # indisponíveis): marca ERROR no master e reporta ao
+                        # cloud sem commit_id.
+                        if not self.dry_run:
+                            df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
                         self.stats["failed_analyses"] += 1
+                        if self.supabase and cloud_session_id:
+                            try:
+                                self.supabase.record_failure(
+                                    session_id=cloud_session_id,
+                                    commit_id=None,
+                                    model_id=cloud_model_id,
+                                    error_type='analysis_error',
+                                    error_message=f'Análise abortada para {hash_commit} (diff/dados indisponíveis)',
+                                )
+                            except Exception as e:
+                                print(dim(f"Supabase record_failure falhou: {e}"))
                         print(error(f"❌ Failed: {hash_commit[:8]}..."))
 
-                    print(dim(f"💾 Progress saved ({processed_count}/{len(analysis_df)})"))
+                    # Mensagem honesta (ROB-1): o que está salvo neste ponto é
+                    # o JSONL incremental; o CSV master é escrito ao final.
+                    print(dim(f"Registro em JSONL ({processed_count}/{len(analysis_df)}); CSV master é escrito ao final"))
                     time.sleep(1)
 
                 except Exception as e:
                     self.stats["processing_errors"] += 1
-                    df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
+                    if not self.dry_run:
+                        df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
                     print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
                     continue
 
@@ -639,7 +699,10 @@ class LLMPurityAnalyzer:
 
         # Salvar CSV e sessão JSON uma vez no final (ou após CTRL+C)
         try:
-            self._save_csv_data(df)
+            if self.dry_run:
+                print(info("Dry-run: CSV master preservado (nenhuma mutação)."))
+            else:
+                self._save_csv_data(df)
             self._save_session_analysis(analyses_results)
             print(success(f'💾 Progresso final salvo. JSONL: {session_writer.path} ({session_writer.count} registros)'))
         except Exception as e:
@@ -720,7 +783,11 @@ class LLMPurityAnalyzer:
                     (df['llm_analysis'].isna()) | 
                     (df['llm_analysis'] == '') |
                     (df['llm_analysis'] == 'None')
-                ])
+                ]),
+                # VAL-6: FAILED/ERROR eram invisíveis (nem completos nem
+                # pendentes); agora são contados e reanalisáveis via
+                # --retry-failed.
+                "failed_analyses": len(df[df['llm_analysis'].isin(['FAILED', 'ERROR'])])
             }
             
             return summary
