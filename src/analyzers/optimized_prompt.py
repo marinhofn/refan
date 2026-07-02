@@ -8,8 +8,12 @@ import tempfile
 import json
 from typing import Optional, Tuple
 
-# Configuração de tamanho limite para envio direto vs arquivo
-MAX_DIRECT_DIFF_SIZE = 100000  # 100k caracteres - limite para envio direto no prompt
+from src.core.settings import settings as _settings
+
+# Alias do limiar centralizado em RefanSettings.max_diff_chars_file:
+# diffs acima deste tamanho vão para arquivo temporário em vez de inline
+# no prompt. Mantido como nome de módulo por compatibilidade com callers.
+MAX_DIRECT_DIFF_SIZE = _settings.max_diff_chars_file
 TEMP_DIFF_DIR = "temp_diffs"  # Diretório para arquivos temporários de diff
 
 # Prompt otimizado baseado nos padrões do Purity Checker

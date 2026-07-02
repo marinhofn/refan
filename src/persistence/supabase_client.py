@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from datetime import datetime
+from src.utils.timeutils import utc_now_iso
 from typing import Optional
 
 from src.utils.logging_config import get_logger
@@ -25,10 +25,17 @@ logger = get_logger(__name__)
 # Import condicional: supabase pode não estar instalado
 try:
     from supabase import create_client, Client
+    try:
+        from supabase import ClientOptions
+    except ImportError:  # versões antigas expõem em submódulo
+        from supabase.lib.client_options import ClientOptions
     HAS_SUPABASE = True
 except ImportError:
     HAS_SUPABASE = False
     Client = None
+    ClientOptions = None
+
+from src.core.settings import settings as _settings
 
 
 class SupabaseClient:
@@ -43,10 +50,51 @@ class SupabaseClient:
             raise ValueError(
                 "SUPABASE_URL e SUPABASE_SERVICE_KEY devem estar configurados"
             )
-        self.client: Client = create_client(url, service_key)
+        # Timeout explícito: sem ele, uma chamada PostgREST pode bloquear o
+        # runner indefinidamente em rede degradada (Fase H6).
+        options = ClientOptions(postgrest_client_timeout=_settings.supabase_timeout_s)
+        self.client: Client = create_client(url, service_key, options=options)
         self._model_cache: dict[str, str] = {}  # name -> uuid
         self._commit_cache: dict[str, str] = {}  # hash -> uuid
         self._prompt_cache: dict[str, str] = {}  # version_tag -> uuid
+
+    def _execute_with_retry(self, operation: str, build_query, attempts: int | None = None):
+        """Executa uma query PostgREST com retry e backoff exponencial.
+
+        Args:
+            operation: Nome da operação (para logging estruturado).
+            build_query: Callable sem argumentos que constrói a query;
+                reconstruída a cada tentativa para não reutilizar estado.
+            attempts: Número de tentativas. Default: settings.supabase_max_retries.
+                Operações periódicas (heartbeat, polling) devem passar 1 —
+                a próxima iteração do loop já as repete naturalmente.
+
+        Returns:
+            O resultado de .execute().
+
+        Raises:
+            A última exceção, após esgotar as tentativas. Os métodos
+            públicos capturam e preservam o contrato documentado
+            (None/False/[] na falha final; fallback JSONL local).
+        """
+        if attempts is None:
+            attempts = _settings.supabase_max_retries
+        last_error: Exception | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                return build_query().execute()
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Supabase {operation} falhou "
+                    f"(tentativa {attempt}/{attempts}): {e}"
+                )
+                if attempt < attempts:
+                    time.sleep(_settings.supabase_backoff_base_s * (2 ** (attempt - 1)))
+        logger.error(
+            f"Supabase {operation}: desistindo após {attempts} tentativas: {last_error}"
+        )
+        raise last_error
 
     # ------------------------------------------------------------------
     # Commits
@@ -65,9 +113,9 @@ class SupabaseClient:
             return self._commit_cache[commit_hash_current]
 
         try:
-            result = (
-                self.client.table("commits")
-                .upsert(
+            result = self._execute_with_retry(
+                "upsert_commit",
+                lambda: self.client.table("commits").upsert(
                     {
                         "commit_hash_current": commit_hash_current,
                         "commit_hash_before": commit_hash_before,
@@ -76,8 +124,7 @@ class SupabaseClient:
                         "purity_analysis": purity_analysis,
                     },
                     on_conflict="commit_hash_current",
-                )
-                .execute()
+                ),
             )
             if result.data:
                 uid = result.data[0]["id"]
@@ -103,9 +150,9 @@ class SupabaseClient:
 
         safe_name = name.replace(":", "_")
         try:
-            result = (
-                self.client.table("llm_models")
-                .upsert(
+            result = self._execute_with_retry(
+                "get_or_create_model",
+                lambda: self.client.table("llm_models").upsert(
                     {
                         "name": name,
                         "safe_name": safe_name,
@@ -113,8 +160,7 @@ class SupabaseClient:
                         "parameter_count": parameter_count,
                     },
                     on_conflict="name",
-                )
-                .execute()
+                ),
             )
             if result.data:
                 uid = result.data[0]["id"]
@@ -128,6 +174,26 @@ class SupabaseClient:
     # Prompt versions
     # ------------------------------------------------------------------
 
+    def get_prompt_version(self, version_tag: str) -> Optional[dict]:
+        """SELECT id e sha256_hash de uma versão de prompt já registrada.
+
+        Usado para validar que o prompt em disco do runner é idêntico ao
+        registrado no banco (HARDENING_PLAN.md, Fase H5). Retorna None se
+        a versão não existe ou em falha de rede.
+        """
+        try:
+            result = self._execute_with_retry(
+                "get_prompt_version",
+                lambda: self.client.table("prompt_versions")
+                .select("id, sha256_hash")
+                .eq("version_tag", version_tag),
+            )
+            if result.data:
+                return result.data[0]
+        except Exception as e:
+            logger.warning(f"Supabase get_prompt_version falhou: {e}")
+        return None
+
     def get_or_create_prompt_version(
         self,
         version_tag: str,
@@ -140,9 +206,9 @@ class SupabaseClient:
 
         sha256 = hashlib.sha256(system_prompt.encode()).hexdigest()
         try:
-            result = (
-                self.client.table("prompt_versions")
-                .upsert(
+            result = self._execute_with_retry(
+                "get_or_create_prompt_version",
+                lambda: self.client.table("prompt_versions").upsert(
                     {
                         "version_tag": version_tag,
                         "system_prompt": system_prompt,
@@ -150,8 +216,7 @@ class SupabaseClient:
                         "description": description,
                     },
                     on_conflict="version_tag",
-                )
-                .execute()
+                ),
             )
             if result.data:
                 uid = result.data[0]["id"]
@@ -176,9 +241,9 @@ class SupabaseClient:
     ) -> Optional[str]:
         """Cria analysis_session, retorna UUID."""
         try:
-            result = (
-                self.client.table("analysis_sessions")
-                .insert(
+            result = self._execute_with_retry(
+                "start_session",
+                lambda: self.client.table("analysis_sessions").insert(
                     {
                         "model_id": model_id,
                         "prompt_version_id": prompt_version_id,
@@ -188,8 +253,7 @@ class SupabaseClient:
                         "purity_filter": purity_filter,
                         "status": "running",
                     }
-                )
-                .execute()
+                ),
             )
             if result.data:
                 return result.data[0]["id"]
@@ -215,13 +279,16 @@ class SupabaseClient:
                 "total_skipped": total_skipped,
             }
             if status in ("completed", "failed", "cancelled"):
-                data["completed_at"] = datetime.now().isoformat()
+                data["completed_at"] = utc_now_iso()
             if error_message:
                 data["error_message"] = error_message
 
-            self.client.table("analysis_sessions").update(data).eq(
-                "id", session_id
-            ).execute()
+            self._execute_with_retry(
+                "update_session_status",
+                lambda: self.client.table("analysis_sessions").update(data).eq(
+                    "id", session_id
+                ),
+            )
             return True
         except Exception as e:
             logger.warning(f"Supabase update_session_status falhou: {e}")
@@ -250,25 +317,28 @@ class SupabaseClient:
     ) -> bool:
         """INSERT em analysis_results."""
         try:
-            self.client.table("analysis_results").upsert(
-                {
-                    "session_id": session_id,
-                    "commit_id": commit_id,
-                    "model_id": model_id,
-                    "prompt_version_id": prompt_version_id,
-                    "classification": classification.upper(),
-                    "justification": justification,
-                    "confidence_level": confidence_level,
-                    "technical_evidence": technical_evidence,
-                    "llm_raw_response": llm_raw_response,
-                    "extraction_method": extraction_method,
-                    "diff_size_chars": diff_size_chars,
-                    "diff_lines": diff_lines,
-                    "processing_time_ms": processing_time_ms,
-                    "diff_source": diff_source,
-                },
-                on_conflict="session_id,commit_id",
-            ).execute()
+            self._execute_with_retry(
+                "record_result",
+                lambda: self.client.table("analysis_results").upsert(
+                    {
+                        "session_id": session_id,
+                        "commit_id": commit_id,
+                        "model_id": model_id,
+                        "prompt_version_id": prompt_version_id,
+                        "classification": classification.upper(),
+                        "justification": justification,
+                        "confidence_level": confidence_level,
+                        "technical_evidence": technical_evidence,
+                        "llm_raw_response": llm_raw_response,
+                        "extraction_method": extraction_method,
+                        "diff_size_chars": diff_size_chars,
+                        "diff_lines": diff_lines,
+                        "processing_time_ms": processing_time_ms,
+                        "diff_source": diff_source,
+                    },
+                    on_conflict="session_id,commit_id",
+                ),
+            )
             return True
         except Exception as e:
             logger.warning(f"Supabase record_result falhou: {e}")
@@ -296,7 +366,10 @@ class SupabaseClient:
             }
             if commit_id:
                 data["commit_id"] = commit_id
-            self.client.table("analysis_failures").insert(data).execute()
+            self._execute_with_retry(
+                "record_failure",
+                lambda: self.client.table("analysis_failures").insert(data),
+            )
             return True
         except Exception as e:
             logger.warning(f"Supabase record_failure falhou: {e}")
@@ -316,22 +389,30 @@ class SupabaseClient:
         total_commits_in_batch: int = 0,
         model_name: str = "",
     ) -> bool:
-        """UPSERT runner_status (heartbeat)."""
+        """UPSERT runner_status (heartbeat).
+
+        Tentativa única: o heartbeat é periódico — a próxima iteração do
+        loop já o repete; retry com backoff só atrasaria a análise.
+        """
         try:
-            self.client.table("runner_status").upsert(
-                {
-                    "runner_id": runner_id,
-                    "session_id": session_id,
-                    "status": status,
-                    "current_commit_hash": current_commit_hash,
-                    "current_commit_index": current_commit_index,
-                    "total_commits_in_batch": total_commits_in_batch,
-                    "model_name": model_name,
-                    "last_heartbeat": datetime.now().isoformat(),
-                    "updated_at": datetime.now().isoformat(),
-                },
-                on_conflict="runner_id",
-            ).execute()
+            self._execute_with_retry(
+                "update_heartbeat",
+                lambda: self.client.table("runner_status").upsert(
+                    {
+                        "runner_id": runner_id,
+                        "session_id": session_id,
+                        "status": status,
+                        "current_commit_hash": current_commit_hash,
+                        "current_commit_index": current_commit_index,
+                        "total_commits_in_batch": total_commits_in_batch,
+                        "model_name": model_name,
+                        "last_heartbeat": utc_now_iso(),
+                        "updated_at": utc_now_iso(),
+                    },
+                    on_conflict="runner_id",
+                ),
+                attempts=1,
+            )
             return True
         except Exception as e:
             logger.warning(f"Supabase update_heartbeat falhou: {e}")
@@ -342,25 +423,34 @@ class SupabaseClient:
     # ------------------------------------------------------------------
 
     def poll_commands(self, runner_id: str) -> list[dict]:
-        """SELECT pending commands, marca como acknowledged."""
+        """SELECT pending commands, marca como acknowledged.
+
+        Tentativa única: o polling é periódico — comandos não lidos agora
+        serão lidos na próxima iteração do loop.
+        """
         try:
-            result = (
-                self.client.table("command_queue")
+            result = self._execute_with_retry(
+                "poll_commands",
+                lambda: self.client.table("command_queue")
                 .select("*")
                 .eq("runner_id", runner_id)
                 .eq("status", "pending")
-                .order("created_at")
-                .execute()
+                .order("created_at"),
+                attempts=1,
             )
             commands = result.data or []
             # Marcar como acknowledged
             for cmd in commands:
-                self.client.table("command_queue").update(
-                    {
-                        "status": "acknowledged",
-                        "acknowledged_at": datetime.now().isoformat(),
-                    }
-                ).eq("id", cmd["id"]).execute()
+                self._execute_with_retry(
+                    "acknowledge_command",
+                    lambda cmd_id=cmd["id"]: self.client.table("command_queue").update(
+                        {
+                            "status": "acknowledged",
+                            "acknowledged_at": utc_now_iso(),
+                        }
+                    ).eq("id", cmd_id),
+                    attempts=1,
+                )
             return commands
         except Exception as e:
             logger.warning(f"Supabase poll_commands falhou: {e}")
@@ -371,13 +461,17 @@ class SupabaseClient:
     ) -> bool:
         """Marca comando como completed."""
         try:
-            self.client.table("command_queue").update(
-                {
-                    "status": "completed",
-                    "completed_at": datetime.now().isoformat(),
-                    "result_message": result_message,
-                }
-            ).eq("id", command_id).execute()
+            self._execute_with_retry(
+                "complete_command",
+                lambda: self.client.table("command_queue").update(
+                    {
+                        "status": "completed",
+                        "completed_at": utc_now_iso(),
+                        "result_message": result_message,
+                    }
+                ).eq("id", command_id),
+                attempts=1,
+            )
             return True
         except Exception as e:
             logger.warning(f"Supabase complete_command falhou: {e}")

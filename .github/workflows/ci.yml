@@ -1,0 +1,51 @@
+# Integração contínua do Refan (HARDENING_PLAN.md, Fase H3).
+#
+# Executa a suíte offline (-m "not slow") em todas as versões de Python
+# suportadas (requires-python >= 3.10). Os testes marcados como `slow`
+# exigem Ollama local e ficam fora da CI por construção — devem ser
+# executados manualmente antes de merges que toquem o llm_handler.
+# Nenhum secret é necessário: Supabase e Ollama são sempre mockados.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Higiene do repositório (EVOLUTION_PLAN.md, Fase E0): bloqueia artefatos de
+  # conflito de sincronização (" 2") versionados e alterações no baseline
+  # imutável. Barato (sem instalação de dependências, sem LFS).
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check repository hygiene
+        run: python scripts/data/check_repo_hygiene.py
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package with dev, json5 and supabase extras
+        run: pip install -e ".[dev,json5,supabase]"
+
+      - name: Run offline test suite
+        run: python -m pytest tests/ -v -m "not slow"

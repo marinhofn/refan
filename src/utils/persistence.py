@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+from src.utils.timeutils import utc_now_stamp
 
 
 class SessionWriter:
@@ -47,8 +48,7 @@ class SessionWriter:
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
         if session_name is None:
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            session_name = f"session_{timestamp}"
+            session_name = f"session_{utc_now_stamp()}"
 
         self.file_path = self.sessions_dir / f"{session_name}.jsonl"
         self._count = 0
@@ -123,6 +123,10 @@ def merge_jsonl_to_csv(
         return 0
 
     df = pd.read_csv(csv_path)
+    # Coluna totalmente vazia é inferida como float64 (NaN); atribuir strings
+    # nela é deprecated no pandas >= 2.1 e passará a levantar erro.
+    if value_column in df.columns:
+        df[value_column] = df[value_column].astype("object")
     updated = 0
 
     for record in records:

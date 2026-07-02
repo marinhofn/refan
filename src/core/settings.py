@@ -50,6 +50,11 @@ class RefanSettings:
     max_retries: int = 2
     timeout_base_s: int = 200
     timeout_large_s: int = 300
+    # Reset preventivo do contexto DeepSeek a cada N análises: degradação
+    # progressiva de performance foi observada empiricamente no DeepSeek-R1
+    # após ~8 análises consecutivas (TCC, ago/2025); o reset via keep_alive=0
+    # descarrega o modelo e restaura o tempo de resposta.
+    deepseek_reset_interval: int = 8
 
     # --- Diff handling ---
     max_diff_chars: int = 60000
@@ -65,7 +70,15 @@ class RefanSettings:
     show_prompt: bool = True
     max_prompt_display_length: int = 2000
     reset_model_context: bool = True
-    use_random_seed: bool = True
+
+    # --- Reprodutibilidade ---
+    # Seed fixo passado em options.seed da API do Ollama. Com temperature
+    # baixa + seed fixo, a geração torna-se determinística por modelo/versão.
+    # use_random_seed=True replica o regime do baseline TCC (sem seed);
+    # o default False define o regime da série experimental do mestrado
+    # (v2.1+). Decisão registrada em HARDENING_PLAN.md e docs/REPRODUCIBILITY.md.
+    llm_seed: int = 42
+    use_random_seed: bool = False
 
     # --- Failure tracking ---
     failures_file: str = "json_failures.json"
@@ -83,6 +96,14 @@ class RefanSettings:
     prompt_version_tag: str = field(
         default_factory=lambda: os.environ.get("REFAN_PROMPT_VERSION", "v2.0-mestrado")
     )
+    # Resiliência de rede (HARDENING_PLAN.md, Fase H6): timeout explícito do
+    # client PostgREST e retry com backoff exponencial para operações que
+    # persistem dados de pesquisa (resultados, sessões, commits). Operações
+    # periódicas (heartbeat, polling) usam tentativa única — a próxima
+    # iteração do loop já as repete naturalmente.
+    supabase_timeout_s: int = 10
+    supabase_max_retries: int = 3
+    supabase_backoff_base_s: float = 1.0
 
     def is_deepseek(self, model_name: str | None = None) -> bool:
         """Verifica se o modelo atual ou informado é DeepSeek."""
