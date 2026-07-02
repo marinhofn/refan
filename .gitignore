@@ -85,9 +85,6 @@ secrets*/
 # Modelos adicionais (caso algum dia salvar pesos locais)
 # models/
 
-# Documentação de planejamento (local, não versionada)
-ARCHITECTURE_PLAN.md
-REFACTORING_PLAN.md
 
 # Claude Code
 .claude/
