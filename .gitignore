@@ -79,6 +79,8 @@ Thumbs.db
 .env.*
 !.env.example
 secrets*/
+# Config do MCP Supabase local (pode conter personal access token inline)
+.mcp.json
 
 # Modelos adicionais (caso algum dia salvar pesos locais)
 # models/
