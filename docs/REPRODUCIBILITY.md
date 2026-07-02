@@ -44,9 +44,23 @@ A service key do Supabase é **excluída** do snapshot por construção.
 `output/models/<modelo>/analises/sessions/session_<ts>.jsonl` e linha em
 `analysis_results` no cloud): hashes do commit, repositório, classificação,
 justificativa, resposta bruta do LLM, tamanho do diff, timestamps UTC,
-`prompt_sha256`, `tool_version`.
+`prompt_sha256`, `tool_version` e — desde a Fase E3 —
+`model_digest`/`ollama_version` (identidade exata dos pesos e do runtime),
+`seed_effective` (sempre explícito, inclusive no regime aleatório),
+`prompt_sha256_effective`/`diff_sha256` (hashes do que foi de fato enviado),
+`num_ctx_effective`/`num_predict_effective`/`prompt_chars`,
+`diff_truncated`/`original_diff_size_chars` e `processing_time_ms` real.
+O `config_snapshot` da sessão inclui ainda o bloco `hardware` (SO, máquina,
+CPU/RAM, GPU, camadas na GPU).
 
 ## 3. Procedimento de reprodução de uma sessão
+
+> **Atalho (Fase E3):** os passos abaixo estão materializados em dois
+> comandos — `python refan.py doctor` (pré-condições: higiene, prompt↔tag,
+> Ollama, digest do modelo, Supabase, disco) e
+> `python refan.py reproduce <sessão.jsonl>` (verificação de ambiente +
+> re-execução isolada + comparação veredito a veredito, exit 0 somente com
+> 100% de concordância). O detalhamento manual permanece como referência.
 
 1. **Recuperar o snapshot**: abra o JSONL da sessão (ou a linha em
    `analysis_sessions`) e anote `tool_version`, `prompt_sha256`, `config_snapshot`
@@ -112,10 +126,10 @@ por iCloud/Drive/Dropbox.
 
 | Lacuna | Impacto | Situação |
 |--------|---------|----------|
-| Digest do modelo Ollama não capturado (tag mutável) | Identidade dos pesos não verificável a posteriori | Aberta — E3 (REP-1) |
-| Seed efetivo no regime aleatório e hash do prompt completo não registrados por análise | Reconstrução exige recomputação a partir do snapshot | Aberta — E3 (REP-2). `num_ctx`/`num_predict` efetivos, `prompt_chars` e `diff_truncated` **já são registrados por análise desde a E2** |
-| Hardware (GPU/driver/`REFAN_NUM_GPU_LAYERS`) fora do `config_snapshot` | Condições de execução parcialmente registradas | Aberta — E3 (REP-3) |
-| `processing_time_ms` sempre 0 | Métricas de desempenho sem significado | Aberta — E3 (REP-4) |
+| ~~Digest do modelo Ollama não capturado~~ | Identidade dos pesos não verificável a posteriori | **Fechada na E3 (REP-1)**: digest + versão do Ollama por sessão e por registro; sessão real aborta sem digest; migration `003_model_digest.sql`. Sessões pré-E3 permanecem não verificáveis (limitação histórica) |
+| ~~Seed efetivo e hashes do envio não registrados por análise~~ | Reconstrução exigia recomputação | **Fechada na E2/E3 (REP-2)**: `seed_effective` sempre explícito (regime aleatório sorteia no cliente e envia), `prompt_sha256_effective`, `diff_sha256`, `num_ctx`/`num_predict` efetivos, `diff_truncated` |
+| ~~Hardware fora do `config_snapshot`~~ | Condições de execução parcialmente registradas | **Fechada na E3 (REP-3)**: bloco `hardware` no snapshot; `num_gpu_layers` no settings; heartbeat com utilização/memória de GPU |
+| ~~`processing_time_ms` sempre 0~~ | Métricas de desempenho sem significado | **Fechada na E3 (REP-4)**: duração real da inferência por análise, local e cloud |
 | ~~Validação de prompt contra `prompt_versions` podia sobrescrever registro histórico~~ | Proveniência de prompt violável | **Fechada na E2 (VAL-4)**: get-then-insert + `PromptVersionConflictError` aborta a sessão; trigger de imutabilidade em `002_provenance_guards.sql` |
 | ~~Truncamento de contexto não detectado/registrado~~ | Modelo podia classificar sem ver o diff inteiro, sem rastro | **Fechada na E2 (VAL-7)**: `plan_generation` dimensiona pelo prompt real; cortes registrados em `diff_truncated`/`original_diff_size_chars` |
 | ~~Rótulos fabricados (heurística de keywords) e `confidence_level`/`technical_evidence` simulados~~ | Rótulos/variáveis artificiais nas séries ≤ v2.1 | **Fechada na E2 (VAL-2/VAL-3/VAL-8)** para dados novos. Dados históricos: rodar `scripts/research/audit_extraction_methods.py` e excluir registros `no_verdict`; `confidence_level`/`technical_evidence` de séries ≤ v2.1 **não são utilizáveis como variáveis** |
