@@ -127,6 +127,62 @@ class OllamaAdapter:
         self._last_duration = None
         self._analysis_count = 0
         self._performance_degraded = False
+        self._model_info_cache: Optional[dict] = None
+
+    def get_model_info(self) -> Optional[dict]:
+        """Identidade exata do modelo e do runtime (Fase E3, REP-1).
+
+        Tags do Ollama são MUTÁVEIS: `ollama pull mistral` em datas
+        diferentes pode trazer pesos diferentes sob o mesmo nome. Sem o
+        digest, dois runs "com o mesmo modelo" são indistinguíveis a
+        posteriori. Consulta /api/tags (digest, tamanho, modified_at) e
+        /api/version (versão do Ollama); resultado cacheado por adapter.
+
+        Returns:
+            dict com model/digest/size_bytes/modified_at/ollama_version,
+            ou None se o Ollama não responder ou o modelo não existir local.
+        """
+        if self._model_info_cache is not None:
+            return self._model_info_cache
+
+        base_url = self.host.split("/api/")[0]
+        try:
+            tags_resp = requests.get(f"{base_url}/api/tags", timeout=10)
+            tags_resp.raise_for_status()
+            models = tags_resp.json().get("models", [])
+        except Exception as e:
+            print(warning(f"Não foi possível consultar /api/tags: {e}"))
+            return None
+
+        def _normalize(name: str) -> str:
+            return name[:-7] if name.endswith(":latest") else name
+
+        entry = None
+        for m in models:
+            name = m.get("name", "")
+            if name == self.model or _normalize(name) == _normalize(self.model):
+                entry = m
+                break
+        if not entry or not entry.get("digest"):
+            print(warning(f"Modelo '{self.model}' não encontrado no Ollama local (/api/tags)"))
+            return None
+
+        ollama_version = ""
+        try:
+            version_resp = requests.get(f"{base_url}/api/version", timeout=10)
+            if version_resp.status_code == 200:
+                ollama_version = version_resp.json().get("version", "")
+        except Exception:
+            pass  # versão é complementar; o digest é o essencial
+
+        self._model_info_cache = {
+            "model": entry.get("name", self.model),
+            "digest": entry["digest"],
+            "size_bytes": entry.get("size", 0),
+            "modified_at": entry.get("modified_at", ""),
+            "ollama_version": ollama_version,
+        }
+        return self._model_info_cache
 
     def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None, seed: int | None = None) -> Optional[str]:
         if attempts is None:
@@ -254,6 +310,10 @@ class LLMHandler:
         else:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
+    def get_model_info(self) -> Optional[dict]:
+        """Identidade do modelo/runtime via adapter (digest etc. — REP-1)."""
+        return self.adapter.get_model_info()
+
     def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
         """Delega para src.utils.failure_logger.save_json_failure."""
         _save_json_failure(

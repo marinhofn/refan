@@ -380,6 +380,8 @@ class LLMPurityAnalyzer:
             session_data = {
                 "session_info": {
                     "model_used": current_model,
+                    "model_digest": getattr(self, "model_digest", ""),
+                    "ollama_version": getattr(self, "ollama_version", ""),
                     "analysis_type": analysis_type,
                     "description": description,
                     "csv_file_analyzed": self.csv_file_path,
@@ -498,6 +500,25 @@ class LLMPurityAnalyzer:
         
         print(info(f"Iniciando análise de {len(analysis_df)} commits..."))
         
+        # Identidade exata do modelo (Fase E3, REP-1): sem digest não há
+        # rastreabilidade — a sessão real é ABORTADA. Dry-run é isento
+        # (não é medição; roda offline).
+        self.model_digest = ""
+        self.ollama_version = ""
+        model_info = None
+        if not self.dry_run:
+            model_info = self.llm_handler.get_model_info()
+            if not model_info or not model_info.get("digest"):
+                raise RuntimeError(
+                    f"Não foi possível obter o digest do modelo '{self.current_model}' "
+                    f"no Ollama local. Sem o digest, os resultados não são "
+                    f"reprodutíveis nem auditáveis (REP-1). Verifique se o Ollama "
+                    f"está ativo e o modelo foi baixado (ollama pull)."
+                )
+            self.model_digest = model_info["digest"]
+            self.ollama_version = model_info.get("ollama_version", "")
+            print(info(f"Modelo {self.current_model} digest {self.model_digest[:19]}... (Ollama {self.ollama_version or '?'})"))
+
         # Inicializar barra de progresso
         progress_bar = ProgressBar(len(analysis_df), title="LLM Analysis")
         
@@ -516,7 +537,11 @@ class LLMPurityAnalyzer:
         if self.supabase and not self.dry_run:
             from src.persistence.supabase_client import PromptVersionConflictError
             try:
-                cloud_model_id = self.supabase.get_or_create_model(self.current_model)
+                cloud_model_id = self.supabase.get_or_create_model(
+                    self.current_model,
+                    digest=self.model_digest,
+                    ollama_version=self.ollama_version,
+                )
 
                 # Proveniência imutável (Fase E2, VAL-4): se a tag registrada
                 # no banco tem hash diferente do prompt em execução,
@@ -534,6 +559,9 @@ class LLMPurityAnalyzer:
                             **_settings.to_dict(),
                             "prompt_sha256": self.prompt_sha256,
                             "tool_version": self.tool_version,
+                            "model_digest": self.model_digest,
+                            "model_modified_at": (model_info or {}).get("modified_at", ""),
+                            "ollama_version": self.ollama_version,
                         },
                         runner_hostname=_settings.runner_id,
                         total_planned=len(analysis_df),
@@ -589,6 +617,8 @@ class LLMPurityAnalyzer:
                         # hash do prompt e a versão da ferramenta que o gerou.
                         result["prompt_sha256"] = self.prompt_sha256
                         result["tool_version"] = self.tool_version
+                        result["model_digest"] = self.model_digest
+                        result["ollama_version"] = self.ollama_version
                         analyses_results.append(result)
                         if has_verdict:
                             self.stats["successful_analyses"] += 1

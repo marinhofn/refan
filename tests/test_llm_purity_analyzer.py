@@ -70,6 +70,13 @@ def _make_analyzer(tmp_path, monkeypatch, dry_run=False):
     analyzer.git_handler = MagicMock()
     analyzer.git_handler.get_commit_message.return_value = "commit msg"
     analyzer.llm_handler = MagicMock()
+    # Identidade do modelo (REP-1): sessões reais exigem digest resolvível
+    analyzer.llm_handler.get_model_info.return_value = {
+        "model": "stub:latest",
+        "digest": "sha256:stubdigest",
+        "modified_at": "2026-01-01T00:00:00Z",
+        "ollama_version": "0.0-test",
+    }
 
     # O loop dorme 1s por commit — irrelevante para os testes
     monkeypatch.setattr("src.analyzers.llm_purity_analyzer.time.sleep", lambda s: None)
@@ -180,3 +187,29 @@ class TestSummary:
         summary = analyzer.get_analysis_summary()
         assert summary["failed_analyses"] == 1  # c3
         assert summary["pending_analyses"] == 2  # c1, c2
+
+
+class TestModelDigest:
+    """Fase E3 (REP-1): sessão real sem digest resolvível é abortada; com
+    digest, a identidade acompanha cada registro."""
+
+    def test_session_aborts_without_digest(self, tmp_path, monkeypatch):
+        analyzer, _ = _make_analyzer(tmp_path, monkeypatch)
+        analyzer.llm_handler.get_model_info.return_value = None
+        import pytest as _pytest
+        with _pytest.raises(RuntimeError, match="digest"):
+            analyzer.analyze_commits(max_commits=1)
+
+    def test_digest_recorded_on_every_record(self, tmp_path, monkeypatch):
+        analyzer, _ = _make_analyzer(tmp_path, monkeypatch)
+        analyzer.llm_handler.analyze_commit_refactoring.return_value = dict(VERDICT_RESPONSE)
+        analyzer.analyze_commits(max_commits=1)
+        records = _read_jsonl_records(analyzer)
+        assert records[0]["model_digest"] == "sha256:stubdigest"
+        assert records[0]["ollama_version"] == "0.0-test"
+
+    def test_dry_run_exempt_from_digest(self, tmp_path, monkeypatch):
+        analyzer, _ = _make_analyzer(tmp_path, monkeypatch, dry_run=True)
+        analyzer.llm_handler.get_model_info.return_value = None
+        stats = analyzer.analyze_commits(max_commits=1)  # não levanta
+        assert stats["total_processed"] == 1

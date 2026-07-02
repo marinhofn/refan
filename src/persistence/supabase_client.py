@@ -161,22 +161,35 @@ class SupabaseClient:
         name: str,
         family: str = "",
         parameter_count: str = "",
+        digest: str = "",
+        ollama_version: str = "",
     ) -> Optional[str]:
-        """Retorna UUID do modelo, criando se necessário."""
+        """Retorna UUID do modelo, criando se necessário.
+
+        digest/ollama_version (Fase E3, REP-1) atualizam o registro do
+        modelo para o estado mais recente observado; a identidade histórica
+        por resultado vive no config_snapshot da sessão e nos registros
+        JSONL. Requer a migration 003_model_digest.sql aplicada.
+        """
         if name in self._model_cache:
             return self._model_cache[name]
 
         safe_name = name.replace(":", "_")
+        payload = {
+            "name": name,
+            "safe_name": safe_name,
+            "family": family,
+            "parameter_count": parameter_count,
+        }
+        if digest:
+            payload["digest"] = digest
+        if ollama_version:
+            payload["last_seen_ollama_version"] = ollama_version
         try:
             result = self._execute_with_retry(
                 "get_or_create_model",
                 lambda: self.client.table("llm_models").upsert(
-                    {
-                        "name": name,
-                        "safe_name": safe_name,
-                        "family": family,
-                        "parameter_count": parameter_count,
-                    },
+                    payload,
                     on_conflict="name",
                 ),
             )
