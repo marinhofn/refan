@@ -109,6 +109,12 @@ class RefanSettings:
     llm_seed: int = 42
     use_random_seed: bool = False
 
+    # --- Persistência ---
+    # fsync após cada linha JSONL (Fase E4, ROB-3): garante que o registro
+    # sobreviva a queda de energia, não só a crash de processo. O custo
+    # (~ms) é irrisório perto de uma inferência LLM (segundos/minutos).
+    jsonl_fsync: bool = True
+
     # --- Failure tracking ---
     failures_file: str = "json_failures.json"
 

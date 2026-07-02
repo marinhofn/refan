@@ -205,8 +205,11 @@ class LLMPurityAnalyzer:
                 print(info(f"Backup criado: {backup_path}"))
                 self._backup_created = True
 
-            # Salvar arquivo atualizado (sobrescreve o CSV de trabalho)
-            df.to_csv(self.csv_file_path, index=False)
+            # Fase E4 (ROB-1): publicação atômica sob lock — crash durante a
+            # escrita não corrompe o master; concorrência não perde escrita.
+            from src.utils.atomic_io import atomic_write_text, file_lock
+            with file_lock(self.csv_file_path):
+                atomic_write_text(self.csv_file_path, df.to_csv(index=False))
             print(success(f"Arquivo {self.csv_file_path} atualizado com sucesso."))
             return True
             
@@ -427,8 +430,8 @@ class LLMPurityAnalyzer:
                 session_data["summary"]["classifications"] = classifications
                 session_data["summary"]["convergence_analysis"] = convergence
             
-            with open(self.session_log_file, 'w', encoding='utf-8') as f:
-                json.dump(session_data, f, indent=2, ensure_ascii=False)
+            from src.utils.atomic_io import atomic_write_json
+            atomic_write_json(self.session_log_file, session_data)
             
             print(success(f"📊 Dados detalhados salvos em: {self.session_log_file}"))
             print(info(f"   Modelo: {current_model}"))

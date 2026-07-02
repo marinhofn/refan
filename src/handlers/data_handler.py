@@ -30,21 +30,34 @@ class DataHandler:
         Returns:
             set: Conjunto de IDs de commits já analisados.
         """
+        if not os.path.exists(self.analyzed_commits_log):
+            return set()
         try:
-            if not os.path.exists(self.analyzed_commits_log):
-                return set()
             with open(self.analyzed_commits_log, 'r') as f:
                 commits_data = json.load(f)
-            analyzed_commits = set()
-            for item in commits_data:
-                commit_hash = item.get('commit2') or item.get('commit_hash_current')
-                if commit_hash:
-                    analyzed_commits.add(commit_hash)
-            print(info(f"Carregados {len(analyzed_commits)} commits já analisados."))
-            return analyzed_commits
-        except Exception as e:
-            print(warning(f"Aviso: Erro ao carregar commits analisados: {str(e)}"))
+        except json.JSONDecodeError as e:
+            # Fase E4 (ROB-2): arquivo corrompido NÃO vira set() silencioso —
+            # isso apagava o histórico de análise sem aviso. O corrompido é
+            # preservado para perícia e o erro é alto e claro.
+            from src.utils.timeutils import utc_now_stamp
+            quarantine = f"{self.analyzed_commits_log}.corrupt-{utc_now_stamp()}"
+            os.replace(self.analyzed_commits_log, quarantine)
+            print(error(
+                f"ERRO: {self.analyzed_commits_log} está corrompido ({e}). "
+                f"Arquivo movido para {quarantine}; o tracking recomeça vazio — "
+                f"use --no-skip/merge-sessions para reconciliar se necessário."
+            ))
             return set()
+        except OSError as e:
+            print(warning(f"Aviso: Erro ao ler commits analisados: {e}"))
+            return set()
+        analyzed_commits = set()
+        for item in commits_data:
+            commit_hash = item.get('commit2') or item.get('commit_hash_current')
+            if commit_hash:
+                analyzed_commits.add(commit_hash)
+        print(info(f"Carregados {len(analyzed_commits)} commits já analisados."))
+        return analyzed_commits
     
     def save_analyzed_commits(self, new_commits):
         """
@@ -54,29 +67,33 @@ class DataHandler:
             new_commits (list): Lista de dicionários com informações dos commits analisados.
         """
         try:
-            existing_data = []
-            if os.path.exists(self.analyzed_commits_log):
-                with open(self.analyzed_commits_log, 'r') as f:
-                    try:
-                        existing_data = json.load(f)
-                    except json.JSONDecodeError:
-                        existing_data = []
-            
-            # Adicionar novos commits
-            existing_data.extend(new_commits)
-            
-            # Atualizar o conjunto de commits analisados
-            for item in new_commits:
-                # Suporte a ambos os formatos de nome de coluna
-                commit_hash = item.get('commit2') or item.get('commit_hash_current')
-                if commit_hash:
-                    self.analyzed_commits.add(commit_hash)
-            
-            # Salvar o arquivo atualizado
-            with open(self.analyzed_commits_log, 'w') as f:
-                json.dump(existing_data, f, indent=4)
+            from src.utils.atomic_io import atomic_write_json, file_lock
 
-                print(success(f"Registro de commits analisados atualizado. {bold('Total:')} {bold(len(self.analyzed_commits))}"))
+            # Fase E4 (ROB-2): read-modify-write serializado por lock e
+            # publicado atomicamente — antes, crash no meio do json.dump
+            # corrompia o arquivo e concorrência perdia atualizações.
+            with file_lock(self.analyzed_commits_log):
+                existing_data = []
+                if os.path.exists(self.analyzed_commits_log):
+                    with open(self.analyzed_commits_log, 'r') as f:
+                        try:
+                            existing_data = json.load(f)
+                        except json.JSONDecodeError:
+                            existing_data = []
+
+                # Adicionar novos commits
+                existing_data.extend(new_commits)
+
+                # Atualizar o conjunto de commits analisados
+                for item in new_commits:
+                    # Suporte a ambos os formatos de nome de coluna
+                    commit_hash = item.get('commit2') or item.get('commit_hash_current')
+                    if commit_hash:
+                        self.analyzed_commits.add(commit_hash)
+
+                atomic_write_json(self.analyzed_commits_log, existing_data, indent=4)
+
+            print(success(f"Registro de commits analisados atualizado. {bold('Total:')} {bold(len(self.analyzed_commits))}"))
         except Exception as e:
             print(error(f"Erro ao salvar registro de commits analisados: {str(e)}"))
     
