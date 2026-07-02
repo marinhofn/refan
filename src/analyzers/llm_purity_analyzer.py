@@ -205,8 +205,11 @@ class LLMPurityAnalyzer:
                 print(info(f"Backup criado: {backup_path}"))
                 self._backup_created = True
 
-            # Salvar arquivo atualizado (sobrescreve o CSV de trabalho)
-            df.to_csv(self.csv_file_path, index=False)
+            # Fase E4 (ROB-1): publicação atômica sob lock — crash durante a
+            # escrita não corrompe o master; concorrência não perde escrita.
+            from src.utils.atomic_io import atomic_write_text, file_lock
+            with file_lock(self.csv_file_path):
+                atomic_write_text(self.csv_file_path, df.to_csv(index=False))
             print(success(f"Arquivo {self.csv_file_path} atualizado com sucesso."))
             return True
             
@@ -241,7 +244,10 @@ class LLMPurityAnalyzer:
             tuple(diff_content, repo_path) ou None em caso de erro.
         """
         try:
-            ok, repo_path = self.git_handler.ensure_repo_cloned(commit.repository)
+            ok, repo_path = self.git_handler.ensure_repo_cloned(
+                commit.repository,
+                required_hashes=[commit.commit_hash_before, commit.commit_hash_current],
+            )
             if not ok:
                 print(error(f"Falha ao preparar repositório: {commit.repository}"))
                 return None
@@ -427,8 +433,8 @@ class LLMPurityAnalyzer:
                 session_data["summary"]["classifications"] = classifications
                 session_data["summary"]["convergence_analysis"] = convergence
             
-            with open(self.session_log_file, 'w', encoding='utf-8') as f:
-                json.dump(session_data, f, indent=2, ensure_ascii=False)
+            from src.utils.atomic_io import atomic_write_json
+            atomic_write_json(self.session_log_file, session_data)
             
             print(success(f"📊 Dados detalhados salvos em: {self.session_log_file}"))
             print(info(f"   Modelo: {current_model}"))
@@ -601,6 +607,29 @@ class LLMPurityAnalyzer:
                     self.stats["skipped_already_analyzed"] += 1
                     continue
 
+                # Controle remoto (ROB-5): reanálises agendadas via dashboard
+                # entram na frente da fila desta sessão (antes: comando aceito
+                # e jamais consumido).
+                if self.command_handler:
+                    for queued_hash in self.command_handler.drain_reanalyze_queue():
+                        in_master = df['hash'] == queued_hash
+                        if not in_master.any():
+                            print(warning(f"Reanálise remota ignorada: {queued_hash[:8]}... não está no master"))
+                            continue
+                        queued_purity = df.loc[in_master, 'purity_analysis'].iloc[0]
+                        print(info(f"Reanálise remota: {queued_hash[:8]}..."))
+                        requeued = self._analyze_single_commit(queued_hash, queued_purity)
+                        if requeued:
+                            requeued["prompt_sha256"] = self.prompt_sha256
+                            requeued["tool_version"] = self.tool_version
+                            requeued["model_digest"] = self.model_digest
+                            requeued["ollama_version"] = self.ollama_version
+                            requeued["reanalyzed_via_remote_command"] = True
+                            analyses_results.append(requeued)
+                            session_writer.append(requeued)
+                            if not self.dry_run:
+                                df.loc[in_master, 'llm_analysis'] = requeued['llm_classification']
+
                 progress_bar.update(processed_count)
                 print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
 
@@ -746,6 +775,9 @@ class LLMPurityAnalyzer:
                     total_failed=self.stats["failed_analyses"],
                     total_skipped=self.stats["skipped_already_analyzed"],
                 )
+                # ROB-6: sem o refresh a view model_metrics nunca refletia
+                # as sessões — AVG(processing_time_ms) e contagens paradas.
+                self.supabase.refresh_model_metrics()
                 self.supabase.update_heartbeat(
                     runner_id=_settings.runner_id,
                     status="idle",

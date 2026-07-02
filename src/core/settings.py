@@ -109,8 +109,27 @@ class RefanSettings:
     llm_seed: int = 42
     use_random_seed: bool = False
 
+    # --- Runner remoto (Fase E4, ROB-5) ---
+    # Pausa máxima via comando remoto: um 'pause' sem 'resume' não pode
+    # congelar o runner para sempre; após o timeout há auto-resume logado.
+    max_pause_s: int = 3600
+
+    # --- Cache de repositórios clonados (Fase E4, ROB-4) ---
+    # Orçamento de disco para repositorios/ — clones são cache reconstruível;
+    # acima do orçamento, `refan clean-repos` remove os menos usados (LRU).
+    repo_cache_max_gb: float = 20.0
+
+    # --- Persistência ---
+    # fsync após cada linha JSONL (Fase E4, ROB-3): garante que o registro
+    # sobreviva a queda de energia, não só a crash de processo. O custo
+    # (~ms) é irrisório perto de uma inferência LLM (segundos/minutos).
+    jsonl_fsync: bool = True
+
     # --- Failure tracking ---
-    failures_file: str = "json_failures.json"
+    # Nome do arquivo de falhas DENTRO do diretório de análises do modelo
+    # (Fase E4, ROB-7 — antes era caminho relativo ao CWD e se dispersava).
+    # Conteúdo é JSONL (uma falha por linha).
+    failures_file: str = "failures.jsonl"
 
     # --- Supabase (cloud persistence) ---
     supabase_url: str = field(

@@ -17,7 +17,13 @@ import json
 import os
 from typing import Optional
 
+from src.utils.logging_config import get_logger
 from src.utils.timeutils import utc_now_iso
+
+logger = get_logger(__name__)
+
+# Tamanho do excerto da resposta (a resposta completa também é gravada).
+EXCERPT_CHARS = 2000
 
 
 def save_json_failure(
@@ -50,7 +56,8 @@ def save_json_failure(
             "commit_message": commit_message,
             "error": error_msg,
             "llm_response_complete": raw_response,
-            "llm_response_excerpt": raw_response,
+            # Fase E4 (ROB-7): o 'excerpt' era a resposta INTEIRA duplicada.
+            "llm_response_excerpt": (raw_response or "")[:EXCERPT_CHARS],
             "analysis_attempt": "JSON parsing failed",
             "prompt_excerpt": prompt_excerpt,
         }
@@ -66,9 +73,11 @@ def save_json_failure(
         with open(failures_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(failure_entry, ensure_ascii=False) + "\n")
 
-    except Exception:
-        # Falha no logger não deve interromper a análise principal
-        pass
+    except Exception as e:
+        # Falha no logger não interrompe a análise principal, mas deixa de
+        # ser invisível (Fase E4, ROB-7): sem este log, perder o registro de
+        # falhas era indetectável.
+        logger.error(f"failure_logger não conseguiu gravar em {failures_file}: {e}")
 
 
 def read_failures(failures_file: str) -> list:

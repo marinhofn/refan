@@ -18,7 +18,12 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from src.core.settings import settings as _settings
+from src.utils.atomic_io import atomic_write_text, file_lock
+from src.utils.logging_config import get_logger
 from src.utils.timeutils import utc_now_stamp
+
+logger = get_logger(__name__)
 
 
 class SessionWriter:
@@ -54,9 +59,17 @@ class SessionWriter:
         self._count = 0
 
     def append(self, record: dict) -> None:
-        """Adiciona um registro ao arquivo JSONL (append atômico)."""
+        """Adiciona um registro ao arquivo JSONL.
+
+        Com ``settings.jsonl_fsync`` (default True — Fase E4, ROB-3), força
+        flush+fsync por linha: o registro sobrevive a queda de energia, não
+        só a crash do processo. Custo desprezível frente a uma inferência.
+        """
         with open(self.file_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            if _settings.jsonl_fsync:
+                f.flush()
+                os.fsync(f.fileno())
         self._count += 1
 
     def read_all(self) -> list[dict]:
@@ -65,13 +78,19 @@ class SessionWriter:
             return []
         records = []
         with open(self.file_path, "r", encoding="utf-8") as f:
-            for line in f:
+            for line_number, line in enumerate(f, 1):
                 line = line.strip()
                 if line:
                     try:
                         records.append(json.loads(line))
                     except json.JSONDecodeError:
-                        continue
+                        # ROB-3: linha truncada (crash no meio da escrita) é
+                        # um REGISTRO PERDIDO — reportar, nunca engolir.
+                        logger.warning(
+                            "Linha %d inválida em %s — registro descartado "
+                            "(possível escrita interrompida)",
+                            line_number, self.file_path,
+                        )
         return records
 
     @property
@@ -111,34 +130,40 @@ def merge_jsonl_to_csv(
 
     records = []
     with open(jsonl_path, "r", encoding="utf-8") as f:
-        for line in f:
+        for line_number, line in enumerate(f, 1):
             line = line.strip()
             if line:
                 try:
                     records.append(json.loads(line))
                 except json.JSONDecodeError:
-                    continue
+                    logger.warning(
+                        "Linha %d inválida em %s — registro ignorado no merge",
+                        line_number, jsonl_path,
+                    )
 
     if not records:
         return 0
 
-    df = pd.read_csv(csv_path)
-    # Coluna totalmente vazia é inferida como float64 (NaN); atribuir strings
-    # nela é deprecated no pandas >= 2.1 e passará a levantar erro.
-    if value_column in df.columns:
-        df[value_column] = df[value_column].astype("object")
-    updated = 0
+    # Fase E4 (ROB-1): read-modify-write do master serializado por lock e
+    # publicado atomicamente — sem clobber concorrente, sem CSV pela metade.
+    with file_lock(csv_path):
+        df = pd.read_csv(csv_path)
+        # Coluna totalmente vazia é inferida como float64 (NaN); atribuir
+        # strings nela é deprecated no pandas >= 2.1.
+        if value_column in df.columns:
+            df[value_column] = df[value_column].astype("object")
+        updated = 0
 
-    for record in records:
-        commit_hash = record.get(hash_column)
-        value = record.get(value_key)
-        if commit_hash and value:
-            mask = df[hash_column] == commit_hash
-            if mask.any():
-                df.loc[mask, value_column] = value
-                updated += 1
+        for record in records:
+            commit_hash = record.get(hash_column)
+            value = record.get(value_key)
+            if commit_hash and value:
+                mask = df[hash_column] == commit_hash
+                if mask.any():
+                    df.loc[mask, value_column] = value
+                    updated += 1
 
-    if updated > 0:
-        df.to_csv(csv_path, index=False)
+        if updated > 0:
+            atomic_write_text(csv_path, df.to_csv(index=False))
 
     return updated

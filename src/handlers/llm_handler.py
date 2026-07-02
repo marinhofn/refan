@@ -303,7 +303,14 @@ class LLMHandler:
         self.host = host or LLM_HOST
         self.llm_prompt = OPTIMIZED_LLM_PROMPT
         self.config = OPTIMIZED_CONFIG
-        self.failures_file = "json_failures.json"
+        # Fase E4 (ROB-7): falhas vivem no diretório do modelo — o caminho
+        # relativo ao CWD dispersava json_failures.json pelo filesystem
+        # conforme o diretório de execução.
+        from src.core.config import get_model_paths
+        model_paths = get_model_paths(self.model)
+        self.failures_file = os.path.join(
+            str(model_paths["ANALISES_DIR"]), _settings.failures_file
+        )
         
         if llm_type == "ollama":
             self.adapter: LLMAdapter = OllamaAdapter(self.host, self.model)

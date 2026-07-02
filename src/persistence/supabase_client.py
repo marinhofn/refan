@@ -546,6 +546,47 @@ class SupabaseClient:
             logger.warning(f"Supabase complete_command falhou: {e}")
             return False
 
+    def fail_command(self, command_id: str, result_message: str = "") -> bool:
+        """Marca comando como failed com o motivo (Fase E4, ROB-5).
+
+        Antes, comandos rejeitados/quebrados ficavam presos em 'acknowledged'
+        para sempre — perdidos silenciosamente para o dashboard.
+        """
+        try:
+            self._execute_with_retry(
+                "fail_command",
+                lambda: self.client.table("command_queue").update(
+                    {
+                        "status": "failed",
+                        "completed_at": utc_now_iso(),
+                        "result_message": result_message,
+                    }
+                ).eq("id", command_id),
+                attempts=1,
+            )
+            return True
+        except Exception as e:
+            logger.warning(f"Supabase fail_command falhou: {e}")
+            return False
+
+    def refresh_model_metrics(self) -> bool:
+        """REFRESH da materialized view model_metrics via RPC (Fase E4, ROB-6).
+
+        Chamado ao finalizar cada sessão — sem isto a view nunca era
+        atualizada e as métricas cloud ficavam estagnadas. Requer a
+        migration 004_rls_and_metrics_refresh.sql aplicada.
+        """
+        try:
+            self._execute_with_retry(
+                "refresh_model_metrics",
+                lambda: self.client.rpc("refresh_model_metrics", {}),
+                attempts=1,
+            )
+            return True
+        except Exception as e:
+            logger.warning(f"Supabase refresh_model_metrics falhou: {e}")
+            return False
+
     # ------------------------------------------------------------------
     # Sync offline
     # ------------------------------------------------------------------
