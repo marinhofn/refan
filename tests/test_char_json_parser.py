@@ -9,12 +9,40 @@ Refs: REFACTORING_PLAN.md Fase 0.3
 import pytest
 from src.utils.json_parser import (
     extract_json_from_text,
+    extract_classification_json,
     _find_json_end_index,
     _find_matching_closing,
     _strip_think_blocks,
     try_parse_json,
     extract_json_candidates,
 )
+
+
+class TestExtractClassificationJson:
+    """Schema mínimo do domínio (Fase E2, VAL-8): refactoring_type válido é
+    obrigatório; ausência/invalidade é falha de extração, nunca default."""
+
+    def test_valid_object_normalized(self):
+        result = extract_classification_json(
+            '{"refactoring_type": "PURE", "justification": "rename"}'
+        )
+        assert result is not None
+        assert result["refactoring_type"] == "pure"
+
+    def test_missing_refactoring_type_is_failure(self):
+        assert extract_classification_json('{"justification": "ok"}') is None
+
+    def test_invalid_refactoring_type_is_failure(self):
+        assert extract_classification_json('{"refactoring_type": "maybe"}') is None
+        assert extract_classification_json('{"refactoring_type": ""}') is None
+
+    def test_no_json_is_failure(self):
+        assert extract_classification_json("plain prose only") is None
+
+    def test_whitespace_normalization(self):
+        result = extract_classification_json('{"refactoring_type": " Floss "}')
+        assert result is not None
+        assert result["refactoring_type"] == "floss"
 
 
 # ---------------------------------------------------------------------------
@@ -69,11 +97,11 @@ class TestExtractJsonFromText:
         assert isinstance(result, dict)
         assert result["refactoring_type"] == "pure"
 
-    def test_no_json_returns_key_value_fallback_or_none(self):
+    def test_no_json_returns_none(self):
+        """Fase E2 (VAL-8): sem objeto JSON não há resultado — nunca um dict
+        fabricado a partir de texto solto."""
         text = "Only plain text with no JSON at all, no braces, nothing."
-        result = extract_json_from_text(text)
-        # Pode retornar None ou um dict do fallback key-value
-        assert result is None or isinstance(result, dict)
+        assert extract_json_from_text(text) is None
 
     def test_nested_json_object(self):
         text = '{"outer": {"inner": "value"}, "type": "test"}'
@@ -124,16 +152,36 @@ class TestExtractJsonFromText:
         # O reparo de comentários deve funcionar
         assert result is None or isinstance(result, dict)
 
-    def test_key_value_fallback(self):
+    def test_key_value_prose_is_not_extracted(self):
+        """Regressão VAL-8 (Fase E2): o antigo fallback 'key: value' montava
+        um dict de qualquer prosa — recall alto, precisão baixa — que virava
+        classificação silenciosa a jusante. Prosa não é objeto JSON."""
         text = (
             "refactoring_type: pure\n"
             "justification: only renames variables\n"
         )
+        assert extract_json_from_text(text) is None
+
+    def test_arrays_are_never_returned_as_lists(self):
+        """VAL-8: o retorno é sempre dict ou None — nunca list. Um array que
+        embrulha um único objeto tem o objeto interno extraído (varredura
+        balanceada); um array escalar não produz resultado."""
+        wrapped = extract_json_from_text('[{"refactoring_type": "pure"}]')
+        assert isinstance(wrapped, dict)
+        assert wrapped["refactoring_type"] == "pure"
+        assert extract_json_from_text('[1, 2, 3]') is None
+
+    def test_string_value_resembling_instructions_survives(self):
+        """VAL-8: as heurísticas destrutivas de limpeza foram removidas —
+        valores de string legítimos não podem ser corrompidos antes do parse."""
+        text = (
+            '{"refactoring_type": "floss", '
+            '"justification": "You are an expert reviewer would say this '
+            'adds a null check changing behavior"}'
+        )
         result = extract_json_from_text(text)
-        # Fallback key-value deve capturar isso
-        assert result is not None
         assert isinstance(result, dict)
-        assert "refactoring_type" in result
+        assert "expert" in result["justification"]
 
     def test_complete_llm_response_structure(self):
         """Simula uma resposta típica do Ollama com análise + JSON."""

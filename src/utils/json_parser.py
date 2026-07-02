@@ -1,14 +1,33 @@
-"""
-Utilitários para extração e reparo de JSON a partir de texto livre.
+"""Utilitários para extração de JSON (objetos) a partir de texto livre de LLMs.
+
+Fonte única de parsing do projeto (REFACTORING_PLAN.md Fase 1). Endurecida na
+Fase E2 (EVOLUTION_PLAN.md, VAL-8) sob o princípio PRECISÃO > RECALL: em um
+instrumento de pesquisa, deixar de extrair é uma falha visível e tratável;
+extrair um objeto fabricado é contaminação silenciosa de dados. Por isso:
+
+- ``extract_json_from_text`` retorna SOMENTE objetos (dict) — nunca listas nem
+  dicionários montados heuristicamente a partir de texto solto;
+- o antigo fallback ``key: value`` (estratégia 3) foi removido: ele fabricava
+  dicts arbitrários de qualquer prosa, que viravam classificação FLOSS via
+  defaults a jusante;
+- ``json5`` é dependência obrigatória: com ela opcional, o mesmo texto podia
+  parsear em uma máquina e falhar em outra (irreprodutibilidade silenciosa);
+- a remoção de blocos <think> é estritamente delimitada por tags; as
+  heurísticas destrutivas de "linhas repetitivas" foram removidas por poderem
+  corromper JSON válido antes do parse;
+- ``extract_classification_json`` aplica o schema mínimo do domínio
+  (refactoring_type ∈ {pure, floss}) — ausência/invalidade é falha de parse,
+  nunca vira default.
 """
 from typing import Optional
 import json
 import re
 
-try:
-    import json5 as _json5
-except Exception:
-    _json5 = None
+# Obrigatório desde a Fase E2 (VAL-8): parsing tolerante determinístico entre
+# ambientes. Pinado em pyproject.toml/requirements.txt.
+import json5 as _json5
+
+from src.utils.classification import VALID_CLASSIFICATIONS
 
 
 def _find_json_end_index(text: str, start_idx: int) -> int:
@@ -63,12 +82,10 @@ def try_parse_json(text: str) -> Optional[dict]:
     try:
         return json.loads(text)
     except Exception:
-        if _json5 is not None:
-            try:
-                return _json5.loads(text)
-            except Exception:
-                return None
-        return None
+        try:
+            return _json5.loads(text)
+        except Exception:
+            return None
 
 
 def extract_json_candidates(text: str) -> list[str]:
@@ -86,32 +103,33 @@ def extract_json_candidates(text: str) -> list[str]:
 
 
 def extract_json_from_text(text: str) -> Optional[dict]:
-    # Pre-processamento: remover blocos de 'thinking' produzidos pelo modelo, ex: <think>...</think>
+    """Extrai o primeiro OBJETO JSON parseável do texto, ou None.
+
+    Estratégias, em ordem de precisão:
+    0) texto inteiro é o objeto;
+    1) candidatos por regex (blocos ```json/```/inline);
+    2) varredura balanceada de '{' com reparos mínimos (vírgula pendente,
+       comentários //).
+
+    Retorna exclusivamente dict — arrays e valores escalares não são objetos
+    de classificação e são ignorados (VAL-8).
+    """
+    # Pré-processamento: remover blocos de 'thinking' delimitados por tags
     text = _strip_think_blocks(text)
 
     # 0) tentar parsear o texto inteiro (alguns modelos retornam apenas JSON)
     whole = text.strip()
     if whole:
         parsed_whole = try_parse_json(whole)
-        if parsed_whole is not None:
+        if isinstance(parsed_whole, dict):
             return parsed_whole
 
     # 1) candidatos por regex
     for cand in extract_json_candidates(text):
         parsed = try_parse_json(cand)
-        if parsed is not None:
+        if isinstance(parsed, dict):
             return parsed
-    
-    # 1.5) tentar reconhecer arrays JSON no texto completo ou em blocos
-    # procurar por blocos que comecem com '[' e terminem em ']' balanceado
-    for idx, ch in enumerate(text):
-        if ch == '[':
-            end_idx = _find_matching_closing(text, idx, '[', ']')
-            if end_idx != -1:
-                candidate = text[idx:end_idx+1]
-                parsed = try_parse_json(candidate)
-                if parsed is not None:
-                    return parsed
+
     # 2) varrer todas as posições de '{' e tentar balancear corretamente
     starts = [i for i, ch in enumerate(text) if ch == '{']
     for start in starts:
@@ -125,7 +143,7 @@ def extract_json_from_text(text: str) -> Optional[dict]:
         # limpar markers de código
         candidate = candidate.strip('`\n ')
         parsed = try_parse_json(candidate)
-        if parsed is not None:
+        if isinstance(parsed, dict):
             return parsed
         # tentar reparos básicos e reparsear
         repaired = re.sub(r',\s*}', '}', candidate)
@@ -133,31 +151,39 @@ def extract_json_from_text(text: str) -> Optional[dict]:
         # remover comentários de linha iniciados por //
         repaired = re.sub(r'//.*?\n', '\n', repaired)
         parsed = try_parse_json(repaired)
-        if parsed is not None:
+        if isinstance(parsed, dict):
             return parsed
-
-    # 3) último recurso: tentar extrair pares simples 'key: value' e montar um dict mínimo
-    simple_kv = {}
-    for m in re.finditer(r'(["\']?)([a-zA-Z0-9_\- ]{3,40})\1\s*[:=]\s*(["\']?)([^\n\r]+?)\3(?:\n|$)', text):
-        k = m.group(2).strip()
-        v = m.group(4).strip().strip('"\'')
-        if len(k) > 1 and len(v) > 0:
-            simple_kv[k] = v
-    if simple_kv:
-        return simple_kv
 
     return None
 
 
-def _strip_think_blocks(text: str) -> str:
-    """Remove blocos que indiquem 'think' ou raciocínio do modelo.
+def extract_classification_json(text: str) -> Optional[dict]:
+    """Extrai o objeto de classificação validando o schema mínimo do domínio.
 
-    Exemplos a remover:
-    - <think> ... </think>
-    - <think/> ou <think />
-    - qualquer variação com maiúsculas/minúsculas
-    - blocos entre delimitadores como <<think>> ... <</think>>
-    - repetições de instruções do sistema
+    Regra (VAL-8): um objeto sem ``refactoring_type`` válido é FALHA de
+    extração — retorna None e o chamador registra a falha. O valor é
+    normalizado para minúsculas ('PURE' -> 'pure'); nenhum default é aplicado.
+    """
+    result = extract_json_from_text(text)
+    if not isinstance(result, dict):
+        return None
+    refactoring_type = str(result.get("refactoring_type", "")).strip().lower()
+    if refactoring_type not in VALID_CLASSIFICATIONS:
+        return None
+    result["refactoring_type"] = refactoring_type
+    return result
+
+
+def _strip_think_blocks(text: str) -> str:
+    """Remove blocos de raciocínio DELIMITADOS POR TAGS da resposta do modelo.
+
+    Somente remoções ancoradas em delimitadores explícitos são aplicadas:
+    - <think> ... </think> (case-insensitive), <think/>, <<think>> ... <</think>>
+    - linhas iniciadas por [think]/(think)
+
+    As heurísticas anteriores de "linhas repetitivas" e de instruções do
+    sistema foram removidas na Fase E2 (VAL-8): operavam sobre texto arbitrário
+    e podiam corromper valores de string de um JSON válido antes do parse.
     """
     if not text:
         return text
@@ -174,27 +200,4 @@ def _strip_think_blocks(text: str) -> str:
     # remover linhas que comecem com [think] ou (think)
     text = re.sub(r'(?im)^\s*\[?\(?think\)?\]?[:\-\s].*$', '', text)
 
-    # remover repetições óbvias de instruções do sistema
-    text = re.sub(r'(?is)CRITICAL:\s*You\s+must\s+respond.*?before\s+or\s+after\.', '', text)
-    text = re.sub(r'(?is)Analyze\s+this\s+Git\s+diff\s+and\s+classify.*?refactoring\.', '', text)
-    
-    # remover blocos que começam com "You are an expert" e similares
-    text = re.sub(r'(?im)^You\s+are\s+an?\s+expert.*$', '', text)
-    text = re.sub(r'(?im)^Based\s+on\s+the\s+provided.*$', '', text)
-    
-    # remover linhas repetidas ou que parecem confusas
-    lines = text.split('\n')
-    cleaned_lines = []
-    for line in lines:
-        line = line.strip()
-        # pular linhas que são apenas repetições de palavras
-        if len(set(line.split())) < len(line.split()) / 3 and len(line.split()) > 5:
-            continue
-        # pular linhas que são muito repetitivas
-        if line and len(line) > 20:
-            words = line.split()
-            if len(words) > 5 and len(set(words)) < len(words) / 2:
-                continue
-        cleaned_lines.append(line)
-    
-    return '\n'.join(cleaned_lines)
+    return text

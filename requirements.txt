@@ -6,3 +6,4 @@ pandas==2.3.3
 requests==2.34.2
 plotly==5.24.1
 kaleido==0.2.1
+json5==0.14.0

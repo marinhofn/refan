@@ -18,6 +18,10 @@ dependencies = [
     "requests==2.34.2",
     "plotly==5.24.1",
     "kaleido==0.2.1",
+    # Obrigatória desde a Fase E2 (EVOLUTION_PLAN.md, VAL-8): com json5
+    # opcional, o parsing tolerante dependia do ambiente — o mesmo texto
+    # parseava numa máquina e falhava noutra (irreprodutibilidade silenciosa).
+    "json5==0.14.0",
 ]
 
 [project.optional-dependencies]
