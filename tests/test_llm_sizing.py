@@ -145,3 +145,48 @@ class TestAnalyzeCommitTruncationTrace:
         )
         assert result["diff_truncated"] is False
         assert result["original_diff_size_chars"] == len(small_diff)
+
+
+class TestPerAnalysisReproducibilityTrace:
+    """Fase E3 (REP-2/REP-4): cada análise registra seed efetivo, hashes do
+    envio e a duração real da inferência."""
+
+    @pytest.fixture
+    def handler(self, tmp_path, monkeypatch):
+        h = LLMHandler(model="mistral")
+        h.failures_file = str(tmp_path / "failures.jsonl")
+        monkeypatch.setattr(
+            "src.handlers.llm_handler.check_llm_model_status",
+            lambda *a, **k: {"available": True},
+        )
+        h.adapter = MagicMock()
+        h.adapter.complete.return_value = "FINAL: PURE"
+        return h
+
+    def test_fixed_seed_regime_records_and_sends_settings_seed(self, handler, monkeypatch):
+        monkeypatch.setattr(settings, "use_random_seed", False)
+        result = handler.analyze_commit("r", "a", "b", "msg", "diff --git\n+x\n")
+        assert result["seed_effective"] == settings.llm_seed
+        assert handler.adapter.complete.call_args.kwargs["seed"] == settings.llm_seed
+
+    def test_random_seed_regime_draws_records_and_sends(self, handler, monkeypatch):
+        """Regime aleatório deixou de ser irregistrável: o seed é sorteado no
+        cliente, enviado ao Ollama e gravado no resultado."""
+        monkeypatch.setattr(settings, "use_random_seed", True)
+        result = handler.analyze_commit("r", "a", "b", "msg", "diff --git\n+x\n")
+        seed = result["seed_effective"]
+        assert isinstance(seed, int) and 0 <= seed < 2**31
+        assert handler.adapter.complete.call_args.kwargs["seed"] == seed
+
+    def test_send_hashes_match_what_was_sent(self, handler):
+        import hashlib
+        diff = "diff --git a/f b/f\n+line\n"
+        result = handler.analyze_commit("r", "a", "b", "msg", diff)
+        sent_prompt = handler.adapter.complete.call_args.args[0]
+        assert result["prompt_sha256_effective"] == hashlib.sha256(sent_prompt.encode()).hexdigest()
+        assert result["diff_sha256"] == hashlib.sha256(diff.encode()).hexdigest()
+
+    def test_processing_time_is_measured(self, handler):
+        result = handler.analyze_commit("r", "a", "b", "msg", "diff --git\n+x\n")
+        assert isinstance(result["processing_time_ms"], int)
+        assert result["processing_time_ms"] >= 0

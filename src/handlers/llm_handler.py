@@ -8,7 +8,10 @@ são FALHAS registradas — nenhuma heurística fabrica rótulo, nenhum campo de
 pesquisa recebe valor simulado. Inclui monitoramento/reset DeepSeek.
 """
 
+import hashlib
 import os
+import random
+import time
 from typing import Optional, Protocol
 from src.utils.json_parser import extract_classification_json
 from src.utils.classification import extract_final_classification
@@ -124,8 +127,64 @@ class OllamaAdapter:
         self._last_duration = None
         self._analysis_count = 0
         self._performance_degraded = False
+        self._model_info_cache: Optional[dict] = None
 
-    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None) -> Optional[str]:
+    def get_model_info(self) -> Optional[dict]:
+        """Identidade exata do modelo e do runtime (Fase E3, REP-1).
+
+        Tags do Ollama são MUTÁVEIS: `ollama pull mistral` em datas
+        diferentes pode trazer pesos diferentes sob o mesmo nome. Sem o
+        digest, dois runs "com o mesmo modelo" são indistinguíveis a
+        posteriori. Consulta /api/tags (digest, tamanho, modified_at) e
+        /api/version (versão do Ollama); resultado cacheado por adapter.
+
+        Returns:
+            dict com model/digest/size_bytes/modified_at/ollama_version,
+            ou None se o Ollama não responder ou o modelo não existir local.
+        """
+        if self._model_info_cache is not None:
+            return self._model_info_cache
+
+        base_url = self.host.split("/api/")[0]
+        try:
+            tags_resp = requests.get(f"{base_url}/api/tags", timeout=10)
+            tags_resp.raise_for_status()
+            models = tags_resp.json().get("models", [])
+        except Exception as e:
+            print(warning(f"Não foi possível consultar /api/tags: {e}"))
+            return None
+
+        def _normalize(name: str) -> str:
+            return name[:-7] if name.endswith(":latest") else name
+
+        entry = None
+        for m in models:
+            name = m.get("name", "")
+            if name == self.model or _normalize(name) == _normalize(self.model):
+                entry = m
+                break
+        if not entry or not entry.get("digest"):
+            print(warning(f"Modelo '{self.model}' não encontrado no Ollama local (/api/tags)"))
+            return None
+
+        ollama_version = ""
+        try:
+            version_resp = requests.get(f"{base_url}/api/version", timeout=10)
+            if version_resp.status_code == 200:
+                ollama_version = version_resp.json().get("version", "")
+        except Exception:
+            pass  # versão é complementar; o digest é o essencial
+
+        self._model_info_cache = {
+            "model": entry.get("name", self.model),
+            "digest": entry["digest"],
+            "size_bytes": entry.get("size", 0),
+            "modified_at": entry.get("modified_at", ""),
+            "ollama_version": ollama_version,
+        }
+        return self._model_info_cache
+
+    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None, seed: int | None = None) -> Optional[str]:
         if attempts is None:
             attempts = _settings.max_retries
         base_opts = get_generation_base_options()
@@ -156,15 +215,16 @@ class OllamaAdapter:
             },
             "think": False,
         }
-        # Reprodutibilidade: seed fixo torna a geração determinística por
-        # modelo/versão. Omitido quando use_random_seed=True (regime do
-        # baseline TCC). Ver settings.py e docs/REPRODUCIBILITY.md.
-        if not _settings.use_random_seed:
+        # Reprodutibilidade (H5 + E3/REP-2): seed explícito do chamador tem
+        # prioridade; sem ele, aplica o regime das settings (seed fixo, ou
+        # omissão no regime aleatório legado). Ver docs/REPRODUCIBILITY.md.
+        if seed is not None:
+            payload["options"]["seed"] = seed
+        elif not _settings.use_random_seed:
             payload["options"]["seed"] = _settings.llm_seed
         last_error = None
         prompt_size = len(prompt)
         timeout = _settings.get_timeout(prompt_size)
-        import time
         start_time = time.time()
         
         for i in range(1, attempts + 1):
@@ -250,6 +310,10 @@ class LLMHandler:
         else:
             raise NotImplementedError(f"LLM type '{llm_type}' não suportado ainda.")
     
+    def get_model_info(self) -> Optional[dict]:
+        """Identidade do modelo/runtime via adapter (digest etc. — REP-1)."""
+        return self.adapter.get_model_info()
+
     def save_json_failure(self, commit_hash: str, repository: str, commit_message: str, raw_response: str, error_msg: str, prompt_excerpt: str | None = None):
         """Delega para src.utils.failure_logger.save_json_failure."""
         _save_json_failure(
@@ -331,8 +395,25 @@ class LLMHandler:
             self.print_prompt(prompt)
         
         try:
+            # Seed efetivo SEMPRE explícito e registrado (E3, REP-2): no
+            # regime aleatório, o seed é sorteado no cliente e enviado — a
+            # geração continua estocástica entre execuções, mas cada execução
+            # passa a ser reproduzível (o Ollama sortearia internamente sem
+            # registrar; distribucionalmente equivalente).
+            if _settings.use_random_seed:
+                seed_effective = random.SystemRandom().randint(0, 2**31 - 1)
+            else:
+                seed_effective = _settings.llm_seed
+
             # Enviar para o LLM com o plano de geração calculado
-            llm_response = self.adapter.complete(prompt, num_ctx=plan.num_ctx, num_predict=plan.num_predict)
+            started = time.monotonic()
+            llm_response = self.adapter.complete(
+                prompt,
+                num_ctx=plan.num_ctx,
+                num_predict=plan.num_predict,
+                seed=seed_effective,
+            )
+            processing_time_ms = int((time.monotonic() - started) * 1000)
             if not llm_response:
                 print(error("Falha ao obter resposta do LLM."))
                 return None
@@ -358,6 +439,13 @@ class LLMHandler:
                 result["num_ctx_effective"] = plan.num_ctx
                 result["num_predict_effective"] = plan.num_predict
                 result["prompt_chars"] = len(prompt)
+                result["seed_effective"] = seed_effective
+                # REP-4: duração real da chamada de inferência.
+                result["processing_time_ms"] = processing_time_ms
+                # REP-2: hashes do que foi DE FATO enviado — auditáveis contra
+                # reconstrução determinística (template versionado + git).
+                result["prompt_sha256_effective"] = hashlib.sha256(prompt.encode()).hexdigest()
+                result["diff_sha256"] = hashlib.sha256(diff.encode()).hexdigest()
                 if reduced_meta.get("reduced"):
                     result["reduction"] = reduced_meta
                 result["processing_method"] = "file" if diff_file_path else "direct"

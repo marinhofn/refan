@@ -158,3 +158,46 @@ class TestReproducibility:
 
         payload = mock_post.call_args.kwargs["json"]
         assert "seed" not in payload["options"]
+
+
+class TestGetModelInfo:
+    """Fase E3 (REP-1): identidade exata do modelo via /api/tags + /api/version."""
+
+    def _adapter(self):
+        from src.handlers.llm_handler import OllamaAdapter
+        return OllamaAdapter("http://localhost:11434/api/generate", "mistral")
+
+    def test_resolves_digest_and_version(self):
+        adapter = self._adapter()
+        tags = mock.MagicMock(status_code=200)
+        tags.json.return_value = {"models": [
+            {"name": "mistral:latest", "digest": "sha256:abc", "size": 42,
+             "modified_at": "2026-01-01T00:00:00Z"},
+        ]}
+        tags.raise_for_status.return_value = None
+        version = mock.MagicMock(status_code=200)
+        version.json.return_value = {"version": "0.9.9"}
+        with mock.patch("src.handlers.llm_handler.requests.get", side_effect=[tags, version]):
+            info = adapter.get_model_info()
+        assert info["digest"] == "sha256:abc"
+        assert info["ollama_version"] == "0.9.9"
+        # cache: segunda chamada não refaz requests
+        with mock.patch("src.handlers.llm_handler.requests.get") as get2:
+            assert adapter.get_model_info()["digest"] == "sha256:abc"
+            get2.assert_not_called()
+
+    def test_model_absent_returns_none(self):
+        adapter = self._adapter()
+        tags = mock.MagicMock(status_code=200)
+        tags.json.return_value = {"models": [{"name": "gemma:2b", "digest": "sha256:x"}]}
+        tags.raise_for_status.return_value = None
+        with mock.patch("src.handlers.llm_handler.requests.get", return_value=tags):
+            assert adapter.get_model_info() is None
+
+    def test_ollama_down_returns_none(self):
+        adapter = self._adapter()
+        with mock.patch(
+            "src.handlers.llm_handler.requests.get",
+            side_effect=ConnectionError("down"),
+        ):
+            assert adapter.get_model_info() is None

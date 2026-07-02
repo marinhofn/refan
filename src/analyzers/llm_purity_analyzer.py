@@ -23,6 +23,7 @@ from src.utils.persistence import SessionWriter
 from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
 from src.utils.version_info import get_tool_version
 from src.utils.classification import summarize_convergence
+from src.utils.hardware_info import get_hardware_info, sample_gpu_metrics
 from src.utils.colors import dim, error, header, info, success, warning
 from src.core.settings import settings as _settings
 
@@ -380,6 +381,8 @@ class LLMPurityAnalyzer:
             session_data = {
                 "session_info": {
                     "model_used": current_model,
+                    "model_digest": getattr(self, "model_digest", ""),
+                    "ollama_version": getattr(self, "ollama_version", ""),
                     "analysis_type": analysis_type,
                     "description": description,
                     "csv_file_analyzed": self.csv_file_path,
@@ -498,6 +501,25 @@ class LLMPurityAnalyzer:
         
         print(info(f"Iniciando análise de {len(analysis_df)} commits..."))
         
+        # Identidade exata do modelo (Fase E3, REP-1): sem digest não há
+        # rastreabilidade — a sessão real é ABORTADA. Dry-run é isento
+        # (não é medição; roda offline).
+        self.model_digest = ""
+        self.ollama_version = ""
+        model_info = None
+        if not self.dry_run:
+            model_info = self.llm_handler.get_model_info()
+            if not model_info or not model_info.get("digest"):
+                raise RuntimeError(
+                    f"Não foi possível obter o digest do modelo '{self.current_model}' "
+                    f"no Ollama local. Sem o digest, os resultados não são "
+                    f"reprodutíveis nem auditáveis (REP-1). Verifique se o Ollama "
+                    f"está ativo e o modelo foi baixado (ollama pull)."
+                )
+            self.model_digest = model_info["digest"]
+            self.ollama_version = model_info.get("ollama_version", "")
+            print(info(f"Modelo {self.current_model} digest {self.model_digest[:19]}... (Ollama {self.ollama_version or '?'})"))
+
         # Inicializar barra de progresso
         progress_bar = ProgressBar(len(analysis_df), title="LLM Analysis")
         
@@ -516,7 +538,11 @@ class LLMPurityAnalyzer:
         if self.supabase and not self.dry_run:
             from src.persistence.supabase_client import PromptVersionConflictError
             try:
-                cloud_model_id = self.supabase.get_or_create_model(self.current_model)
+                cloud_model_id = self.supabase.get_or_create_model(
+                    self.current_model,
+                    digest=self.model_digest,
+                    ollama_version=self.ollama_version,
+                )
 
                 # Proveniência imutável (Fase E2, VAL-4): se a tag registrada
                 # no banco tem hash diferente do prompt em execução,
@@ -534,6 +560,10 @@ class LLMPurityAnalyzer:
                             **_settings.to_dict(),
                             "prompt_sha256": self.prompt_sha256,
                             "tool_version": self.tool_version,
+                            "model_digest": self.model_digest,
+                            "model_modified_at": (model_info or {}).get("modified_at", ""),
+                            "ollama_version": self.ollama_version,
+                            "hardware": get_hardware_info(),
                         },
                         runner_hostname=_settings.runner_id,
                         total_planned=len(analysis_df),
@@ -589,6 +619,8 @@ class LLMPurityAnalyzer:
                         # hash do prompt e a versão da ferramenta que o gerou.
                         result["prompt_sha256"] = self.prompt_sha256
                         result["tool_version"] = self.tool_version
+                        result["model_digest"] = self.model_digest
+                        result["ollama_version"] = self.ollama_version
                         analyses_results.append(result)
                         if has_verdict:
                             self.stats["successful_analyses"] += 1
@@ -625,6 +657,7 @@ class LLMPurityAnalyzer:
                                         diff_source=result.get("diff_source", "direct"),
                                         diff_size_chars=result.get("diff_size", 0),
                                         diff_lines=result.get("diff_lines", 0),
+                                        processing_time_ms=result.get("processing_time_ms", 0),
                                     )
                                 elif classification == "FAILED":
                                     # Falhas são dados (VAL-6): antes nenhuma
@@ -638,7 +671,8 @@ class LLMPurityAnalyzer:
                                         error_message=result.get('error_message', ''),
                                         llm_raw_response=result.get('llm_raw_response', '') or '',
                                     )
-                                # Heartbeat
+                                # Heartbeat (com métricas de GPU quando NVIDIA)
+                                gpu_pct, gpu_mem = sample_gpu_metrics()
                                 self.supabase.update_heartbeat(
                                     runner_id=_settings.runner_id,
                                     session_id=cloud_session_id,
@@ -647,6 +681,8 @@ class LLMPurityAnalyzer:
                                     current_commit_index=processed_count,
                                     total_commits_in_batch=len(analysis_df),
                                     model_name=self.current_model,
+                                    gpu_utilization_pct=gpu_pct,
+                                    memory_used_mb=gpu_mem,
                                 )
                             except Exception as e:
                                 print(dim(f"Supabase sync falhou (JSONL local OK): {e}"))

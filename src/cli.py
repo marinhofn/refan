@@ -110,6 +110,44 @@ def build_parser() -> argparse.ArgumentParser:
         help="Caminho do CSV master a atualizar",
     )
 
+    # --- doctor ---
+    p_doctor = subparsers.add_parser(
+        "doctor",
+        help="Diagnóstico de prontidão para sessão reprodutível (Fase E3)",
+    )
+    p_doctor.add_argument(
+        "--model",
+        default=None,
+        help="Modelo a verificar (default: modelo ativo)",
+    )
+    p_doctor.add_argument(
+        "--full",
+        action="store_true",
+        default=False,
+        help="Inclui a verificação criptográfica do manifesto do baseline (exige LFS)",
+    )
+
+    # --- reproduce ---
+    p_reproduce = subparsers.add_parser(
+        "reproduce",
+        help="Reproduzir uma sessão registrada e comparar classificações (Fase E3)",
+    )
+    p_reproduce.add_argument(
+        "session",
+        help="Caminho do JSONL da sessão (output/models/<m>/analises/sessions/*.jsonl)",
+    )
+    p_reproduce.add_argument(
+        "--model",
+        default=None,
+        help="Modelo a usar (default: modelo ativo; deve ter o MESMO digest registrado)",
+    )
+    p_reproduce.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Reproduzir apenas os N primeiros registros com veredito",
+    )
+
     # --- interactive ---
     p_interactive = subparsers.add_parser(
         "interactive",
@@ -230,6 +268,20 @@ def cmd_interactive(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Diagnóstico de prontidão (Fase E3): checks de sessão reprodutível."""
+    from src.core.doctor import run_doctor
+
+    return run_doctor(model=args.model, full=args.full)
+
+
+def cmd_reproduce(args: argparse.Namespace) -> int:
+    """Reproduz uma sessão registrada e compara classificações (Fase E3)."""
+    from src.analyzers.reproduce import run_reproduction
+
+    return run_reproduction(args.session, model=args.model, limit=args.limit)
+
+
 def run_cli(argv: list[str] | None = None) -> int:
     """Entry point da CLI. Retorna exit code."""
     parser = build_parser()
@@ -245,6 +297,8 @@ def run_cli(argv: list[str] | None = None) -> int:
         "status": cmd_status,
         "merge-sessions": cmd_merge_sessions,
         "interactive": cmd_interactive,
+        "doctor": cmd_doctor,
+        "reproduce": cmd_reproduce,
     }
 
     handler = commands.get(args.command)
