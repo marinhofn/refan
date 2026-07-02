@@ -8,7 +8,7 @@ import json
 import pandas as pd
 import random
 from src.core.config import CSV_PATH, PURITY_CSV_PATH, get_model_paths, get_current_llm_model
-from src.utils.colors import *
+from src.utils.colors import bold, error, header, info, success, warning
 
 class DataHandler:
     def __init__(self):

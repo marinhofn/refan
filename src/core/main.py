@@ -20,11 +20,10 @@ if __name__ == "__main__":
 from src.handlers.data_handler import DataHandler
 from src.handlers.git_handler import GitHandler
 from src.handlers.llm_handler import LLMHandler
-from src.handlers.optimized_llm_handler import OptimizedLLMHandler
 from src.handlers.purity_handler import PurityHandler
 from src.handlers.visualization_handler import VisualizationHandler
 from src.core.config import create_directories, list_available_ollama_models, set_llm_model, get_current_llm_model, ensure_model_directories
-from src.utils.colors import *
+from src.utils.colors import bold, commit_info, cyan, dim, error, header, highlight, info, progress, success, warning
 
 def clear_screen():
     """Limpa a tela do terminal."""
@@ -248,7 +247,7 @@ def process_commits_optimized(commits_data, analyzed_session_count=0):
 
     git_handler = GitHandler()
     # Usar handler otimizado mas forçar prompt padrão
-    llm_handler = OptimizedLLMHandler()
+    llm_handler = LLMHandler()
     # Substituir o prompt otimizado pelo padrão para esta opção
     from src.core.config import LLM_PROMPT
     llm_handler.llm_prompt = LLM_PROMPT
@@ -261,7 +260,7 @@ def process_commits_optimized(commits_data, analyzed_session_count=0):
     print(f"\n{header('=' * 50)}")
     print(f"{header('CONFIGURAÇÃO HÍBRIDA:')}")
     print(f"{header('=' * 50)}")
-    print(f"{info('Handler:')} OptimizedLLMHandler (diffs grandes, timeouts, retry)")
+    print(f"{info('Handler:')} LLMHandler (diffs grandes, timeouts, retry)")
     print(f"{info('Prompt:')} LLM_PROMPT (padrão)")
     print(f"{info('Suporte a arquivos:')} Sim (para diffs grandes)")
     print(f"{warning('Nota:')} Use opção 5 para prompt otimizado completo")
@@ -421,7 +420,7 @@ def process_specific_commits_optimized(commits_data, analyzed_session_count=0):
 
     git_handler = GitHandler()
     # Usar handler otimizado completo (handler + prompt otimizados)
-    optimized_llm_handler = OptimizedLLMHandler()
+    llm_handler = LLMHandler()
     results = []
     
     total_commits = len(commits_data)
@@ -431,7 +430,7 @@ def process_specific_commits_optimized(commits_data, analyzed_session_count=0):
     print(f"\n{header('=' * 50)}")
     print(f"{header('CONFIGURAÇÃO COMPLETA OTIMIZADA:')}")
     print(f"{header('=' * 50)}")
-    print(f"{success('Handler:')} OptimizedLLMHandler (diffs grandes, timeouts, retry)")
+    print(f"{success('Handler:')} LLMHandler (diffs grandes, timeouts, retry)")
     print(f"{success('Prompt:')} OPTIMIZED_LLM_PROMPT (indicadores técnicos)")
     print(f"{success('Recursos:')} Suporte completo a diffs grandes via arquivo")
     print(f"{success('Qualidade:')} Máxima precisão com indicadores do Purity")
@@ -463,7 +462,7 @@ def process_specific_commits_optimized(commits_data, analyzed_session_count=0):
                 continue
             
             # Usar handler otimizado para análise
-            analysis_result = optimized_llm_handler.analyze_commit_refactoring(
+            analysis_result = llm_handler.analyze_commit_refactoring(
                 current_hash, previous_hash, repository, diff_content
             )
             

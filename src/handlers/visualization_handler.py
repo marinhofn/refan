@@ -11,7 +11,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime
 from src.core.config import get_model_paths, get_current_llm_model
-from src.utils.colors import *
+from src.utils.colors import bold, error, header, info, success, warning
 
 class VisualizationHandler:
     def __init__(self):
@@ -414,7 +414,7 @@ class VisualizationHandler:
                     fig.write_image(png_filename, width=1200, height=800, scale=2)
                     saved_files.append(png_filename)
                     print(success(f"Gráfico de comparação PNG salvo: {bold(png_filename)}"))
-                except:
+                except Exception:
                     print(warning("Erro ao salvar PNG (instale kaleido: pip install kaleido)"))
             
             # Mostrar gráfico interativo
@@ -430,7 +430,7 @@ class VisualizationHandler:
         """Extrai o nome do repositório da URL."""
         try:
             return repo_url.split('/')[-1].replace('.git', '')
-        except:
+        except Exception:
             return 'Unknown'
     
     def _add_timeline_chart(self, fig, data, row, col):

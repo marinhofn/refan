@@ -5,18 +5,25 @@ Preenche a coluna llm_analysis com análises de commits de refatoramento.
 """
 
 import pandas as pd
+import hashlib
 import json
 import os
-import datetime
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 import time
 import sys
 
-from src.handlers.optimized_llm_handler import OptimizedLLMHandler
+from src.handlers.llm_handler import LLMHandler
 from src.handlers.git_handler import GitHandler
 from src.handlers.data_handler import DataHandler
-from src.utils.colors import *
+from src.models.commit import CommitPair, AnalysisResult
+from src.models.adapters import commit_from_csv_row, analysis_from_llm_response, analysis_to_session_dict
+from src.analyzers.optimized_prompt import OPTIMIZED_LLM_PROMPT
+from src.utils.persistence import SessionWriter
+from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
+from src.utils.version_info import get_tool_version
+from src.utils.colors import dim, error, header, info, success, warning
+from src.core.settings import settings as _settings
 
 class ProgressBar:
     """Barra de progresso simples para análise LLM."""
@@ -84,7 +91,7 @@ class LLMPurityAnalyzer:
             model: Nome do modelo LLM a usar (se None usa o atual configurado).
             csv_file_path: Caminho para o CSV a ser usado/atualizado. Se None usa o CSV global.
         """
-        self.llm_handler = OptimizedLLMHandler(model=model)
+        self.llm_handler = LLMHandler(model=model)
         self.git_handler = GitHandler()
         self.data_handler = DataHandler()
         self.dry_run = dry_run
@@ -98,10 +105,30 @@ class LLMPurityAnalyzer:
         self.csv_file_path = csv_file_path or "csv/floss_hashes_no_rpt_purity_with_analysis.csv"
         self.backup_dir = str(paths['ANALISES_DIR'])  # Diretório específico do modelo
         self.session_log_file = None
+        self.current_model = current_model
+
+        # Rastreabilidade (HARDENING_PLAN.md, Fase H5): hash do prompt em
+        # uso e versão da ferramenta acompanham todo registro persistido,
+        # fechando a cadeia de auditoria dado bruto -> resultado.
+        self.prompt_sha256 = hashlib.sha256(OPTIMIZED_LLM_PROMPT.encode()).hexdigest()
+        self.tool_version = get_tool_version()
+
+        # Supabase (opcional: conecta se configurado)
+        self.supabase = None
+        self.command_handler = None
+        if _settings.supabase_enabled:
+            try:
+                from src.persistence.supabase_client import SupabaseClient
+                from src.runner.command_handler import CommandHandler
+                self.supabase = SupabaseClient(_settings.supabase_url, _settings.supabase_service_key)
+                self.command_handler = CommandHandler(self.supabase, _settings.runner_id)
+                print(success("Supabase conectado para persistência cloud"))
+            except Exception as e:
+                print(warning(f"Supabase indisponível, usando modo local: {e}"))
 
         # Estatísticas da sessão
         self.stats = {
-            "start_time": datetime.datetime.now(),
+            "start_time": utc_now(),
             "total_processed": 0,
             "successful_analyses": 0,
             "failed_analyses": 0,
@@ -115,7 +142,7 @@ class LLMPurityAnalyzer:
         
     def _create_session_log_file(self) -> str:
         """Cria arquivo de log da sessão específico por modelo e tipo."""
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = utc_now_stamp()
         
         # Detectar tipo de análise baseado no caminho do CSV
         csv_name = Path(self.csv_file_path).name
@@ -166,7 +193,7 @@ class LLMPurityAnalyzer:
             # Criar um backup apenas uma vez por sessão para evitar poluição
             # do diretório csv. O backup será armazenado no diretório do modelo
             # (self.backup_dir) para manter os arquivos de trabalho organizados.
-            backup_timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_timestamp = utc_now_stamp()
             if (not self._backup_created) and os.path.exists(self.csv_file_path):
                 # Nome seguro para o backup
                 original_name = Path(self.csv_file_path).name
@@ -185,50 +212,42 @@ class LLMPurityAnalyzer:
             print(error(f"Erro ao salvar CSV: {str(e)}"))
             return False
     
-    def _get_commit_data_from_refactoring_csv(self, hash_commit: str) -> Optional[Dict]:
+    def _get_commit_data_from_refactoring_csv(self, hash_commit: str) -> Optional[CommitPair]:
         """Busca dados do commit no arquivo commits_with_refactoring.csv."""
         try:
-            # Carregar dados se ainda não foram carregados
             if not self.data_handler.load_data():
                 return None
-            
-            # Buscar o commit pelo hash
-            commit_data = self.data_handler.data[
+
+            matches = self.data_handler.data[
                 self.data_handler.data['commit2'] == hash_commit
             ]
-            
-            if commit_data.empty:
+
+            if matches.empty:
                 print(warning(f"Commit {hash_commit[:8]}... não encontrado no arquivo de refatorações."))
                 return None
-            
-            # Pegar a primeira ocorrência se houver duplicatas
-            row = commit_data.iloc[0]
-            
-            return {
-                'commit1': row['commit1'],
-                'commit2': row['commit2'],
-                'project': row['project'],
-                'project_name': row['project_name']
-            }
-            
+
+            return commit_from_csv_row(matches.iloc[0])
+
         except Exception as e:
             print(error(f"Erro ao buscar dados do commit {hash_commit[:8]}...: {str(e)}"))
             return None
     
-    def _get_diff_for_commit(self, repository: str, commit1: str, commit2: str) -> Optional[tuple[str, str]]:
+    def _get_diff_for_commit(self, commit: CommitPair) -> Optional[tuple]:
         """Obtém o diff entre dois commits e retorna também o caminho local do repositório.
 
         Returns:
             tuple(diff_content, repo_path) ou None em caso de erro.
         """
         try:
-            success, repo_path = self.git_handler.ensure_repo_cloned(repository)
-            if not success:
-                print(error(f"Falha ao preparar repositório: {repository}"))
+            ok, repo_path = self.git_handler.ensure_repo_cloned(commit.repository)
+            if not ok:
+                print(error(f"Falha ao preparar repositório: {commit.repository}"))
                 return None
-            diff_content = self.git_handler.get_commit_diff(repo_path, commit1, commit2)
+            diff_content = self.git_handler.get_commit_diff(
+                repo_path, commit.commit_hash_before, commit.commit_hash_current
+            )
             if not diff_content:
-                print(warning(f"Diff vazio entre commits {commit1[:8]}...{commit2[:8]}"))
+                print(warning(f"Diff vazio entre commits {commit.commit_hash_before[:8]}...{commit.commit_hash_current[:8]}"))
                 return None
             return diff_content, repo_path
         except Exception as e:
@@ -239,127 +258,90 @@ class LLMPurityAnalyzer:
         """Analisa um único commit com a LLM."""
         try:
             print(info(f"Analisando commit {hash_commit[:8]}... (Purity: {purity_classification})"))
-            
-            # Buscar dados do commit
-            commit_data = self._get_commit_data_from_refactoring_csv(hash_commit)
-            if not commit_data:
+
+            commit = self._get_commit_data_from_refactoring_csv(hash_commit)
+            if not commit:
                 return None
-            
-            # Dry-run: não realiza chamadas git/LLM, retorna resultado simulado
+
+            # Dry-run: não realiza chamadas git/LLM
             if self.dry_run:
                 print(dim(f"Dry-run ativado: simulando análise para {hash_commit[:8]}..."))
-                result = {
-                    'hash': hash_commit,
-                    'purity_classification': purity_classification,
-                    'llm_classification': 'DRY_RUN',
-                    'llm_justification': 'Dry run - análise simulada (nenhuma chamada LLM foi realizada).',
-                    'llm_confidence': '0',
-                    'project_name': commit_data.get('project_name', 'unknown'),
-                    'analysis_timestamp': datetime.datetime.now().isoformat(),
-                    'diff_size': 0,
-                    'diff_lines': 0,
-                    'llm_raw_response': 'DRY_RUN - No LLM call made',
-                    'repository': commit_data.get('project_name', 'unknown'),
-                    'commit_hash_before': commit_data.get('commit1', 'unknown'),
-                    'commit_hash_current': commit_data.get('commit2', 'unknown'),
-                    'technical_evidence': 'DRY_RUN - No analysis performed',
-                    'diff_source': 'dry_run'
-                }
-                print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: {result['llm_classification']}"))
-                return result
-            
-            # Obter diff (com repo_path para evitar novo fetch)
-            diff_result = self._get_diff_for_commit(
-                commit_data['project'],
-                commit_data['commit1'],
-                commit_data['commit2']
-            )
+                dry_result = AnalysisResult(
+                    repository=commit.repository,
+                    commit_hash_before=commit.commit_hash_before,
+                    commit_hash_current=commit.commit_hash_current,
+                    refactoring_type="DRY_RUN",
+                    justification="Dry run - análise simulada (nenhuma chamada LLM foi realizada).",
+                    confidence_level="0",
+                    project_name=commit.project_name,
+                    llm_raw_response="DRY_RUN - No LLM call made",
+                    technical_evidence="DRY_RUN - No analysis performed",
+                    diff_source="dry_run",
+                    success=True,
+                )
+                result_dict = analysis_to_session_dict(dry_result)
+                result_dict['purity_classification'] = purity_classification
+                print(success(f"✅ Commit {hash_commit[:8]}... simuladamente analisado: DRY_RUN"))
+                return result_dict
+
+            # Obter diff
+            diff_result = self._get_diff_for_commit(commit)
             if not diff_result:
                 return None
             diff_content, repo_path = diff_result
 
-            # Obter mensagem do commit (uma única vez, usando repo já atualizado)
+            # Obter mensagem do commit
             try:
-                commit_message = self.git_handler.get_commit_message(repo_path, commit_data['commit2']) or "Commit message not available"
+                commit.commit_message = self.git_handler.get_commit_message(
+                    repo_path, commit.commit_hash_current
+                ) or "Commit message not available"
             except Exception:
-                commit_message = "Commit message not available"
-            
+                commit.commit_message = "Commit message not available"
+
             # Análise com LLM
             try:
                 llm_result = self.llm_handler.analyze_commit_refactoring(
                     current_hash=hash_commit,
-                    previous_hash=commit_data['commit1'],
-                    repository=commit_data['project'],
+                    previous_hash=commit.commit_hash_before,
+                    repository=commit.repository,
                     diff_content=diff_content,
-                    commit_message=commit_message,
-                    repo_path=repo_path
+                    commit_message=commit.commit_message,
+                    repo_path=repo_path,
                 )
-                
+
                 if llm_result and llm_result.get('success') and llm_result.get('refactoring_type'):
-                    result = {
-                        'hash': hash_commit,
-                        'purity_classification': purity_classification,
-                        'llm_classification': llm_result['refactoring_type'].upper(),
-                        'llm_justification': llm_result.get('justification', ''),
-                        'llm_confidence': llm_result.get('confidence_level', 'unknown'),
-                        'project_name': commit_data['project_name'],
-                        'analysis_timestamp': datetime.datetime.now().isoformat(),
-                        'diff_size': len(diff_content),
-                        'diff_lines': len(diff_content.splitlines())
-                    }
-                    
-                    # Adicionar novos campos implementados se disponíveis
-                    if 'llm_raw_response' in llm_result:
-                        result['llm_raw_response'] = llm_result['llm_raw_response']
-                    if 'repository' in llm_result:
-                        result['repository'] = llm_result['repository']
-                    if 'commit_hash_before' in llm_result:
-                        result['commit_hash_before'] = llm_result['commit_hash_before']
-                    if 'commit_hash_current' in llm_result:
-                        result['commit_hash_current'] = llm_result['commit_hash_current']
-                    if 'technical_evidence' in llm_result:
-                        result['technical_evidence'] = llm_result['technical_evidence']
-                    if 'diff_source' in llm_result:
-                        result['diff_source'] = llm_result['diff_source']
-                    
-                    print(success(f"✅ Commit {hash_commit[:8]}... analisado: {result['llm_classification']}"))
-                    return result
+                    analysis = analysis_from_llm_response(llm_result, commit)
+                    analysis.diff_size_chars = len(diff_content)
+                    analysis.diff_lines = len(diff_content.splitlines())
+                    result_dict = analysis_to_session_dict(analysis)
+                    result_dict['purity_classification'] = purity_classification
+                    print(success(f"✅ Commit {hash_commit[:8]}... analisado: {analysis.refactoring_type.upper()}"))
+                    return result_dict
                 else:
-                    # Mesmo com falha, tentar preservar dados disponíveis
-                    result = {
-                        'hash': hash_commit,
-                        'purity_classification': purity_classification,
-                        'llm_classification': 'FLOSS',  # padrão conservativo
-                        'llm_justification': 'Analysis failed - insufficient data',
-                        'llm_confidence': 'low',
-                        'project_name': commit_data['project_name'],
-                        'analysis_timestamp': datetime.datetime.now().isoformat(),
-                        'diff_size': len(diff_content),
-                        'diff_lines': len(diff_content.splitlines())
-                    }
-                    
-                    # Tentar preservar dados parciais mesmo em falhas
-                    if llm_result:
-                        if 'llm_raw_response' in llm_result:
-                            result['llm_raw_response'] = llm_result['llm_raw_response']
-                        if 'justification' in llm_result and llm_result['justification']:
-                            result['llm_justification'] = llm_result['justification']
-                        if 'repository' in llm_result:
-                            result['repository'] = llm_result['repository']
-                        if 'commit_hash_before' in llm_result:
-                            result['commit_hash_before'] = llm_result['commit_hash_before']
-                        if 'commit_hash_current' in llm_result:
-                            result['commit_hash_current'] = llm_result['commit_hash_current']
-                        if 'technical_evidence' in llm_result:
-                            result['technical_evidence'] = llm_result['technical_evidence']
-                    
+                    # Fallback conservativo com dados parciais
+                    fallback = AnalysisResult(
+                        repository=commit.repository,
+                        commit_hash_before=commit.commit_hash_before,
+                        commit_hash_current=commit.commit_hash_current,
+                        refactoring_type="floss",
+                        justification=llm_result.get('justification', 'Analysis failed - insufficient data') if llm_result else 'Analysis failed - insufficient data',
+                        confidence_level="low",
+                        project_name=commit.project_name,
+                        diff_size_chars=len(diff_content),
+                        diff_lines=len(diff_content.splitlines()),
+                        llm_raw_response=llm_result.get('llm_raw_response', '') if llm_result else '',
+                        technical_evidence=llm_result.get('technical_evidence', '') if llm_result else '',
+                        success=False,
+                    )
+                    result_dict = analysis_to_session_dict(fallback)
+                    result_dict['purity_classification'] = purity_classification
                     print(warning(f"⚠️ Commit {hash_commit[:8]}... - LLM falhou, usando dados parciais/padrão"))
-                    return result
-                    
+                    return result_dict
+
             except Exception as llm_error:
                 print(error(f"❌ Erro na chamada LLM para {hash_commit[:8]}...: {str(llm_error)}"))
                 return None
-                
+
         except Exception as e:
             print(error(f"Erro na análise do commit {hash_commit[:8]}...: {str(e)}"))
             return None
@@ -392,8 +374,11 @@ class LLMPurityAnalyzer:
                     "analysis_type": analysis_type,
                     "description": description,
                     "csv_file_analyzed": self.csv_file_path,
+                    "prompt_sha256": self.prompt_sha256,
+                    "tool_version": self.tool_version,
+                    "config_snapshot": _settings.to_dict(),
                     "start_time": self.stats["start_time"].isoformat(),
-                    "end_time": datetime.datetime.now().isoformat(),
+                    "end_time": utc_now_iso(),
                     "total_processed": self.stats["total_processed"],
                     "successful_analyses": self.stats["successful_analyses"],
                     "failed_analyses": self.stats["failed_analyses"],
@@ -500,51 +485,146 @@ class LLMPurityAnalyzer:
         # Inicializar barra de progresso
         progress_bar = ProgressBar(len(analysis_df), title="LLM Analysis")
         
-        # Processar commits
+        # Inicializar persistência incremental (JSONL append-only)
+        sessions_dir = os.path.join(self.backup_dir, "sessions")
+        session_writer = SessionWriter(sessions_dir)
         analyses_results = []
         processed_count = 0
-        
+
+        # Inicializar sessão Supabase (se conectado)
+        cloud_session_id = None
+        cloud_model_id = None
+        cloud_prompt_id = None
+        if self.supabase:
+            try:
+                cloud_model_id = self.supabase.get_or_create_model(self.current_model)
+
+                # Validação de integridade do prompt (Fase H5): se a tag de
+                # versão já existe no banco com hash diferente do prompt em
+                # disco, o prompt foi alterado sem registrar nova versão.
+                # Política warn-and-record: nunca sobrescrever, sempre gravar
+                # a divergência no snapshot da sessão.
+                prompt_hash_mismatch = False
+                existing_prompt = self.supabase.get_prompt_version(_settings.prompt_version_tag)
+                if existing_prompt and existing_prompt.get("sha256_hash") != self.prompt_sha256:
+                    prompt_hash_mismatch = True
+                    print(warning(
+                        f"Prompt em disco difere do registrado para "
+                        f"'{_settings.prompt_version_tag}' no Supabase "
+                        f"(local {self.prompt_sha256[:12]}... != cloud "
+                        f"{existing_prompt['sha256_hash'][:12]}...). "
+                        f"Registre uma nova versão de prompt antes de consolidar resultados."
+                    ))
+
+                cloud_prompt_id = self.supabase.get_or_create_prompt_version(
+                    _settings.prompt_version_tag, OPTIMIZED_LLM_PROMPT
+                )
+                if cloud_model_id and cloud_prompt_id:
+                    cloud_session_id = self.supabase.start_session(
+                        model_id=cloud_model_id,
+                        prompt_version_id=cloud_prompt_id,
+                        config_snapshot={
+                            **_settings.to_dict(),
+                            "prompt_sha256": self.prompt_sha256,
+                            "tool_version": self.tool_version,
+                            "prompt_hash_mismatch": prompt_hash_mismatch,
+                        },
+                        runner_hostname=_settings.runner_id,
+                        total_planned=len(analysis_df),
+                        purity_filter=purity_filter,
+                    )
+                    if cloud_session_id:
+                        print(info(f"Sessão Supabase criada: {cloud_session_id[:8]}..."))
+            except Exception as e:
+                print(warning(f"Falha ao criar sessão Supabase: {e}"))
+
         try:
             for idx, row in analysis_df.iterrows():
+                # Controle remoto: verificar comandos pendentes
+                if self.command_handler:
+                    from src.runner.command_handler import AnalysisCancelled
+                    try:
+                        self.command_handler.poll_and_execute()
+                        self.command_handler.wait_if_paused()
+                    except AnalysisCancelled:
+                        print(warning("Análise cancelada via comando remoto"))
+                        break
+
                 processed_count += 1
                 self.stats["total_processed"] += 1
 
                 hash_commit = row['hash']
                 purity_classification = row['purity_analysis']
 
-                # Atualizar barra de progresso
-                progress_bar.update(processed_count)
+                # Controle remoto: verificar skip list
+                if self.command_handler and self.command_handler.should_skip(hash_commit):
+                    print(dim(f"⏭️ Skip (remoto): {hash_commit[:8]}..."))
+                    self.stats["skipped_already_analyzed"] += 1
+                    continue
 
-                # Imprimir detalhes do commit atual (em nova linha após a barra)
+                progress_bar.update(processed_count)
                 print(f"{info(f'Processing:')} {hash_commit[:8]}... (Purity: {purity_classification})")
 
                 try:
-                    # Analisar commit
                     result = self._analyze_single_commit(hash_commit, purity_classification)
 
                     if result:
-                        # Atualizar DataFrame
                         classification = result['llm_classification']
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = classification
-
+                        # Rastreabilidade: todo registro persistido carrega o
+                        # hash do prompt e a versão da ferramenta que o gerou.
+                        result["prompt_sha256"] = self.prompt_sha256
+                        result["tool_version"] = self.tool_version
                         analyses_results.append(result)
                         self.stats["successful_analyses"] += 1
 
+                        # Persistência local: JSONL append (O(1), atômico)
+                        session_writer.append(result)
+
+                        # Persistência cloud: Supabase (se conectado)
+                        if self.supabase and cloud_session_id:
+                            try:
+                                commit_id = self.supabase.upsert_commit(
+                                    commit_hash_current=hash_commit,
+                                    commit_hash_before=result.get("commit_hash_before", ""),
+                                    repository_url=result.get("repository", ""),
+                                    project_name=result.get("project_name", ""),
+                                    purity_analysis=purity_classification,
+                                )
+                                if commit_id:
+                                    self.supabase.record_result(
+                                        session_id=cloud_session_id,
+                                        commit_id=commit_id,
+                                        model_id=cloud_model_id,
+                                        prompt_version_id=cloud_prompt_id,
+                                        classification=classification,
+                                        justification=result.get("llm_justification", ""),
+                                        confidence_level=result.get("llm_confidence", ""),
+                                        technical_evidence=result.get("technical_evidence", ""),
+                                        llm_raw_response=result.get("llm_raw_response", ""),
+                                        diff_size_chars=result.get("diff_size", 0),
+                                        diff_lines=result.get("diff_lines", 0),
+                                    )
+                                # Heartbeat
+                                self.supabase.update_heartbeat(
+                                    runner_id=_settings.runner_id,
+                                    session_id=cloud_session_id,
+                                    status="running",
+                                    current_commit_hash=hash_commit,
+                                    current_commit_index=processed_count,
+                                    total_commits_in_batch=len(analysis_df),
+                                    model_name=self.current_model,
+                                )
+                            except Exception as e:
+                                print(dim(f"Supabase sync falhou (JSONL local OK): {e}"))
+
                         print(success(f"✅ {hash_commit[:8]}... → {classification}"))
                     else:
-                        # Marcar como falha
                         df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'FAILED'
                         self.stats["failed_analyses"] += 1
-
                         print(error(f"❌ Failed: {hash_commit[:8]}..."))
 
-                    # Salvar progresso IMEDIATAMENTE após cada commit para permitir
-                    # interrupção segura (CTRL+C) sem perda de dados.
-                    self._save_csv_data(df)
-                    self._save_session_analysis(analyses_results)
                     print(dim(f"💾 Progress saved ({processed_count}/{len(analysis_df)})"))
-
-                    # Pequena pausa entre análises
                     time.sleep(1)
 
                 except Exception as e:
@@ -552,21 +632,37 @@ class LLMPurityAnalyzer:
                     df.loc[df['hash'] == hash_commit, 'llm_analysis'] = 'ERROR'
                     print(error(f"⚠️ Error: {hash_commit[:8]}... - {str(e)}"))
                     continue
+
         except KeyboardInterrupt:
-            # Usuário interrompeu com CTRL+C — salvar o que foi processado até agora
             print(warning('\n⚠️ Interrupção detectada (CTRL+C). Salvando progresso atual...'))
-            try:
-                self._save_csv_data(df)
-                self._save_session_analysis(analyses_results)
-                print(success('💾 Progresso salvo com sucesso após interrupção.'))
-            except Exception as e:
-                print(error(f"❌ Falha ao salvar progresso após interrupção: {e}"))
+
+        # Salvar CSV e sessão JSON uma vez no final (ou após CTRL+C)
+        try:
+            self._save_csv_data(df)
+            self._save_session_analysis(analyses_results)
+            print(success(f'💾 Progresso final salvo. JSONL: {session_writer.path} ({session_writer.count} registros)'))
+        except Exception as e:
+            print(error(f"❌ Falha ao salvar progresso: {e}"))
             return self.stats
 
-        # Salvar resultados finais
-        self._save_csv_data(df)
-        self._save_session_analysis(analyses_results)
-        
+        # Finalizar sessão Supabase
+        if self.supabase and cloud_session_id:
+            try:
+                self.supabase.update_session_status(
+                    session_id=cloud_session_id,
+                    status="completed",
+                    total_completed=self.stats["successful_analyses"],
+                    total_failed=self.stats["failed_analyses"],
+                    total_skipped=self.stats["skipped_already_analyzed"],
+                )
+                self.supabase.update_heartbeat(
+                    runner_id=_settings.runner_id,
+                    status="idle",
+                )
+                print(success("Sessão Supabase finalizada"))
+            except Exception as e:
+                print(warning(f"Falha ao finalizar sessão Supabase: {e}"))
+
         # Imprimir estatísticas finais
         self._print_final_stats()
         
@@ -574,7 +670,7 @@ class LLMPurityAnalyzer:
     
     def _print_final_stats(self) -> None:
         """Imprime estatísticas finais da análise."""
-        end_time = datetime.datetime.now()
+        end_time = utc_now()
         duration = end_time - self.stats["start_time"]
         
         print(f"\n{header('='*60)}")

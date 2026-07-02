@@ -1,0 +1,53 @@
+[project]
+name = "refan"
+version = "2.0.0"
+description = "Classificação de refatorações de código com LLMs — ferramenta de pesquisa acadêmica"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "José Marinho Falcão Neto", email = "jose.marinho.neto@ccc.ufcg.edu.br"},
+]
+keywords = ["refactoring", "llm", "software-engineering", "classification", "ollama"]
+# Versões exatas (==) por exigência de reprodutibilidade acadêmica:
+# o ambiente deve ser reconstituível de forma idêntica anos após a defesa.
+# Pinagem realizada em venv limpo Python 3.12 (jun/2026), preservando os
+# majors usados na série v2.0 (pandas 2.x, plotly 5.x, kaleido 0.2.x) —
+# apenas atualizados para versões com wheels cp312.
+dependencies = [
+    "pandas==2.3.3",
+    "requests==2.34.2",
+    "plotly==5.24.1",
+    "kaleido==0.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.0.3",
+    "pytest-cov==7.1.0",
+    "pytest-mock==3.15.1",
+]
+json5 = ["json5==0.14.0"]
+supabase = [
+    "supabase==2.31.0",
+    "python-dotenv==1.2.2",
+]
+
+[project.scripts]
+refan = "src.cli:run_cli"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: testes que requerem Ollama ou rede",
+    "integration: testes de integração com CSVs reais",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*"]

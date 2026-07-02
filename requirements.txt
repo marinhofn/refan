@@ -1,4 +1,8 @@
-pandas==2.0.3
-requests==2.31.0
-plotly==5.22.0
+# Dependências de runtime — espelho exato de [project.dependencies] no
+# pyproject.toml. Para o ambiente completo (dev, json5, supabase), usar:
+#   pip install -e ".[dev,json5,supabase]"
+# Para reprodução byte-a-byte (transitivas congeladas): requirements-lock.txt
+pandas==2.3.3
+requests==2.34.2
+plotly==5.24.1
 kaleido==0.2.1
