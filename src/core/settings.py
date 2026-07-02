@@ -126,7 +126,10 @@ class RefanSettings:
     jsonl_fsync: bool = True
 
     # --- Failure tracking ---
-    failures_file: str = "json_failures.json"
+    # Nome do arquivo de falhas DENTRO do diretório de análises do modelo
+    # (Fase E4, ROB-7 — antes era caminho relativo ao CWD e se dispersava).
+    # Conteúdo é JSONL (uma falha por linha).
+    failures_file: str = "failures.jsonl"
 
     # --- Supabase (cloud persistence) ---
     supabase_url: str = field(

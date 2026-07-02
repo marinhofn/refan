@@ -569,6 +569,24 @@ class SupabaseClient:
             logger.warning(f"Supabase fail_command falhou: {e}")
             return False
 
+    def refresh_model_metrics(self) -> bool:
+        """REFRESH da materialized view model_metrics via RPC (Fase E4, ROB-6).
+
+        Chamado ao finalizar cada sessão — sem isto a view nunca era
+        atualizada e as métricas cloud ficavam estagnadas. Requer a
+        migration 004_rls_and_metrics_refresh.sql aplicada.
+        """
+        try:
+            self._execute_with_retry(
+                "refresh_model_metrics",
+                lambda: self.client.rpc("refresh_model_metrics", {}),
+                attempts=1,
+            )
+            return True
+        except Exception as e:
+            logger.warning(f"Supabase refresh_model_metrics falhou: {e}")
+            return False
+
     # ------------------------------------------------------------------
     # Sync offline
     # ------------------------------------------------------------------

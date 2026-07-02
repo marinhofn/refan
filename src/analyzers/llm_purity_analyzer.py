@@ -775,6 +775,9 @@ class LLMPurityAnalyzer:
                     total_failed=self.stats["failed_analyses"],
                     total_skipped=self.stats["skipped_already_analyzed"],
                 )
+                # ROB-6: sem o refresh a view model_metrics nunca refletia
+                # as sessões — AVG(processing_time_ms) e contagens paradas.
+                self.supabase.refresh_model_metrics()
                 self.supabase.update_heartbeat(
                     runner_id=_settings.runner_id,
                     status="idle",
