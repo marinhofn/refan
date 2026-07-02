@@ -25,7 +25,10 @@ supabase_module = pytest.importorskip(
     "supabase", reason="extra [supabase] não instalado"
 )
 
-from src.persistence.supabase_client import SupabaseClient
+from src.persistence.supabase_client import (
+    PromptVersionConflictError,
+    SupabaseClient,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -35,11 +38,13 @@ def no_backoff(monkeypatch):
     monkeypatch.setattr(settings, "supabase_backoff_base_s", 0.0)
 
 
-def make_client(execute_data=None):
+def make_client(execute_data=None, select_data=None):
     """SupabaseClient com API mockada.
 
-    Retorna (cliente, mock_api). O resultado de qualquer .execute() é um
-    objeto com .data igual a execute_data (default: um registro com id).
+    Retorna (cliente, mock_api). O resultado de upsert/insert .execute() é um
+    objeto com .data igual a execute_data (default: um registro com id); o
+    resultado de select().eq().execute() usa select_data (default: vazio —
+    registro inexistente).
     """
     if execute_data is None:
         execute_data = [{"id": "uuid-1"}]
@@ -49,6 +54,9 @@ def make_client(execute_data=None):
     )
     mock_api.table.return_value.insert.return_value.execute.return_value = (
         SimpleNamespace(data=execute_data)
+    )
+    mock_api.table.return_value.select.return_value.eq.return_value.execute.return_value = (
+        SimpleNamespace(data=select_data or [])
     )
     with mock.patch(
         "src.persistence.supabase_client.create_client", return_value=mock_api
@@ -67,6 +75,26 @@ class TestInit:
 
 
 class TestUpsertCommit:
+    def test_none_purity_is_omitted_from_payload(self):
+        """Fase E2 (VAL-5): 'purity_analysis': None no payload sobrescrevia
+        para NULL o baseline de commits já registrados a cada sync."""
+        client, api = make_client()
+
+        client.upsert_commit("hash-a", "hash-b", "https://r", "proj")
+
+        payload = api.table.return_value.upsert.call_args.args[0]
+        assert "purity_analysis" not in payload
+
+    def test_provided_purity_is_sent(self):
+        client, api = make_client()
+
+        client.upsert_commit(
+            "hash-a", "hash-b", "https://r", "proj", purity_analysis="FALSE"
+        )
+
+        payload = api.table.return_value.upsert.call_args.args[0]
+        assert payload["purity_analysis"] == "FALSE"
+
     def test_returns_uuid_and_caches(self):
         client, api = make_client()
 
@@ -127,15 +155,48 @@ class TestGetPromptVersion:
 
 
 class TestGetOrCreatePromptVersion:
-    def test_computes_sha256_of_prompt(self):
-        client, api = make_client()
+    """Fase E2 (VAL-4): versões de prompt são imutáveis — get-then-insert.
+
+    O upsert anterior sobrescrevia system_prompt/sha256_hash de uma tag já
+    registrada, corrompendo a proveniência de todos os resultados que a
+    referenciavam.
+    """
+
+    def test_new_tag_inserts_with_sha256(self):
+        client, api = make_client()  # select vazio: tag inexistente
         prompt = "You are a software engineering expert."
 
-        client.get_or_create_prompt_version("v-test", prompt)
+        uid = client.get_or_create_prompt_version("v-test", prompt)
 
-        payload = api.table.return_value.upsert.call_args.args[0]
+        assert uid == "uuid-1"
+        payload = api.table.return_value.insert.call_args.args[0]
         assert payload["sha256_hash"] == hashlib.sha256(prompt.encode()).hexdigest()
         assert payload["version_tag"] == "v-test"
+        api.table.return_value.upsert.assert_not_called()
+
+    def test_existing_tag_same_hash_returns_registered_id(self):
+        prompt = "Same prompt."
+        sha = hashlib.sha256(prompt.encode()).hexdigest()
+        client, api = make_client(
+            select_data=[{"id": "uuid-registrado", "sha256_hash": sha}]
+        )
+
+        uid = client.get_or_create_prompt_version("v-test", prompt)
+
+        assert uid == "uuid-registrado"
+        api.table.return_value.insert.assert_not_called()
+        api.table.return_value.upsert.assert_not_called()
+
+    def test_existing_tag_different_hash_raises_and_never_writes(self):
+        client, api = make_client(
+            select_data=[{"id": "uuid-registrado", "sha256_hash": "outrohash"}]
+        )
+
+        with pytest.raises(PromptVersionConflictError, match="imutáveis"):
+            client.get_or_create_prompt_version("v-test", "Edited prompt.")
+
+        api.table.return_value.insert.assert_not_called()
+        api.table.return_value.upsert.assert_not_called()
 
 
 class TestRecordResult:

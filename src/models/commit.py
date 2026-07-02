@@ -49,14 +49,27 @@ class AnalysisResult:
     commit_hash_before: str
     commit_hash_current: str
     refactoring_type: str
-    justification: str
-    confidence_level: str = "medium"
-    technical_evidence: str = ""
+    # Variáveis de pesquisa (Fase E2, VAL-3): None = o modelo não declarou.
+    # Defaults simulados ("medium"/"") foram abolidos — em séries <= v2.1
+    # esses campos eram constantes artificiais no caminho de extração
+    # dominante e não podem ser usados como variáveis (docs/REPRODUCIBILITY.md §6).
+    justification: str | None
+    confidence_level: str | None = None
+    technical_evidence: str | None = None
     llm_raw_response: str = ""
     extraction_method: str = ""
     diff_size_chars: int = 0
     diff_lines: int = 0
     diff_source: str = "direct"
+    # Rastreabilidade do envio (Fase E2, VAL-7): o que foi de fato enviado
+    # ao modelo nesta análise. diff_truncated=True significa que o modelo
+    # NÃO viu o diff inteiro — antes esse corte acontecia silenciosamente
+    # dentro do Ollama, sem qualquer registro.
+    original_diff_size_chars: int = 0
+    diff_truncated: bool = False
+    num_ctx_effective: int = 0
+    num_predict_effective: int = 0
+    prompt_chars: int = 0
     processing_time_ms: int = 0
     timestamp: str = field(default_factory=utc_now_iso)
     success: bool = True

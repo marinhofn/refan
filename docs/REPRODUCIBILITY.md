@@ -110,15 +110,18 @@ por iCloud/Drive/Dropbox.
 
 ## 6. Lacunas conhecidas de reprodutibilidade (e onde serão fechadas)
 
-| Lacuna | Impacto | Fase planejada (`EVOLUTION_PLAN.md`) |
-|--------|---------|--------------------------------------|
-| Digest do modelo Ollama não capturado (tag mutável) | Identidade dos pesos não verificável a posteriori | E3 (REP-1) |
-| `num_ctx` efetivo, seed efetivo (regime aleatório) e hash do prompt completo não registrados por análise | Reconstrução exige recomputação a partir do snapshot | E3 (REP-2) |
-| Hardware (GPU/driver/`REFAN_NUM_GPU_LAYERS`) fora do `config_snapshot` | Condições de execução parcialmente registradas | E3 (REP-3) |
-| `processing_time_ms` sempre 0 | Métricas de desempenho sem significado | E3 (REP-4) |
-| Validação de prompt contra `prompt_versions` pode sobrescrever registro histórico (upsert) | Proveniência de prompt violável | E2 (VAL-4) |
-| Truncamento de contexto não detectado/registrado (`num_ctx` menor que o prompt) | Modelo pode classificar sem ver o diff inteiro, sem rastro | E2 (VAL-7) |
-| `confidence_level`/`technical_evidence` fabricados no caminho de extração dominante | Duas variáveis registradas são constantes artificiais nas séries ≤ v2.1 | E2 (VAL-3); dados históricos: usar apenas classificação e justificativa |
+| Lacuna | Impacto | Situação |
+|--------|---------|----------|
+| Digest do modelo Ollama não capturado (tag mutável) | Identidade dos pesos não verificável a posteriori | Aberta — E3 (REP-1) |
+| Seed efetivo no regime aleatório e hash do prompt completo não registrados por análise | Reconstrução exige recomputação a partir do snapshot | Aberta — E3 (REP-2). `num_ctx`/`num_predict` efetivos, `prompt_chars` e `diff_truncated` **já são registrados por análise desde a E2** |
+| Hardware (GPU/driver/`REFAN_NUM_GPU_LAYERS`) fora do `config_snapshot` | Condições de execução parcialmente registradas | Aberta — E3 (REP-3) |
+| `processing_time_ms` sempre 0 | Métricas de desempenho sem significado | Aberta — E3 (REP-4) |
+| ~~Validação de prompt contra `prompt_versions` podia sobrescrever registro histórico~~ | Proveniência de prompt violável | **Fechada na E2 (VAL-4)**: get-then-insert + `PromptVersionConflictError` aborta a sessão; trigger de imutabilidade em `002_provenance_guards.sql` |
+| ~~Truncamento de contexto não detectado/registrado~~ | Modelo podia classificar sem ver o diff inteiro, sem rastro | **Fechada na E2 (VAL-7)**: `plan_generation` dimensiona pelo prompt real; cortes registrados em `diff_truncated`/`original_diff_size_chars` |
+| ~~Rótulos fabricados (heurística de keywords) e `confidence_level`/`technical_evidence` simulados~~ | Rótulos/variáveis artificiais nas séries ≤ v2.1 | **Fechada na E2 (VAL-2/VAL-3/VAL-8)** para dados novos. Dados históricos: rodar `scripts/research/audit_extraction_methods.py` e excluir registros `no_verdict`; `confidence_level`/`technical_evidence` de séries ≤ v2.1 **não são utilizáveis como variáveis** |
+| ~~Convergência sempre 0 agree nos resumos de sessão~~ | Métrica-alvo errada em todos os JSONs de sessão ≤ v2.1 | **Fechada na E2 (VAL-1)** para sessões novas. Históricas: recomputáveis via `scripts/research/recompute_convergence.py` (registros por commit estão corretos) |
+| ~~Sync offline→online apagava `purity_analysis` no cloud~~ | Variável independente destruída na reconciliação | **Fechada na E2 (VAL-5)**; dano pré-existente detectável pela query em `002_provenance_guards.sql` e recuperável com `seed_supabase.py` (idempotente) |
 
-Enquanto a Fase E2 não estiver mergeada, **nenhuma sessão nova deve alimentar a
-dissertação** — ver "Regra de ouro de sequenciamento" no `EVOLUTION_PLAN.md`.
+**Sessões executadas com a ferramenta ≥ v2.2 (pós-merge da Fase E2) são
+elegíveis para a dissertação.** Sessões ≤ v2.1 exigem as auditorias acima e a
+documentação das exclusões.
