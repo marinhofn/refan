@@ -67,18 +67,24 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Artefatos de conflito de sincronização (iCloud/Finder duplica como "nome 2.ext").
+# Em jul/2026 esses artefatos violaram o baseline imutável (EVOLUTION_PLAN.md, INT-1/INT-2);
+# a CI executa scripts/data/check_repo_hygiene.py para impedir que sejam versionados.
+* 2
+* 2.*
+* 2/
+
 # Arquivos que podem conter segredos (verifique antes de remover este ignore)
 *.env
 .env.*
 !.env.example
 secrets*/
+# Config do MCP Supabase local (pode conter personal access token inline)
+.mcp.json
 
 # Modelos adicionais (caso algum dia salvar pesos locais)
 # models/
 
-# Documentação de planejamento (local, não versionada)
-ARCHITECTURE_PLAN.md
-REFACTORING_PLAN.md
 
 # Claude Code
 .claude/

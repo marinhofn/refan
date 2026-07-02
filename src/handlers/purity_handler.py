@@ -168,16 +168,29 @@ class PurityHandler:
     def _resolve_classification_conflict(self, group):
         """
         Resolve conflito quando o mesmo commit tem classificações True e False.
-        
+
+        Regra de decisão (registrada em docs/REPRODUCIBILITY.md §4): se QUALQUER
+        linha do commit é False, o commit consolida como False (FALSE > TRUE).
+
+        Justificativa metodológica: o CSV do Purity Checker traz uma linha por
+        refatoração detectada; "pure" é uma propriedade universalmente
+        quantificada sobre o commit inteiro — zero mudanças comportamentais.
+        Uma única refatoração avaliada como impura (False) já é evidência de
+        mudança funcional, logo o commit não pode ser pure, independentemente
+        de quantas linhas True coexistam. A regra é deliberadamente coerente
+        com o viés conservador do prompt ("when uncertain → FLOSS", ver
+        docs/PROMPTS.md), mantendo baseline e LLM sob o mesmo princípio.
+
+        A consolidação é auditável e não destrói informação: o registro final
+        carrega had_classification_conflict=True e concatena todas as
+        descrições originais prefixadas pela classificação de origem.
+
         Args:
             group (pd.DataFrame): Grupo de registros conflitantes
-            
+
         Returns:
             dict: Registro com classificação resolvida
         """
-        # Estratégia: Se há qualquer classificação False (floss), usar False
-        # Isso é conservativo - assume que refatoramento impuro é mais provável
-        
         has_false = False in group['purity'].values
         has_true = True in group['purity'].values
         
