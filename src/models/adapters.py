@@ -15,6 +15,7 @@ from typing import Optional
 import pandas as pd
 
 from src.models.commit import CommitPair, AnalysisResult
+from src.utils.classification import VALID_CLASSIFICATIONS
 
 
 def commit_from_csv_row(row: pd.Series) -> CommitPair:
@@ -52,16 +53,28 @@ def analysis_from_llm_response(
     """Constrói AnalysisResult a partir do dict retornado pelo LLM handler.
 
     Normaliza variantes de campo (project -> repository, etc.) e preenche
-    com dados do CommitPair quando o LLM não retorna campos completos.
+    identificadores com dados do CommitPair quando ausentes.
+
+    Guarda de fabricação (Fase E2, VAL-8): ``refactoring_type`` ausente ou
+    inválido é erro do chamador — o handler só entrega dicts com veredito
+    validado — e levanta ValueError em vez de degradar silenciosamente para
+    'floss' (o antigo default contaminava os dados com rótulos que o modelo
+    nunca emitiu). Variáveis de pesquisa ausentes permanecem None (VAL-3).
     """
+    refactoring_type = str(raw_dict.get("refactoring_type") or "").strip().lower()
+    if refactoring_type not in VALID_CLASSIFICATIONS:
+        raise ValueError(
+            f"refactoring_type inválido em resposta do LLM: "
+            f"{raw_dict.get('refactoring_type')!r} (esperado pure|floss)"
+        )
     return AnalysisResult(
         repository=raw_dict.get("repository", commit.repository),
         commit_hash_before=raw_dict.get("commit_hash_before", commit.commit_hash_before),
         commit_hash_current=raw_dict.get("commit_hash_current", commit.commit_hash_current),
-        refactoring_type=raw_dict.get("refactoring_type", "floss"),
-        justification=raw_dict.get("justification", ""),
-        confidence_level=raw_dict.get("confidence_level", "medium"),
-        technical_evidence=raw_dict.get("technical_evidence", ""),
+        refactoring_type=refactoring_type,
+        justification=raw_dict.get("justification"),
+        confidence_level=raw_dict.get("confidence_level"),
+        technical_evidence=raw_dict.get("technical_evidence"),
         llm_raw_response=raw_dict.get("llm_raw_response", llm_raw_response),
         extraction_method=raw_dict.get("extraction_method", ""),
         diff_size_chars=raw_dict.get("diff_size_chars", 0),
@@ -74,7 +87,12 @@ def analysis_from_llm_response(
 
 
 def analysis_to_session_dict(result: AnalysisResult) -> dict:
-    """Converte AnalysisResult para dict usado nos JSONs de sessão."""
+    """Converte AnalysisResult para dict usado nos JSONs/JSONL de sessão.
+
+    Desde a Fase E2 (VAL-3) o dict inclui ``extraction_method`` e ``success``
+    — antes eram descartados aqui, o que impedia auditar a proveniência do
+    veredito nos registros históricos (docs/REPRODUCIBILITY.md §6).
+    """
     return {
         "hash": result.commit_hash_current,
         "purity_classification": "",  # preenchido pelo caller
@@ -91,4 +109,6 @@ def analysis_to_session_dict(result: AnalysisResult) -> dict:
         "commit_hash_current": result.commit_hash_current,
         "technical_evidence": result.technical_evidence,
         "diff_source": result.diff_source,
+        "extraction_method": result.extraction_method,
+        "success": result.success,
     }
