@@ -65,6 +65,23 @@ class RefanSettings:
     context_small: int = 4096
     context_medium: int = 6144
     context_large: int = 8192
+    # Dimensionamento honesto de contexto (Fase E2, VAL-7): o prompt REAL
+    # (template + contexto + diff) é medido e o num_ctx é planejado para
+    # comportá-lo com margem; se não couber no teto, o diff é reduzido ANTES
+    # do envio e o corte é registrado (diff_truncated) — nunca truncamento
+    # silencioso pelo Ollama.
+    # Teto padrão de contexto por VRAM disponível (16 GB no runner de refª).
+    context_ceiling: int = 8192
+    # Teto empírico DeepSeek-R1: janelas maiores degradam latência (TCC,
+    # ago/2025); mantido como limite superior, não mais como override cego.
+    context_ceiling_deepseek: int = 4096
+    # Orçamento de SAÍDA: análise breve + linha FINAL + JSON de 8 campos
+    # cabem folgadamente em 2048 tokens. O valor herdado num_predict=50000
+    # disputava a janela com o input e mascarava o truncamento.
+    max_output_tokens: int = 2048
+    # chars/4 subestima tokens de código/diff; margem de segurança aplicada
+    # sobre a estimativa ao planejar o contexto.
+    token_estimate_margin: float = 1.25
 
     # --- Debug ---
     show_prompt: bool = True
@@ -116,9 +133,12 @@ class RefanSettings:
             return self.keep_alive_deepseek
         return self.keep_alive
 
+    # Limiar (em chars de prompt) acima do qual o timeout largo é usado.
+    timeout_prompt_threshold: int = 50000
+
     def get_timeout(self, prompt_size: int = 0) -> int:
         """Retorna timeout em segundos baseado no tamanho do prompt."""
-        if prompt_size > 50000:
+        if prompt_size > self.timeout_prompt_threshold:
             return self.timeout_large_s
         return self.timeout_base_s
 

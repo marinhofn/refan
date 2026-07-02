@@ -52,7 +52,7 @@ from src.utils.colors import dim, error, header, info, success, warning
 # Utilidades de otimização de prompt
 # -----------------------------
 
-from src.utils.llm_sizing import dynamic_num_ctx
+from src.utils.llm_sizing import plan_generation
 from src.core.settings import settings as _settings
 
 
@@ -71,28 +71,35 @@ def reduce_diff(diff_text: str, max_chars: int | None = None, per_file_line_limi
         return diff_text, {"reduced": False}
     sections = diff_text.split('\n')
     reduced_lines = []
-    current_file = None
     per_file_counter = 0
     truncated_files = 0
+    # Comprimento acumulado incremental: o join por iteração era O(n^2)
+    # exatamente nos diffs grandes que esta função existe para tratar.
+    running_len = 0
+
+    def _append(text: str) -> None:
+        nonlocal running_len
+        reduced_lines.append(text)
+        running_len += len(text) + 1  # +1 pelo '\n' do join final
+
     for line in sections:
         if line.startswith('diff --git'):
-            current_file = line
             per_file_counter = 0
         if per_file_counter < per_file_line_limit:
-            reduced_lines.append(line)
+            _append(line)
             per_file_counter += 1
         else:
             if line.startswith('@@'):
-                reduced_lines.append(line)
+                _append(line)
             elif line.startswith('diff --git'):
-                reduced_lines.append(line)
+                _append(line)
                 per_file_counter = 1
             else:
                 if per_file_counter == per_file_line_limit:
-                    reduced_lines.append('... (linhas adicionais omitidas)')
+                    _append('... (linhas adicionais omitidas)')
                     truncated_files += 1
                     per_file_counter += 1
-        if len('\n'.join(reduced_lines)) > max_chars:
+        if running_len > max_chars:
             reduced_lines.append('\n... (diff truncado por limite global)')
             break
     new_diff = '\n'.join(reduced_lines)
@@ -118,7 +125,7 @@ class OllamaAdapter:
         self._analysis_count = 0
         self._performance_degraded = False
 
-    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None) -> Optional[str]:
+    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None) -> Optional[str]:
         if attempts is None:
             attempts = _settings.max_retries
         base_opts = get_generation_base_options()
@@ -127,7 +134,13 @@ class OllamaAdapter:
         # blocos de monitoramento/timeout abaixo dependem desta variável.
         is_deepseek = _settings.is_deepseek(self.model)
 
-        default_num_ctx = _settings.context_small if is_deepseek else (num_ctx or _settings.context_small)
+        # VAL-7: o num_ctx planejado pelo chamador é respeitado; o teto
+        # empírico DeepSeek atua como LIMITE superior, não mais como
+        # override cego para context_small.
+        effective_num_ctx = num_ctx or _settings.context_small
+        if is_deepseek:
+            effective_num_ctx = min(effective_num_ctx, _settings.context_ceiling_deepseek)
+        effective_num_predict = num_predict if num_predict is not None else _settings.num_predict
 
         payload = {
             "model": self.model,
@@ -135,9 +148,9 @@ class OllamaAdapter:
             "stream": False,
             "keep_alive": keep_alive if keep_alive is not None else _settings.get_keep_alive(self.model),
             "options": {
-                "num_ctx": default_num_ctx,
+                "num_ctx": effective_num_ctx,
                 "temperature": _settings.temperature,
-                "num_predict": _settings.num_predict,
+                "num_predict": effective_num_predict,
                 "think": False,
                 **base_opts,
             },
@@ -278,8 +291,10 @@ class LLMHandler:
             "diff": diff,
         }
         
-        # Possível redução de diff antes de construir prompt
-        original_diff = diff
+        # Redução de diff em duas camadas (Fase E2, VAL-7):
+        # 1) política legada por tamanho absoluto (max_diff_chars);
+        # 2) orçamento de contexto do MODELO — medido sobre o prompt real.
+        original_diff_size = len(diff)
         reduced_meta = {}
         if len(diff) > _settings.max_diff_chars:
             diff, reduced_meta = reduce_diff(diff)
@@ -287,20 +302,37 @@ class LLMHandler:
                 print(warning(f"Diff reduzido de {reduced_meta['original_chars']} para {reduced_meta['new_chars']} chars (arquivos truncados: {reduced_meta['truncated_files']})"))
         # Construir prompt com suporte a arquivo
         prompt, diff_file_path = build_optimized_commit_prompt_with_file_support({**commit_data, "diff": diff}, self.llm_prompt)
-        
+
+        # Planejar contexto para o PROMPT REAL. Se não couber no teto do
+        # modelo, reduzir o diff ao orçamento e replanejar — antes o Ollama
+        # descartava o excedente silenciosamente e o modelo classificava sem
+        # ver o diff inteiro.
+        plan = plan_generation(prompt, self.model)
+        if not plan.fits:
+            prompt_overhead = len(prompt) - len(diff)
+            diff_budget = max(1000, plan.max_prompt_chars - prompt_overhead)
+            diff, _fit_meta = reduce_diff(diff, max_chars=diff_budget)
+            if len(diff) > diff_budget:
+                diff = diff[:diff_budget] + "\n... (diff truncado para caber na janela de contexto)"
+            prompt, diff_file_path = build_optimized_commit_prompt_with_file_support({**commit_data, "diff": diff}, self.llm_prompt)
+            plan = plan_generation(prompt, self.model)
+            print(warning(
+                f"Diff excedia o teto de contexto do modelo — reduzido para "
+                f"{len(diff)} chars (num_ctx={plan.num_ctx}); corte registrado em diff_truncated"
+            ))
+
         # Mostrar informações sobre a estratégia usada
         if diff_file_path:
             print(info(f"Diff grande ({len(diff)} chars) - usando abordagem de arquivo: {diff_file_path}"))
         else:
-            print(info(f"Diff pequeno ({len(diff)} chars) - enviando diretamente no prompt"))
+            print(info(f"Diff ({len(diff)} chars) inline no prompt — num_ctx planejado: {plan.num_ctx}"))
         
         if show_prompt and DEBUG_SHOW_PROMPT:
             self.print_prompt(prompt)
         
         try:
-            # Enviar para o LLM com parâmetros dinâmicos
-            ctx = dynamic_num_ctx(diff, self.model)
-            llm_response = self.adapter.complete(prompt, num_ctx=ctx)
+            # Enviar para o LLM com o plano de geração calculado
+            llm_response = self.adapter.complete(prompt, num_ctx=plan.num_ctx, num_predict=plan.num_predict)
             if not llm_response:
                 print(error("Falha ao obter resposta do LLM."))
                 return None
@@ -319,6 +351,13 @@ class LLMHandler:
             if result:
                 result["diff_size_chars"] = len(diff)
                 result["diff_lines"] = len(diff.splitlines())
+                # Rastreabilidade do envio (VAL-7/REP-2): o que foi de fato
+                # usado nesta análise, registrado por resultado.
+                result["original_diff_size_chars"] = original_diff_size
+                result["diff_truncated"] = len(diff) < original_diff_size
+                result["num_ctx_effective"] = plan.num_ctx
+                result["num_predict_effective"] = plan.num_predict
+                result["prompt_chars"] = len(prompt)
                 if reduced_meta.get("reduced"):
                     result["reduction"] = reduced_meta
                 result["processing_method"] = "file" if diff_file_path else "direct"
