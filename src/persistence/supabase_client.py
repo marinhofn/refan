@@ -38,6 +38,15 @@ except ImportError:
 from src.core.settings import settings as _settings
 
 
+class PromptVersionConflictError(RuntimeError):
+    """Tag de prompt reutilizada com conteúdo diferente do registrado.
+
+    Levantada por get_or_create_prompt_version (Fase E2, VAL-4): versões de
+    prompt publicadas são imutáveis; prosseguir gravaria resultados com
+    proveniência falsa. A sessão deve ser abortada e uma nova tag registrada.
+    """
+
+
 class SupabaseClient:
     """Cliente para operações de persistência no Supabase."""
 
@@ -108,21 +117,30 @@ class SupabaseClient:
         project_name: str,
         purity_analysis: str | None = None,
     ) -> Optional[str]:
-        """Insert ou get commit, retorna UUID."""
+        """Insert ou get commit, retorna UUID.
+
+        Chaves com valor None são OMITIDAS do payload (Fase E2, VAL-5):
+        o upsert com ``"purity_analysis": None`` sobrescrevia para NULL o
+        baseline Purity de commits já registrados — a variável independente
+        da pesquisa era apagada em cada sync offline->online.
+        """
         if commit_hash_current in self._commit_cache:
             return self._commit_cache[commit_hash_current]
+
+        payload = {
+            "commit_hash_current": commit_hash_current,
+            "commit_hash_before": commit_hash_before,
+            "repository_url": repository_url,
+            "project_name": project_name,
+        }
+        if purity_analysis is not None:
+            payload["purity_analysis"] = purity_analysis
 
         try:
             result = self._execute_with_retry(
                 "upsert_commit",
                 lambda: self.client.table("commits").upsert(
-                    {
-                        "commit_hash_current": commit_hash_current,
-                        "commit_hash_before": commit_hash_before,
-                        "repository_url": repository_url,
-                        "project_name": project_name,
-                        "purity_analysis": purity_analysis,
-                    },
+                    payload,
                     on_conflict="commit_hash_current",
                 ),
             )
@@ -200,22 +218,51 @@ class SupabaseClient:
         system_prompt: str,
         description: str = "",
     ) -> Optional[str]:
-        """Retorna UUID da versão do prompt, criando se necessário."""
+        """Retorna UUID da versão do prompt, criando SOMENTE se inexistente.
+
+        Registro de versão de prompt é IMUTÁVEL (Fase E2, VAL-4): o upsert
+        anterior sobrescrevia system_prompt/sha256_hash quando a tag já
+        existia com outro conteúdo — resultados históricos passavam a
+        apontar para um prompt que não foi o usado (proveniência corrompida).
+
+        Semântica get-then-insert:
+        - tag inexistente -> INSERT e retorna o UUID novo;
+        - tag existente com o MESMO sha256 -> retorna o UUID registrado;
+        - tag existente com sha256 DIFERENTE -> PromptVersionConflictError.
+          O operador deve registrar uma nova tag (REFAN_PROMPT_VERSION) em
+          vez de reutilizar a antiga com texto alterado.
+
+        Retorna None apenas em falha de rede/API (fallback local continua).
+        """
         if version_tag in self._prompt_cache:
             return self._prompt_cache[version_tag]
 
         sha256 = hashlib.sha256(system_prompt.encode()).hexdigest()
+
+        existing = self.get_prompt_version(version_tag)
+        if existing:
+            if existing.get("sha256_hash") != sha256:
+                raise PromptVersionConflictError(
+                    f"A tag '{version_tag}' já está registrada com sha256 "
+                    f"{existing.get('sha256_hash', '')[:12]}..., mas o prompt "
+                    f"local tem sha256 {sha256[:12]}.... Prompts publicados são "
+                    f"imutáveis — registre uma NOVA versão (REFAN_PROMPT_VERSION) "
+                    f"e documente-a em docs/PROMPTS.md."
+                )
+            uid = existing["id"]
+            self._prompt_cache[version_tag] = uid
+            return uid
+
         try:
             result = self._execute_with_retry(
                 "get_or_create_prompt_version",
-                lambda: self.client.table("prompt_versions").upsert(
+                lambda: self.client.table("prompt_versions").insert(
                     {
                         "version_tag": version_tag,
                         "system_prompt": system_prompt,
                         "sha256_hash": sha256,
                         "description": description,
                     },
-                    on_conflict="version_tag",
                 ),
             )
             if result.data:
@@ -506,11 +553,15 @@ class SupabaseClient:
                     if not commit_hash:
                         continue
 
+                    # VAL-5: propagar o purity do registro local quando
+                    # existir; upsert_commit omite a chave quando None, então
+                    # o valor já registrado no cloud nunca é sobrescrito.
                     commit_id = self.upsert_commit(
                         commit_hash_current=commit_hash,
                         commit_hash_before=record.get("commit_hash_before", ""),
                         repository_url=record.get("repository", ""),
                         project_name=record.get("project_name", ""),
+                        purity_analysis=record.get("purity_classification") or None,
                     )
                     if not commit_id:
                         continue

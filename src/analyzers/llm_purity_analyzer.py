@@ -514,26 +514,15 @@ class LLMPurityAnalyzer:
         # Dry-run nunca toca o cloud: além de não ser medição, 'DRY_RUN'
         # violaria o CHECK de classification do schema.
         if self.supabase and not self.dry_run:
+            from src.persistence.supabase_client import PromptVersionConflictError
             try:
                 cloud_model_id = self.supabase.get_or_create_model(self.current_model)
 
-                # Validação de integridade do prompt (Fase H5): se a tag de
-                # versão já existe no banco com hash diferente do prompt em
-                # disco, o prompt foi alterado sem registrar nova versão.
-                # Política warn-and-record: nunca sobrescrever, sempre gravar
-                # a divergência no snapshot da sessão.
-                prompt_hash_mismatch = False
-                existing_prompt = self.supabase.get_prompt_version(_settings.prompt_version_tag)
-                if existing_prompt and existing_prompt.get("sha256_hash") != self.prompt_sha256:
-                    prompt_hash_mismatch = True
-                    print(warning(
-                        f"Prompt em disco difere do registrado para "
-                        f"'{_settings.prompt_version_tag}' no Supabase "
-                        f"(local {self.prompt_sha256[:12]}... != cloud "
-                        f"{existing_prompt['sha256_hash'][:12]}...). "
-                        f"Registre uma nova versão de prompt antes de consolidar resultados."
-                    ))
-
+                # Proveniência imutável (Fase E2, VAL-4): se a tag registrada
+                # no banco tem hash diferente do prompt em execução,
+                # get_or_create_prompt_version levanta conflito e a sessão é
+                # ABORTADA — a política anterior (H5) avisava e prosseguia,
+                # sobrescrevendo o registro histórico via upsert.
                 cloud_prompt_id = self.supabase.get_or_create_prompt_version(
                     _settings.prompt_version_tag, OPTIMIZED_LLM_PROMPT
                 )
@@ -545,7 +534,6 @@ class LLMPurityAnalyzer:
                             **_settings.to_dict(),
                             "prompt_sha256": self.prompt_sha256,
                             "tool_version": self.tool_version,
-                            "prompt_hash_mismatch": prompt_hash_mismatch,
                         },
                         runner_hostname=_settings.runner_id,
                         total_planned=len(analysis_df),
@@ -553,6 +541,9 @@ class LLMPurityAnalyzer:
                     )
                     if cloud_session_id:
                         print(info(f"Sessão Supabase criada: {cloud_session_id[:8]}..."))
+            except PromptVersionConflictError as e:
+                print(error(f"Sessão abortada — conflito de versão de prompt: {e}"))
+                raise
             except Exception as e:
                 print(warning(f"Falha ao criar sessão Supabase: {e}"))
 
