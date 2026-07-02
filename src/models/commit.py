@@ -70,6 +70,12 @@ class AnalysisResult:
     num_ctx_effective: int = 0
     num_predict_effective: int = 0
     prompt_chars: int = 0
+    # Reprodutibilidade por análise (Fase E3, REP-2/REP-4): seed efetivamente
+    # enviado (sempre explícito, mesmo no regime aleatório), hashes do prompt
+    # completo e do diff enviados, e duração real da inferência.
+    seed_effective: int | None = None
+    prompt_sha256_effective: str = ""
+    diff_sha256: str = ""
     processing_time_ms: int = 0
     timestamp: str = field(default_factory=utc_now_iso)
     success: bool = True

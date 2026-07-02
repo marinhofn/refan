@@ -625,6 +625,7 @@ class LLMPurityAnalyzer:
                                         diff_source=result.get("diff_source", "direct"),
                                         diff_size_chars=result.get("diff_size", 0),
                                         diff_lines=result.get("diff_lines", 0),
+                                        processing_time_ms=result.get("processing_time_ms", 0),
                                     )
                                 elif classification == "FAILED":
                                     # Falhas são dados (VAL-6): antes nenhuma

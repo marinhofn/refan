@@ -8,7 +8,10 @@ são FALHAS registradas — nenhuma heurística fabrica rótulo, nenhum campo de
 pesquisa recebe valor simulado. Inclui monitoramento/reset DeepSeek.
 """
 
+import hashlib
 import os
+import random
+import time
 from typing import Optional, Protocol
 from src.utils.json_parser import extract_classification_json
 from src.utils.classification import extract_final_classification
@@ -125,7 +128,7 @@ class OllamaAdapter:
         self._analysis_count = 0
         self._performance_degraded = False
 
-    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None) -> Optional[str]:
+    def complete(self, prompt: str, attempts: int | None = None, keep_alive: str | int | None = None, num_ctx: int | None = None, num_predict: int | None = None, seed: int | None = None) -> Optional[str]:
         if attempts is None:
             attempts = _settings.max_retries
         base_opts = get_generation_base_options()
@@ -156,15 +159,16 @@ class OllamaAdapter:
             },
             "think": False,
         }
-        # Reprodutibilidade: seed fixo torna a geração determinística por
-        # modelo/versão. Omitido quando use_random_seed=True (regime do
-        # baseline TCC). Ver settings.py e docs/REPRODUCIBILITY.md.
-        if not _settings.use_random_seed:
+        # Reprodutibilidade (H5 + E3/REP-2): seed explícito do chamador tem
+        # prioridade; sem ele, aplica o regime das settings (seed fixo, ou
+        # omissão no regime aleatório legado). Ver docs/REPRODUCIBILITY.md.
+        if seed is not None:
+            payload["options"]["seed"] = seed
+        elif not _settings.use_random_seed:
             payload["options"]["seed"] = _settings.llm_seed
         last_error = None
         prompt_size = len(prompt)
         timeout = _settings.get_timeout(prompt_size)
-        import time
         start_time = time.time()
         
         for i in range(1, attempts + 1):
@@ -331,8 +335,25 @@ class LLMHandler:
             self.print_prompt(prompt)
         
         try:
+            # Seed efetivo SEMPRE explícito e registrado (E3, REP-2): no
+            # regime aleatório, o seed é sorteado no cliente e enviado — a
+            # geração continua estocástica entre execuções, mas cada execução
+            # passa a ser reproduzível (o Ollama sortearia internamente sem
+            # registrar; distribucionalmente equivalente).
+            if _settings.use_random_seed:
+                seed_effective = random.SystemRandom().randint(0, 2**31 - 1)
+            else:
+                seed_effective = _settings.llm_seed
+
             # Enviar para o LLM com o plano de geração calculado
-            llm_response = self.adapter.complete(prompt, num_ctx=plan.num_ctx, num_predict=plan.num_predict)
+            started = time.monotonic()
+            llm_response = self.adapter.complete(
+                prompt,
+                num_ctx=plan.num_ctx,
+                num_predict=plan.num_predict,
+                seed=seed_effective,
+            )
+            processing_time_ms = int((time.monotonic() - started) * 1000)
             if not llm_response:
                 print(error("Falha ao obter resposta do LLM."))
                 return None
@@ -358,6 +379,13 @@ class LLMHandler:
                 result["num_ctx_effective"] = plan.num_ctx
                 result["num_predict_effective"] = plan.num_predict
                 result["prompt_chars"] = len(prompt)
+                result["seed_effective"] = seed_effective
+                # REP-4: duração real da chamada de inferência.
+                result["processing_time_ms"] = processing_time_ms
+                # REP-2: hashes do que foi DE FATO enviado — auditáveis contra
+                # reconstrução determinística (template versionado + git).
+                result["prompt_sha256_effective"] = hashlib.sha256(prompt.encode()).hexdigest()
+                result["diff_sha256"] = hashlib.sha256(diff.encode()).hexdigest()
                 if reduced_meta.get("reduced"):
                     result["reduction"] = reduced_meta
                 result["processing_method"] = "file" if diff_file_path else "direct"
