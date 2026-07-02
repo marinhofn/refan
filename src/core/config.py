@@ -139,21 +139,17 @@ USE_RANDOM_SEED = _settings.use_random_seed
 # de ambiente REFAN_NUM_GPU_LAYERS antes de executar a aplicação. Ex:
 #   export REFAN_NUM_GPU_LAYERS=60
 # IMPORTANTE: Aumentar demais pode causar OOM (out of memory) e o modelo falhar ao carregar.
-NUM_GPU_LAYERS_ENV = os.environ.get("REFAN_NUM_GPU_LAYERS")
-try:
-    NUM_GPU_LAYERS = int(NUM_GPU_LAYERS_ENV) if NUM_GPU_LAYERS_ENV else None
-except ValueError:
-    NUM_GPU_LAYERS = None
-
 def get_generation_base_options():
     """Retorna opções padrão adicionais para geração no Ollama.
 
-    Inclui num_gpu_layers caso o usuário tenha configurado REFAN_NUM_GPU_LAYERS e seja > 0.
+    Lê num_gpu_layers de RefanSettings (fonte única desde a Fase E3/REP-3 —
+    antes o valor vivia num global deste módulo, fora do config_snapshot).
     """
+    from src.core.settings import settings as _s
     opts = {}
-    if NUM_GPU_LAYERS and NUM_GPU_LAYERS > 0:
-        # Nome do campo conforme API do Ollama (num_gpu_layers) para forçar camadas na GPU
-        opts["num_gpu_layers"] = NUM_GPU_LAYERS
+    if _s.num_gpu_layers and _s.num_gpu_layers > 0:
+        # Nome do campo conforme API do Ollama para forçar camadas na GPU
+        opts["num_gpu_layers"] = _s.num_gpu_layers
     return opts
 
 # Função para criar diretórios necessários

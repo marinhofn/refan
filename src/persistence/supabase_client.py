@@ -448,27 +448,36 @@ class SupabaseClient:
         current_commit_index: int = 0,
         total_commits_in_batch: int = 0,
         model_name: str = "",
+        gpu_utilization_pct: float | None = None,
+        memory_used_mb: float | None = None,
     ) -> bool:
         """UPSERT runner_status (heartbeat).
 
         Tentativa única: o heartbeat é periódico — a próxima iteração do
         loop já o repete; retry com backoff só atrasaria a análise.
+        As métricas de GPU (Fase E3, REP-3) são opcionais — omitidas do
+        payload quando None (máquinas sem NVIDIA).
         """
+        heartbeat = {
+            "runner_id": runner_id,
+            "session_id": session_id,
+            "status": status,
+            "current_commit_hash": current_commit_hash,
+            "current_commit_index": current_commit_index,
+            "total_commits_in_batch": total_commits_in_batch,
+            "model_name": model_name,
+            "last_heartbeat": utc_now_iso(),
+            "updated_at": utc_now_iso(),
+        }
+        if gpu_utilization_pct is not None:
+            heartbeat["gpu_utilization_pct"] = gpu_utilization_pct
+        if memory_used_mb is not None:
+            heartbeat["memory_used_mb"] = memory_used_mb
         try:
             self._execute_with_retry(
                 "update_heartbeat",
                 lambda: self.client.table("runner_status").upsert(
-                    {
-                        "runner_id": runner_id,
-                        "session_id": session_id,
-                        "status": status,
-                        "current_commit_hash": current_commit_hash,
-                        "current_commit_index": current_commit_index,
-                        "total_commits_in_batch": total_commits_in_batch,
-                        "model_name": model_name,
-                        "last_heartbeat": utc_now_iso(),
-                        "updated_at": utc_now_iso(),
-                    },
+                    heartbeat,
                     on_conflict="runner_id",
                 ),
                 attempts=1,

@@ -23,6 +23,7 @@ from src.utils.persistence import SessionWriter
 from src.utils.timeutils import utc_now, utc_now_iso, utc_now_stamp
 from src.utils.version_info import get_tool_version
 from src.utils.classification import summarize_convergence
+from src.utils.hardware_info import get_hardware_info, sample_gpu_metrics
 from src.utils.colors import dim, error, header, info, success, warning
 from src.core.settings import settings as _settings
 
@@ -562,6 +563,7 @@ class LLMPurityAnalyzer:
                             "model_digest": self.model_digest,
                             "model_modified_at": (model_info or {}).get("modified_at", ""),
                             "ollama_version": self.ollama_version,
+                            "hardware": get_hardware_info(),
                         },
                         runner_hostname=_settings.runner_id,
                         total_planned=len(analysis_df),
@@ -669,7 +671,8 @@ class LLMPurityAnalyzer:
                                         error_message=result.get('error_message', ''),
                                         llm_raw_response=result.get('llm_raw_response', '') or '',
                                     )
-                                # Heartbeat
+                                # Heartbeat (com métricas de GPU quando NVIDIA)
+                                gpu_pct, gpu_mem = sample_gpu_metrics()
                                 self.supabase.update_heartbeat(
                                     runner_id=_settings.runner_id,
                                     session_id=cloud_session_id,
@@ -678,6 +681,8 @@ class LLMPurityAnalyzer:
                                     current_commit_index=processed_count,
                                     total_commits_in_batch=len(analysis_df),
                                     model_name=self.current_model,
+                                    gpu_utilization_pct=gpu_pct,
+                                    memory_used_mb=gpu_mem,
                                 )
                             except Exception as e:
                                 print(dim(f"Supabase sync falhou (JSONL local OK): {e}"))

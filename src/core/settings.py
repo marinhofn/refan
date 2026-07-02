@@ -83,6 +83,18 @@ class RefanSettings:
     # sobre a estimativa ao planejar o contexto.
     token_estimate_margin: float = 1.25
 
+    # --- GPU ---
+    # Camadas offloaded para a GPU (env REFAN_NUM_GPU_LAYERS). Movido de
+    # config.py para o settings na Fase E3 (REP-3): fora do dataclass o valor
+    # ficava FORA do config_snapshot — condição de execução não registrada.
+    num_gpu_layers: int | None = field(
+        default_factory=lambda: (
+            int(os.environ["REFAN_NUM_GPU_LAYERS"])
+            if os.environ.get("REFAN_NUM_GPU_LAYERS", "").isdigit()
+            else None
+        )
+    )
+
     # --- Debug ---
     show_prompt: bool = True
     max_prompt_display_length: int = 2000
